@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken');
 function auth(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
-  try { req.user = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret'); next(); }
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+    if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin access required' });
+    next();
+  }
   catch { res.status(401).json({ message: 'Authentication required' }); }
 }
 module.exports = { auth };
