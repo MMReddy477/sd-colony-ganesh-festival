@@ -1,5 +1,165 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ganesh Utsav Committee</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css"></head>
-<body><nav class="navbar navbar-expand-lg navbar-dark fixed-top"><div class="container"><a class="navbar-brand" href="#home"><span class="brand-mark">ॐ</span> Ganesh Utsav</a><button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button><div id="nav" class="collapse navbar-collapse"><ul class="navbar-nav ms-auto"><li><a class="nav-link" href="#gallery">Gallery</a></li><li><a class="nav-link" href="#committee">Committee</a></li><li><a class="nav-link" href="#events">Events</a></li><li><a class="nav-link" href="#funds">Funds</a></li><li><a class="nav-link" href="#donations">Donations</a></li><li><a class="nav-link" href="#contact">Contact</a></li><li><a class="btn btn-outline-light btn-sm ms-lg-3" href="/admin.html">Admin login</a></li></ul></div></div></nav>
-<header id="home" class="hero"><div class="container hero-inner"><div class="hero-copy"><p class="eyebrow">A decade of devotion · 2026</p><h1>One community.<br><em>One celebration.</em></h1><p class="lead">Building a brighter Ganesh Utsav together, with transparent giving, joyful traditions, and room for every family.</p><a class="btn btn-saffron" href="#events">Explore the celebration <span>↗</span></a></div><div class="hero-visual"><img src="/Ganesh%20Idol.jpg" alt="Ganesh idol decorated for the Utsav" fetchpriority="high"><span id="heroDonations" hidden></span></div></div></header>
-<main><section id="funds" class="section funds"><div class="container"><div class="section-heading"><p class="eyebrow">Open books</p><h2>Every rupee has a story.</h2><p>See how our community's generosity becomes shared celebration.</p></div><div class="row g-3" id="stats"></div></div></section><section id="events" class="section section-light"><div class="container"><div class="section-heading split"><div><p class="eyebrow">Mark your calendar</p><h2>This year's moments</h2></div><span class="section-note">All are welcome</span></div><div class="row g-4" id="eventsList"></div></div></section><section id="committee" class="section"><div class="container"><div class="section-heading"><p class="eyebrow">The people behind the joy</p><h2>Meet the committee</h2></div><div class="row g-4" id="membersList"></div></div></section><section id="gallery" class="section gallery-section"><div class="container"><div class="section-heading split"><div><p class="eyebrow">From last year's memories</p><h2>Gallery</h2></div><a class="btn btn-dark-red" href="/api/gallery/zip">Download all ↧</a></div><div class="gallery-grid" id="galleryList"></div></div></section><section id="donations" class="section section-light"><div class="container"><div class="section-heading"><p class="eyebrow">With gratitude</p><h2>Our supporters</h2><p>A public record of the generous people who make this possible.</p></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Donor</th><th>Date</th><th>Mode</th><th class="text-end">Amount</th></tr></thead><tbody id="donationsList"></tbody></table></div></div></section><section id="contact" class="contact-band"><div class="container d-flex flex-wrap justify-content-between align-items-center gap-4"><div><p class="eyebrow">Come say hello</p><h2>Celebrate with us.</h2></div><div class="contact-details"><strong>Shree Ganesh Utsav Committee</strong><span>hello@ganeshutsav.org · +91 98765 43210</span><span>Community Hall, Main Street · Open daily 10am–8pm</span></div></div></section></main><footer><div class="container d-flex justify-content-between"><span>© 2026 Ganesh Utsav Committee</span><a href="/admin.html">Committee admin</a></div></footer><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="/app.js"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ganesh Utsav Committee</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand colony-brand" href="#home"
+          ><img src="/ganesh-logo.png" alt="Ganesh logo" /><span class="colony-brand-copy"><strong>🏘️ SURYODAYA COLONY</strong><small>Building Bonds, Celebrating Together, Growing Stronger.</small></span></a
+        ><button
+          class="navbar-toggler"
+          data-bs-toggle="collapse"
+          data-bs-target="#nav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nav" class="collapse navbar-collapse">
+          <ul class="navbar-nav ms-auto">
+            <li><a class="nav-link" href="#gallery">Gallery</a></li>
+            <li><a class="nav-link" href="#committee">Committee</a></li>
+            <li><a class="nav-link" href="#events">Events</a></li>
+            <li><a class="nav-link" href="#funds">Funds</a></li>
+            <li><a class="nav-link" href="#donations">Donations</a></li>
+            <li><a class="nav-link" href="#contact">Contact</a></li>
+            <li>
+              <a class="btn btn-outline-light btn-sm ms-lg-3" href="/admin.html"
+                >Admin login</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <header id="home" class="hero hero-redesign">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow hero-tagline">🐘 GANAPATI BAPPA MORYA! 🐘</p>
+          <h1>🕉️ SD COLONY GANESH UTSAV<br /><em>COMMITTEE 🕉️</em></h1>
+          <p class="lead">
+            Celebrating Faith • Unity • Tradition
+          </p>
+          <p class="hero-blessing">🙏 Together Under the Blessings of Lord Ganesha 🙏</p>
+          <a class="btn btn-saffron" href="#events"
+            >Explore Celebration <span>↗</span></a
+          >
+        </div>
+        <div class="hero-visual">
+          <img
+            src="/Ganesh%20Idol.jpg"
+            alt="Ganesh idol decorated for the Utsav"
+            fetchpriority="high"
+          /><span id="heroDonations" hidden></span>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section id="funds" class="section funds">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">Open books</p>
+            <h2>Every rupee has a story.</h2>
+            <p>
+              See how our community's generosity becomes shared celebration.
+            </p>
+          </div>
+          <div class="row g-3" id="stats"></div>
+        </div>
+      </section>
+      <section id="events" class="section section-light">
+        <div class="container">
+          <div class="section-heading split">
+            <div>
+              <p class="eyebrow">Mark your calendar</p>
+              <h2>This year's moments</h2>
+            </div>
+            <span class="section-note">All are welcome</span>
+          </div>
+          <div class="row g-4" id="eventsList"></div>
+        </div>
+      </section>
+      <section id="committee" class="section">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">The people behind the joy</p>
+            <h2>Meet the committee</h2>
+          </div>
+          <div class="row g-4" id="membersList"></div>
+        </div>
+      </section>
+      <section id="gallery" class="section gallery-section">
+        <div class="container">
+          <div class="section-heading split">
+            <div>
+              <p class="eyebrow">From last year's memories</p>
+              <h2>Gallery</h2>
+            </div>
+            <a class="btn btn-dark-red" href="/api/gallery/zip"
+              >Download all ↧</a
+            >
+          </div>
+          <div class="gallery-grid" id="galleryList"></div>
+        </div>
+      </section>
+      <section id="donations" class="section section-light">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">With gratitude</p>
+            <h2>Our supporters</h2>
+            <p>
+              A public record of the generous people who make this possible.
+            </p>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Donor</th>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th class="text-end">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="donationsList"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section id="contact" class="contact-band">
+        <div
+          class="container d-flex flex-wrap justify-content-between align-items-center gap-4"
+        >
+          <div>
+            <p class="eyebrow">Come say hello</p>
+            <h2>Celebrate with us.</h2>
+          </div>
+          <div class="contact-details">
+            <strong>Shree Ganesh Utsav Committee</strong
+            ><span>hello@ganeshutsav.org · +91 98765 43210</span
+            ><span>Community Hall, Main Street · Open daily 10am–8pm</span>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <div class="container d-flex justify-content-between">
+        <span>© 2026 Ganesh Utsav Committee</span
+        ><a href="/admin.html">Committee admin</a>
+      </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
