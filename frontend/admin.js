@@ -40,7 +40,8 @@ async function downloadReceiptImage(receiptNumber){
     let response=await fetch('/api/receipts/'+encodeURIComponent(receiptNumber)+'/image.svg');
     if(!response.ok)response=await fetch('/api/receipts/'+encodeURIComponent(receiptNumber)+'/image');
     if(!response.ok)throw new Error(response.status===404?'Receipt not found':'Receipt service unavailable');
-    const sourceUrl=URL.createObjectURL(new Blob([await response.text()],{type:'image/svg+xml'}));
+      const svg=await response.text();
+      const sourceUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
     const image=new Image();
     image.onload=()=>{
       const canvas=document.createElement('canvas');
@@ -52,11 +53,11 @@ async function downloadReceiptImage(receiptNumber){
         link.href=URL.createObjectURL(jpg);
         link.download=receiptNumber+'.jpg';
         link.click();
-        setTimeout(()=>{URL.revokeObjectURL(link.href);URL.revokeObjectURL(sourceUrl);},1000);
+        URL.revokeObjectURL(sourceUrl);
       },'image/jpeg',0.92);
     };
     image.onerror=()=>{URL.revokeObjectURL(sourceUrl);alert('Unable to create receipt image. Please try again.');};
-    image.src=sourceUrl;
+      image.src=sourceUrl;
   }catch(e){alert('Download failed: '+e.message);console.error(e);}
 }
 document.addEventListener('click',async event=>{if(event.target.closest('[data-view-receipt]')){const viewButton=event.target.closest('[data-view-receipt]');event.preventDefault();showReceiptModal(viewButton.dataset.viewReceipt);return}const downloadButton=event.target.closest('[data-download-receipt]');if(downloadButton){event.preventDefault();downloadReceiptImage(downloadButton.dataset.downloadReceipt);return}if(event.target.closest('[data-report]')){const button=event.target.closest('[data-report]');if(!button)return;const response=await api('/reports/'+button.dataset.report);if(!response.ok){alert('Report download failed');return}const blob=await response.blob();const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=button.dataset.report.replace('/','-');link.click();URL.revokeObjectURL(link.href)}});
