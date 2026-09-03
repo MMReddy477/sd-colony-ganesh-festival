@@ -34,7 +34,7 @@ function renderExpenseTable(items, path) {
   const query = document.getElementById("expenseSearch")?.value.toLowerCase() || "";
   const filtered = items.filter(item => `${item.name} ${item.paymentMode}`.toLowerCase().includes(query));
   const pageSize = getPageSize("expense"); const page = pageState.expense; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
-  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatDate(item.date)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">📄 View bill</button> <button data-bill-replace="${item._id}">Replace</button>` : "--"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatDate(item.date)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">📄 View bill</button> <button data-bill-replace="${item._id}">Replace</button>` : "--"}</td><td><button data-edit-record="expense:${item._id}" title="Edit expense">Edit</button> <button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
   renderPagination("expensePagination", filtered.length, pageSize, page, next => { pageState.expense = next; renderExpenseTable(items, path); });
 }
 const defaultExpenseList = renderList;
@@ -116,7 +116,7 @@ document.addEventListener("click", async (event) => {
       : '<p class="muted">No donations recorded yet.</p>';
   if (label === "Expenses")
     content = adminExpenses.length
-      ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.date ? new Date(item.date).toLocaleDateString("en-IN") : "--"}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">View Bill</button>` : "--"}</td><td><button data-delete="/expenses/${item._id}">Delete Expense</button></td></tr>`).join("")}</tbody></table></div>`
+      ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.date ? new Date(item.date).toLocaleDateString("en-IN") : "--"}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">View Bill</button>` : "--"}</td><td><button data-edit-record="expense:${item._id}" title="Edit expense">Edit</button> <button data-delete="/expenses/${item._id}">Delete Expense</button></td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenses recorded yet.</p>';
   if (label === "Balance")
     content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div class="balance-result"><span>Current balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
@@ -186,7 +186,7 @@ renderList = (id, items, label, path) =>
     : memberRenderList(id, items, label, path);
 function renderMemberTable(items, path) {
   const container = document.getElementById("memberAdminList");
-  container.innerHTML = `<div class="member-table-wrap"><table class="member-table"><thead><tr><th>Name</th><th>Designation</th><th>Mobile number</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.designation || "--"}</td><td>${item.mobile || "--"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="member-table-wrap"><table class="member-table"><thead><tr><th>Name</th><th>Designation</th><th>Mobile number</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.designation || "--"}</td><td>${item.mobile || "--"}</td><td><button data-edit-record="member:${item._id}" title="Edit member">Edit</button> <button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
 }
 const eventRenderList = renderList;
 renderList = (id, items, label, path) =>
@@ -195,7 +195,7 @@ renderList = (id, items, label, path) =>
     : eventRenderList(id, items, label, path);
 function renderEventTable(items, path) {
   const container = document.getElementById("eventAdminList");
-  container.innerHTML = `<div class="member-table-wrap"><table class="member-table event-table"><thead><tr><th>Event name</th><th>Date</th><th>Time</th><th>Venue</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${formatDate(item.date)}</td><td>${item.time || "--"}</td><td>${item.venue || "Between Sirius & Samyukta"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="member-table-wrap"><table class="member-table event-table"><thead><tr><th>Event name</th><th>Date</th><th>Time</th><th>Venue</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${formatDate(item.date)}</td><td>${item.time || "--"}</td><td>${item.venue || "Between Sirius & Samyukta"}</td><td><button data-edit-record="event:${item._id}" title="Edit event">Edit</button> <button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
 }
 function renderDonationTable(items, path) {
   const container = document.getElementById("donationAdminList");
@@ -501,6 +501,8 @@ async function loadAdmin() {
   if (!r.ok) return;
   const d = await r.json();
   adminDonations = d.donations;
+  adminMembers = d.members;
+  adminEvents = d.events;
   const expenseResponse = await api("/expenses");
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   document.getElementById("adminStats").innerHTML = [
@@ -544,6 +546,26 @@ async function loadAdmin() {
 }
 let adminDonations = [];
 let adminExpenses = [];
+let adminMembers = [];
+let adminEvents = [];
+const editRecordFields = { expense: ["name", "amount", "paymentMode", "date"], member: ["name", "designation", "mobile"], event: ["name", "date", "time", "venue"] };
+document.addEventListener("click", event => {
+  const button = event.target.closest("[data-edit-record]");
+  if (!button) return;
+  const [type, id] = button.dataset.editRecord.split(":");
+  const records = type === "expense" ? adminExpenses : type === "member" ? adminMembers : adminEvents;
+  const item = records.find(record => record._id === id);
+  if (!item) return;
+  const requiredFields = { expense: ["name", "amount", "paymentMode", "date"], member: ["name"], event: ["name"] };
+  const values = editRecordFields[type].map(name => `<label>${name}<input name="${name}" type="${name === "date" ? "date" : "text"}" value="${escapeHtml(String(item[name] || "").slice(0, 10))}"${requiredFields[type].includes(name) ? " required" : ""}></label>`).join("");
+  const modal = document.createElement("div");
+  modal.className = "finance-modal is-open";
+  modal.innerHTML = `<div class="finance-modal-panel" role="dialog" aria-modal="true"><button class="finance-close" type="button" aria-label="Close">×</button><p class="eyebrow">Edit record</p><h3>Edit ${type}</h3><form class="record-edit-form">${values}<div class="donor-modal-actions"><button class="btn btn-saffron" type="submit">Save changes</button><button class="btn btn-link" type="button" data-close-edit>Cancel</button></div></form></div>`;
+  document.body.appendChild(modal);
+  const close = () => modal.remove();
+  modal.addEventListener("click", click => { if (click.target === modal || click.target.closest(".finance-close, [data-close-edit]")) close(); });
+  modal.querySelector("form").addEventListener("submit", async submit => { submit.preventDefault(); const response = await api(`/${type}s/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData(submit.target)) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not update record"); return; } close(); loadAdmin(); });
+});
 document.addEventListener("input", event => { if (event.target.id === "adminDonorSearch") { pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); } if (event.target.id === "expenseSearch") { pageState.expense = 0; renderExpenseTable(adminExpenses, "/expenses"); } });
 document.addEventListener("change", event => { if (event.target.id === "adminPaymentFilter") { pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); } });
 const donorModal = document.getElementById("donorModal");
