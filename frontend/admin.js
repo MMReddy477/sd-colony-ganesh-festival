@@ -394,6 +394,8 @@ window.addEventListener("DOMContentLoaded", () => {
     timeInput.replaceWith(select);
   }
   const donationForm = document.getElementById("donationForm");
+  const donorRows = document.getElementById("adminDonorRows");
+  if (donorRows) donorRows.value = "10";
   const donorName =
     donationForm && donationForm.querySelector('[name="donorName"]');
   if (donorName && !donationForm.querySelector('[name="flatNumber"]')) {
