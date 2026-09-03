@@ -416,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("ganeshLanguage", select.value);
     location.reload();
   });
-  nav.insertBefore(select, nav.querySelector(".navbar-toggler"));
+  document.getElementById("nav").insertBefore(select, document.getElementById("nav").firstChild);
   applyLanguage();
   const dynamicSections = [
     "#stats",
