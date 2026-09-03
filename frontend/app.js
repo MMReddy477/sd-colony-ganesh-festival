@@ -403,14 +403,8 @@ const applyLanguage = () => {
   if (select) select.value = language;
 };
 document.addEventListener("DOMContentLoaded", () => {
-  const nav = document.querySelector(".navbar .container");
-  if (!nav || document.getElementById("languageSelect")) return;
-  const select = document.createElement("select");
-  select.id = "languageSelect";
-  select.className = "language-select";
-  select.setAttribute("aria-label", "Select language");
-  select.innerHTML =
-    '<option value="en">English</option><option value="te">తెలుగు</option>';
+  const select = document.getElementById("languageSelect");
+  if (!select) return;
   select.value = localStorage.getItem("ganeshLanguage") || "en";
   select.addEventListener("change", () => {
     localStorage.setItem("ganeshLanguage", select.value);
