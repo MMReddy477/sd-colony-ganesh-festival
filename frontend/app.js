@@ -1,19 +1,3 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const response = await fetch("/api/public");
-  if (!response.ok) return;
-  const data = await response.json();
-  const table = document.querySelector("#donationsList")?.closest("table");
-  if (!table) return;
-  table.querySelector("thead tr").innerHTML =
-    "<th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th>";
-  table.querySelector("tbody").innerHTML =
-    data.donations
-      .map(
-        (item) =>
-          `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td>${item.mobile || "--"}</td><td class="fw-bold">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</td></tr>`,
-      )
-      .join("") || '<tr><td colspan="6">No donations recorded yet.</td></tr>';
-});
 const publicDonationTableObserver = new MutationObserver(async () => {
   const modal = document.getElementById("financeModal");
   if (
@@ -150,20 +134,24 @@ async function loadPortal() {
 loadPortal();
 let publicDonorRows = [];
 let publicDonorPage = 0;
-let publicDonorPageSize = 10;
+let publicDonorPageSize = 25;
 function renderPublicDonors(items) {
   publicDonorRows = items;
   const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
-  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.mobile} ${item.paymentMode}`.toLowerCase().includes(query));
+  const mode = document.getElementById("publicPaymentFilter")?.value || "";
+  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.mobile} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
-  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td>${d.donorName || "--"}</td><td>${date(d.date)}</td><td>${d.paymentMode || "Cash"}</td><td class="text-end fw-bold">${money(d.amount)}</td></tr>`).join("") || '<tr><td colspan="4">No matching donors.</td></tr>';
+  const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Flat Number</th><th>Donor Name</th><th>Mobile Number</th><th>Amount</th><th>Payment Mode</th><th>Time</th><th>Receipt</th>";
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Flat Number">${safe(d.flatNumber || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Mobile Number">${safe(d.mobile || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Time">${safe(formatDonorDate(d.createdAt || d.date))}</td><td data-label="Receipt">${d.receiptNumber ? `<a class="receipt-action" href="/api/receipts/${encodeURIComponent(d.receiptNumber)}/image.svg" target="_blank" rel="noopener">👁 View</a> <a class="receipt-action" href="/api/receipts/${encodeURIComponent(d.receiptNumber)}/public-pdf" download>⬇ Download PDF</a>` : "--"}</td></tr>`).join("") || '<tr><td colspan="7" class="donor-empty">🐘 No supporters found.<br><small>Try another name, flat number, or mobile number.</small></td></tr>';
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
-  panel.innerHTML = `<label>Rows per page: <select id="publicRowsPerPage"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="all">All</option></select></label><span>Showing ${first}-${last} of ${total} donors</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
-  panel.querySelector("select").value = size;
+  panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
 }
+function formatDonorDate(value) { return value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--"; }
 document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("change", event => { if (event.target.id === "publicRowsPerPage") { publicDonorPageSize = event.target.value === "all" ? "all" : Number(event.target.value); publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
+document.addEventListener("change", event => { if (event.target.id === "publicPaymentFilter") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("click", event => { const button = event.target.closest("[data-public-page]"); if (!button) return; const value = button.dataset.publicPage; publicDonorPage += value === "prev" ? -1 : value === "next" ? 1 : Number(value) - publicDonorPage; renderPublicDonors(publicDonorRows); });
 let galleryImages = [];
 let galleryIndex = 0;
@@ -281,12 +269,7 @@ document.addEventListener("click", async (event) => {
       : '<p class="muted">No donations recorded yet.</p>';
   if (label === "Total expenditure")
     content = data.expenses.length
-      ? data.expenses
-          .map(
-            (item) =>
-              `<div class="finance-detail"><span>${item.name}<small>${date(item.date)}</small></span><strong>${money(item.amount)}</strong></div>`,
-          )
-          .join("")
+      ? `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense Name</th><th>Amount</th><th>Payment Mode</th><th>Expense Date</th></tr></thead><tbody>${data.expenses.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatDonorDate(item.date)}</td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenditure recorded yet.</p>';
   if (label === "Current balance")
     content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div class="balance-result"><span>Final balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
@@ -445,34 +428,6 @@ document.addEventListener("DOMContentLoaded", () =>
   setTimeout(hidePageLoader, 150),
 );
 setTimeout(hidePageLoader, 2000);
-document.addEventListener("DOMContentLoaded", async () => {
-  const table = document.querySelector("#donationsList")?.closest("table");
-  if (!table) return;
-  const response = await fetch("/api/public");
-  if (!response.ok) return;
-  const data = await response.json();
-  const safe = (value) =>
-    String(value ?? "").replace(
-      /[&<>"']/g,
-      (char) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        })[char],
-    );
-  table.querySelector("thead tr").innerHTML =
-    '<th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th><th class="text-center">Receipt</th>';
-  table.querySelector("tbody").innerHTML =
-    data.donations
-      .map(
-        (item) =>
-          `<tr><td>${safe(item.flatNumber || "--")}</td><td>${safe(item.donorName || "--")}</td><td>${safe(item.mobile || "--")}</td><td class="fw-bold">${money(item.amount)}</td><td>${safe(item.paymentMode || "--")}</td><td>${safe(new Date(item.createdAt || item.date).toLocaleString("en-IN"))}</td><td class="text-center"><button class="public-receipt-download" type="button" data-public-receipt="${safe(item.receiptNumber || "")}" title="Download receipt" aria-label="Download receipt">&#11015;</button></td></tr>`,
-      )
-      .join("") || '<tr><td colspan="7">No donations recorded yet.</td></tr>';
-});
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-public-receipt]");
   if (!button || !button.dataset.publicReceipt) return;

@@ -467,7 +467,8 @@ async function loadAdmin() {
   if (!r.ok) return;
   const d = await r.json();
   adminDonations = d.donations;
-  adminExpenses = d.expenses;
+  const expenseResponse = await api("/expenses");
+  adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   document.getElementById("adminStats").innerHTML = [
     ["Donations", d.stats.totalDonations],
     ["Expenses", d.stats.totalExpenses],
@@ -487,7 +488,7 @@ async function loadAdmin() {
   );
   renderList(
     "expenseAdminList",
-    d.expenses,
+    adminExpenses,
     (x) => `${x.name} · ${money(x.amount)}`,
     "/expenses",
   );
