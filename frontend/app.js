@@ -410,7 +410,6 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("ganeshLanguage", select.value);
     location.reload();
   });
-  document.getElementById("nav").insertBefore(select, document.getElementById("nav").firstChild);
   applyLanguage();
   const dynamicSections = [
     "#stats",
