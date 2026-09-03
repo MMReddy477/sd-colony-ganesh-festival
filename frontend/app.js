@@ -31,7 +31,7 @@ const publicExpenseTableObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Time</th></tr></thead><tbody>${data.expenses.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</td></tr>`).join("") || '<tr><td colspan="4">No expenditure recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Time</th></tr></thead><tbody>${data.expenses.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatDonorDate(item.createdAt || item.date)}</td></tr>`).join("") || '<tr><td colspan="4">No expenditure recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 publicExpenseTableObserver.observe(document.body, {
   subtree: true,
@@ -54,14 +54,16 @@ const money = (value) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value || 0);
+const formatDate = (value, fallback = "--") => {
+  if (!value) return fallback;
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${parsed.getFullYear()}`;
+};
 const date = (value) =>
-  value
-    ? new Date(value).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "Date to be announced";
+  formatDate(value, "Date to be announced");
 document
   .querySelectorAll("#nav .nav-link, #nav .navbar-brand")
   .forEach((link) =>
@@ -148,7 +150,7 @@ function renderPublicDonors(items) {
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
 }
-function formatDonorDate(value) { return value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--"; }
+function formatDonorDate(value) { return value ? `${formatDate(value)} ${new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "--"; }
 document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("change", event => { if (event.target.id === "publicRowsPerPage") { publicDonorPageSize = event.target.value === "all" ? "all" : Number(event.target.value); publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("change", event => { if (event.target.id === "publicPaymentFilter") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });

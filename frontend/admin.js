@@ -1,3 +1,11 @@
+const formatDate = (value, fallback = "--") => {
+  if (!value) return fallback;
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${parsed.getFullYear()}`;
+};
 window.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     document
@@ -26,7 +34,7 @@ function renderExpenseTable(items, path) {
   const query = document.getElementById("expenseSearch")?.value.toLowerCase() || "";
   const filtered = items.filter(item => `${item.name} ${item.paymentMode}`.toLowerCase().includes(query));
   const pageSize = getPageSize("expense"); const page = pageState.expense; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
-  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.date ? new Date(item.date).toLocaleDateString("en-IN") : "--"}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">📄 View bill</button> <button data-bill-replace="${item._id}">Replace</button>` : "--"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatDate(item.date)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">📄 View bill</button> <button data-bill-replace="${item._id}">Replace</button>` : "--"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
   renderPagination("expensePagination", filtered.length, pageSize, page, next => { pageState.expense = next; renderExpenseTable(items, path); });
 }
 const defaultExpenseList = renderList;
@@ -76,7 +84,7 @@ const donationPopupObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${escapeHtml(item.flatNumber || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td>${escapeHtml(item.mobile || "--")}</td><td><strong>${money(item.amount)}</strong></td><td>${escapeHtml(item.paymentMode || "--")}</td><td>${escapeHtml(new Date(item.createdAt || item.date).toLocaleString("en-IN"))}</td></tr>`).join("") || '<tr><td colspan="6">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${escapeHtml(item.flatNumber || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td><strong>${money(item.amount)}</strong></td><td>${escapeHtml(item.paymentMode || "--")}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-view-receipt="${escapeHtml(item.receiptNumber)}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 donationPopupObserver.observe(document.body, {
   subtree: true,
@@ -102,7 +110,7 @@ document.addEventListener("click", async (event) => {
       ? data.donations
           .map(
             (item) =>
-              `<div class="finance-detail"><span>${item.flatNumber || "--"} · ${item.donorName}<small>${item.mobile || "--"} · ${item.paymentMode || "--"} · ${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</small></span><strong>${money(item.amount)}</strong></div>`,
+              `<div class="finance-detail"><span>${item.flatNumber || "--"} · ${item.donorName}<small>${item.mobile || "--"} · ${item.paymentMode || "--"} · ${formatDate(item.createdAt || item.date)}</small></span><strong>${money(item.amount)}</strong></div>`,
           )
           .join("")
       : '<p class="muted">No donations recorded yet.</p>';
@@ -166,7 +174,7 @@ renderList = (id, items, label, path) =>
     : eventRenderList(id, items, label, path);
 function renderEventTable(items, path) {
   const container = document.getElementById("eventAdminList");
-  container.innerHTML = `<div class="member-table-wrap"><table class="member-table event-table"><thead><tr><th>Event name</th><th>Date</th><th>Time</th><th>Venue</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.date ? new Date(item.date).toLocaleDateString("en-IN") : "--"}</td><td>${item.time || "--"}</td><td>${item.venue || "Between Sirius & Samyukta"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="member-table-wrap"><table class="member-table event-table"><thead><tr><th>Event name</th><th>Date</th><th>Time</th><th>Venue</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${formatDate(item.date)}</td><td>${item.time || "--"}</td><td>${item.venue || "Between Sirius & Samyukta"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="5" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
 }
 function renderDonationTable(items, path) {
   const container = document.getElementById("donationAdminList");
@@ -174,7 +182,7 @@ function renderDonationTable(items, path) {
   const mode = document.getElementById("adminPaymentFilter")?.value || "";
   const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.mobile} ${item.amount} ${item.paymentMode}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const pageSize = getPageSize("donors"); const page = pageState.donors; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
-  container.innerHTML = `<div class="donation-table-wrap"><table class="donation-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th><th>Actions</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td>${item.mobile || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</td><td><div class="admin-actions">${item.receiptNumber ? `<button class="admin-icon-btn view-btn" type="button" data-view-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">👁</button><button class="admin-icon-btn download-btn" type="button" data-download-receipt="${escapeHtml(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">⤓</button>` : ""}<button class="admin-icon-btn delete-btn" type="button" data-delete="${path}/${item._id}" title="Delete donation" aria-label="Delete donation">🗑</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted">No matching donors.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="donation-table-wrap"><table class="donation-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th><th>Actions</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td>${item.mobile || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatDate(item.createdAt || item.date)}</td><td><div class="admin-actions">${item.receiptNumber ? `<button class="receipt-action" type="button" data-view-receipt="${escapeHtml(item.receiptNumber)}">👁 View Receipt</button>` : "--"}<button class="admin-icon-btn delete-btn" type="button" data-delete="${path}/${item._id}" title="Delete donation" aria-label="Delete donation">🗑</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted">No matching donors.</td></tr>'}</tbody></table></div>`;
   renderPagination("adminDonorPagination", filtered.length, pageSize, page, next => { pageState.donors = next; renderDonationTable(items, path); });
 }
 
