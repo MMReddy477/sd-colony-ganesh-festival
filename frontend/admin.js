@@ -655,6 +655,12 @@ document.getElementById("contactForm")?.addEventListener("submit", async (event)
   message.textContent = response.ok ? "Contact numbers updated successfully." : ((await response.json().catch(() => ({}))).message || "Could not update contact numbers.");
   message.className = response.ok ? "text-success" : "text-danger";
 });
+document.getElementById("deleteUpi")?.addEventListener("click", async () => {
+  if (!window.confirm("Delete the public UPI ID and QR code?")) return;
+  const response = await api("/settings/upi", { method: "DELETE" });
+  const message = document.getElementById("contactMessage");
+  if (response.ok) { document.querySelector('#contactForm [name="upiId"]').value = ""; message.textContent = "UPI ID and QR code deleted."; message.className = "text-success"; } else { message.textContent = "Could not delete UPI details."; message.className = "text-danger"; }
+});
 document.querySelectorAll("[data-toggle-password]").forEach((button) => {
   button.addEventListener("click", () => {
     const input = button.parentElement.querySelector("input");
