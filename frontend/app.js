@@ -11,7 +11,7 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
@@ -163,7 +163,7 @@ async function loadPortal() {
 loadPortal();
 let publicDonorRows = [];
 let publicDonorPage = 0;
-let publicDonorPageSize = 25;
+let publicDonorPageSize = 10;
 function renderPublicDonors(items) {
   publicDonorRows = items;
   const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
@@ -171,8 +171,8 @@ function renderPublicDonors(items) {
   const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Flat Number</th><th>Donor Name</th><th>Amount</th><th>Payment Mode</th><th>Receipt</th>";
-  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Flat Number">${safe(d.flatNumber || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5" class="donor-empty">🐘 No supporters found.<br><small>Try another name or flat number.</small></td></tr>';
+  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Amount</th><th>Payment Mode</th><th>Receipt</th>";
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(d.flatNumber || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
