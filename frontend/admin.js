@@ -557,10 +557,11 @@ document.addEventListener("click", event => {
   const item = records.find(record => record._id === id);
   if (!item) return;
   const requiredFields = { expense: ["name", "amount", "paymentMode", "date"], member: ["name"], event: ["name"] };
-  const values = editRecordFields[type].map(name => `<label>${name}<input name="${name}" type="${name === "date" ? "date" : "text"}" value="${escapeHtml(name === "date" ? String(item[name] || "").slice(0, 10) : String(item[name] || ""))}"${requiredFields[type].includes(name) ? " required" : ""}></label>`).join("");
+  const fieldLabels = { name: "Name", designation: "Designation", mobile: "Mobile Number", amount: "Amount", paymentMode: "Payment Mode", date: "Date", time: "Time", venue: "Venue" };
+  const values = editRecordFields[type].map(name => { const required = requiredFields[type].includes(name) ? " required" : ""; const value = escapeHtml(name === "date" ? String(item[name] || "").slice(0, 10) : String(item[name] || "")); if (name === "paymentMode") return `<select name="${name}"${required}><option value="">Payment Mode</option>${["Cash", "UPI", "Bank transfer", "Cheque"].map(mode => `<option${mode === item[name] ? " selected" : ""}>${mode}</option>`).join("")}</select>`; return `<input name="${name}" type="${name === "date" ? "date" : name === "amount" ? "number" : "text"}" placeholder="${fieldLabels[name]}${required ? " *" : ""}" value="${value}"${required}>`; }).join("");
   const modal = document.createElement("div");
   modal.className = "finance-modal is-open";
-  modal.innerHTML = `<div class="finance-modal-panel" role="dialog" aria-modal="true"><button class="finance-close" type="button" aria-label="Close">×</button><p class="eyebrow">Edit record</p><h3>Edit ${type}</h3><form class="record-edit-form">${values}<div class="donor-modal-actions"><button class="btn btn-saffron" type="submit">Save changes</button><button class="btn btn-link" type="button" data-close-edit>Cancel</button></div></form></div>`;
+  modal.innerHTML = `<div class="finance-modal-panel donor-modal-panel" role="dialog" aria-modal="true"><button class="finance-close" type="button" aria-label="Close">×</button><p class="eyebrow">Edit record</p><h3>Edit ${type}</h3><form class="donor-modal-form">${values}<div class="donor-modal-actions"><button class="btn btn-saffron" type="submit">Save changes</button><button class="btn btn-link" type="button" data-close-edit>Cancel</button></div></form></div>`;
   document.body.appendChild(modal);
   const close = () => modal.remove();
   modal.addEventListener("click", click => { if (click.target === modal || click.target.closest(".finance-close, [data-close-edit]")) close(); });
