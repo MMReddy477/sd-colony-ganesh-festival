@@ -161,6 +161,19 @@ function updateAdminNav() {
 }
 window.addEventListener("hashchange", updateAdminNav);
 window.addEventListener("DOMContentLoaded", updateAdminNav);
+const adminMenuToggle = document.getElementById("adminMenuToggle");
+const adminNavLinks = document.getElementById("adminNavLinks");
+adminMenuToggle?.addEventListener("click", () => {
+  const isOpen = adminNavLinks.classList.toggle("is-open");
+  adminMenuToggle.setAttribute("aria-expanded", String(isOpen));
+  adminMenuToggle.setAttribute("aria-label", isOpen ? "Close admin navigation" : "Open admin navigation");
+});
+adminNavLinks?.addEventListener("click", (event) => {
+  if (!event.target.closest("a")) return;
+  adminNavLinks.classList.remove("is-open");
+  adminMenuToggle?.setAttribute("aria-expanded", "false");
+  adminMenuToggle?.setAttribute("aria-label", "Open admin navigation");
+});
 const defaultRenderList = renderList;
 renderList = (id, items, label, path) =>
   id === "donationAdminList"
