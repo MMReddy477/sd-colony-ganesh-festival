@@ -65,7 +65,7 @@ const formatDate = (value, fallback = "--") => {
 const date = (value) =>
   formatDate(value, "Date to be announced");
 document
-  .querySelectorAll("#nav .nav-link, #nav .navbar-brand")
+  .querySelectorAll("#nav .nav-link, #nav .navbar-brand, #nav .mobile-admin-item a")
   .forEach((link) =>
     link.addEventListener("click", () => {
       const nav = document.getElementById("nav");
