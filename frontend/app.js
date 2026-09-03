@@ -495,7 +495,9 @@ document.addEventListener("click", async (event) => {
           }
           const link = document.createElement("a");
           link.href = URL.createObjectURL(jpg);
-          link.download = button.dataset.publicReceipt + ".jpg";
+          const donation = data.donations.find((item) => item.receiptNumber === button.dataset.publicReceipt) || {};
+          const safePart = (value, fallback) => String(value || fallback).trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || fallback;
+          link.download = `${safePart(donation.flatNumber, "Receipt")}_${safePart(donation.donorName, button.dataset.publicReceipt)}.jpg`;
           link.click();
           setTimeout(() => {
             URL.revokeObjectURL(link.href);

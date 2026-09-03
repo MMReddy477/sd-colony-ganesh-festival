@@ -257,6 +257,9 @@ function showReceiptModal(receiptNumber) {
 }
 async function downloadReceiptImage(receiptNumber) {
   try {
+    const donation = adminDonations.find((item) => item.receiptNumber === receiptNumber) || {};
+    const safePart = (value, fallback) => String(value || fallback).trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || fallback;
+    const downloadName = `${safePart(donation.flatNumber, "Receipt")}_${safePart(donation.donorName, receiptNumber)}.jpg`;
     let response = await fetch(
       "/api/receipts/" + encodeURIComponent(receiptNumber) + "/image.svg",
     );
@@ -290,7 +293,7 @@ async function downloadReceiptImage(receiptNumber) {
           }
           const link = document.createElement("a");
           link.href = URL.createObjectURL(jpg);
-          link.download = receiptNumber + ".jpg";
+          link.download = downloadName;
           link.click();
           URL.revokeObjectURL(sourceUrl);
         },
