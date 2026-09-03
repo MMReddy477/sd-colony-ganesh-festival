@@ -56,7 +56,7 @@
           </button>
         </div>
         <div class="admin-nav-links container-fluid" aria-label="Admin navigation">
-          <a href="#dashboard">🏠 Dashboard</a><a href="#donations">💰 Donations</a><a href="#expenses">📤 Expenditure</a><a href="#live-finance">📊 Live Finance</a><a href="#gallery">🖼️ Gallery</a><a href="#committee">👥 Committee</a><a href="#events">🎉 Events</a><a href="#reports">📋 Reports</a><a href="#settings">⚙️ Settings</a>
+          <a href="#dashboard">🏠 Dashboard</a><a href="#donations">💰 Donations</a><a href="#expenses">📤 Expenditure</a><a href="#live-finance">📊 Live Finance</a><a href="#gallery">🖼️ Gallery</a><a href="#committee">👥 Committee</a><a href="#events">🎉 Events</a><a href="#account">🔐 Account</a>
         </div>
       </nav>
       <main class="container py-5">
@@ -223,14 +223,9 @@
             <div id="galleryAdminList" class="admin-list"></div>
           </section>
         </div>
-        <section id="reports" class="admin-card admin-reports-card">
-          <div class="card-head"><div><p class="eyebrow">Reports</p><h2>Financial reports</h2></div></div>
-          <div class="report-actions"><button class="btn btn-dark-red" data-report="donations/pdf">Donation Report PDF</button><button class="btn btn-outline-dark" data-report="donations/xlsx">Donation Excel</button><button class="btn btn-dark-red" data-report="expenses/pdf">Expense Report PDF</button><button class="btn btn-outline-dark" data-report="expenses/xlsx">Expense Excel</button><button class="btn btn-saffron" data-report="annual-summary/pdf">Monthly Summary PDF</button></div>
-        </section>
-        <section id="settings" class="admin-card admin-settings-card">
-          <div class="card-head"><div><p class="eyebrow">Settings</p><h2>Committee settings</h2></div></div>
-          <form id="committeeSettingsForm" class="settings-grid"><label>Committee Name<input name="committeeName" required></label><label>Logo Upload<input name="logo" type="file" accept="image/jpeg,image/png"></label><label>Contact Number<input name="contactNumber" type="tel"></label><label>Contact Email<input name="contactEmail" type="email"></label><label>UPI ID<input name="upiId"></label><label class="settings-wide">Address<textarea name="address" rows="2"></textarea></label><label>Receipt Prefix<input name="receiptPrefix"></label><label>Starting Receipt Number<input name="startingReceiptNumber" type="number" min="1"></label><label class="settings-wide">Footer Message<textarea name="footerMessage" rows="2"></textarea></label><div class="settings-wide settings-actions"><button class="btn btn-saffron" type="submit">Save Committee Settings</button><span id="settingsMessage" role="status"></span></div></form>
-          <div class="settings-divider"></div><h3>Account password</h3><form id="passwordForm" class="settings-grid"><label>Current Password *<span class="password-field"><input name="currentPassword" type="password" required autocomplete="current-password"><button type="button" data-toggle-password>Show</button></span></label><label>New Password *<span class="password-field"><input name="newPassword" type="password" required minlength="8" autocomplete="new-password"><button type="button" data-toggle-password>Show</button></span></label><label>Confirm Password *<span class="password-field"><input name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"><button type="button" data-toggle-password>Show</button></span></label><div class="settings-wide settings-actions"><button class="btn btn-dark-red" type="submit">Update Password</button><span id="passwordMessage" role="status"></span></div></form>
+        <section id="account" class="admin-card admin-settings-card">
+          <div class="card-head"><div><p class="eyebrow">Account</p><h2>Account Settings</h2></div></div>
+          <form id="passwordForm" class="settings-grid"><label>Current Password *<span class="password-field"><input name="currentPassword" type="password" required autocomplete="current-password"><button type="button" data-toggle-password>Show</button></span></label><label>New Password *<span class="password-field"><input name="newPassword" type="password" required minlength="8" autocomplete="new-password"><button type="button" data-toggle-password>Show</button></span></label><label>Confirm Password *<span class="password-field"><input name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"><button type="button" data-toggle-password>Show</button></span></label><div class="settings-wide settings-actions"><button class="btn btn-dark-red" type="submit">Update Password</button><span id="passwordMessage" role="status"></span></div></form>
         </section>
       </main>
     </div>

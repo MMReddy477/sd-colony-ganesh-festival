@@ -153,6 +153,14 @@ window.addEventListener("DOMContentLoaded", () => {
     venue.placeholder = "Between Sirius & Samyukta";
   }
 });
+function updateAdminNav() {
+  const current = window.location.hash || "#dashboard";
+  document.querySelectorAll(".admin-nav-links a").forEach((link) => {
+    link.classList.toggle("active", link.getAttribute("href") === current);
+  });
+}
+window.addEventListener("hashchange", updateAdminNav);
+window.addEventListener("DOMContentLoaded", updateAdminNav);
 const defaultRenderList = renderList;
 renderList = (id, items, label, path) =>
   id === "donationAdminList"
@@ -513,20 +521,8 @@ async function loadAdmin() {
     "/events",
   );
   renderGalleryAdmin(d.gallery);
-  await loadSettings();
   document.getElementById("lastUpdated").textContent =
     `Last Updated: ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-}
-async function loadSettings() {
-  const response = await api("/settings");
-  if (!response.ok) return;
-  const settings = await response.json();
-  const form = document.getElementById("committeeSettingsForm");
-  if (!form) return;
-  Object.entries(settings).forEach(([name, value]) => {
-    const field = form.elements.namedItem(name);
-    if (field && value !== null && value !== undefined) field.value = value;
-  });
 }
 let adminDonations = [];
 let adminExpenses = [];
@@ -593,28 +589,6 @@ document.getElementById("galleryForm").addEventListener("submit", async (e) => {
   if (!r.ok) alert("Upload failed");
   e.target.reset();
   loadAdmin();
-});
-document.getElementById("committeeSettingsForm")?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const message = document.getElementById("settingsMessage");
-  const response = await api("/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(Object.fromEntries([...new FormData(event.target)].filter(([name]) => name !== "logo"))),
-  });
-  message.textContent = response.ok ? "Committee settings saved." : ((await response.json().catch(() => ({}))).message || "Could not save settings.");
-  message.className = response.ok ? "text-success" : "text-danger";
-  const logo = event.target.elements.namedItem("logo");
-  if (response.ok && logo.files?.[0]) {
-    const logoResponse = await api("/settings/logo", { method: "POST", body: new FormData(event.target) });
-    if (!logoResponse.ok) {
-      message.textContent = "Settings saved, but logo upload failed.";
-      message.className = "text-danger";
-      return;
-    }
-  }
-  event.target.reset();
-  await loadSettings();
 });
 document.getElementById("passwordForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
