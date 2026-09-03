@@ -523,11 +523,11 @@ document.addEventListener("change", event => { if (event.target.id === "adminPay
 const donorModal = document.getElementById("donorModal");
 const donorModalForm = document.getElementById("donorModalForm");
 function closeDonorModal() { donorModal.classList.remove("is-open"); donorModal.setAttribute("aria-hidden", "true"); }
-document.getElementById("showDonorForm")?.addEventListener("click", () => { donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.reset(); donorModalForm.querySelector("[name=flatNumber]").focus(); });
+document.getElementById("showDonorForm")?.addEventListener("click", () => { donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.reset(); donorModalForm.querySelector("[name=date]").value = new Date().toISOString().slice(0, 10); donorModalForm.querySelector("[name=flatNumber]").focus(); });
 document.getElementById("closeDonorModal")?.addEventListener("click", closeDonorModal);
 document.getElementById("cancelDonor")?.addEventListener("click", closeDonorModal);
 donorModal?.addEventListener("click", event => { if (event.target === donorModal) closeDonorModal(); });
-async function saveDonor(keepOpen) { const response = await api("/donations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(donorModalForm))) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } donorModalForm.reset(); await loadAdmin(); if (!keepOpen) closeDonorModal(); }
+async function saveDonor(keepOpen) { const response = await api("/donations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(donorModalForm))) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } donorModalForm.reset(); donorModalForm.querySelector("[name=date]").value = new Date().toISOString().slice(0, 10); await loadAdmin(); if (!keepOpen) closeDonorModal(); }
 donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
 document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
 function renderGalleryAdmin(items) {
