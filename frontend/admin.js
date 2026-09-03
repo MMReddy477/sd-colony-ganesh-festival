@@ -23,7 +23,11 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 function renderExpenseTable(items, path) {
   const container = document.getElementById("expenseAdminList");
-  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  const query = document.getElementById("expenseSearch")?.value.toLowerCase() || "";
+  const filtered = items.filter(item => `${item.name} ${item.paymentMode}`.toLowerCase().includes(query));
+  const pageSize = getPageSize("expense"); const page = pageState.expense; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
+  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.date ? new Date(item.date).toLocaleDateString("en-IN") : "--"}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">📄 View bill</button> <button data-bill-replace="${item._id}">Replace</button>` : "--"}</td><td><button data-delete="${path}/${item._id}">Delete</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  renderPagination("expensePagination", filtered.length, pageSize, page, next => { pageState.expense = next; renderExpenseTable(items, path); });
 }
 const defaultExpenseList = renderList;
 renderList = (id, items, label, path) =>
@@ -103,13 +107,8 @@ document.addEventListener("click", async (event) => {
           .join("")
       : '<p class="muted">No donations recorded yet.</p>';
   if (label === "Expenses")
-    content = data.expenses.length
-      ? data.expenses
-          .map(
-            (item) =>
-              `<div class="finance-detail"><span>${item.name}<small>${new Date(item.date).toLocaleDateString("en-IN")} · ${item.description || "No description"}</small></span><strong>${money(item.amount)}</strong></div>`,
-          )
-          .join("")
+    content = adminExpenses.length
+      ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Bill</th><th>Action</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.date ? new Date(item.date).toLocaleDateString("en-IN") : "--"}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}">View Bill</button>` : "--"}</td><td><button data-delete="/expenses/${item._id}">Delete Expense</button></td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenses recorded yet.</p>';
   if (label === "Balance")
     content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div class="balance-result"><span>Current balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
@@ -171,8 +170,19 @@ function renderEventTable(items, path) {
 }
 function renderDonationTable(items, path) {
   const container = document.getElementById("donationAdminList");
-  container.innerHTML = `<div class="donation-table-wrap"><table class="donation-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th><th>Actions</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td>${item.mobile || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</td><td><div class="admin-actions">${item.receiptNumber ? `<button class="admin-icon-btn view-btn" type="button" data-view-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">👁</button><button class="admin-icon-btn download-btn" type="button" data-download-receipt="${escapeHtml(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">⤓</button>` : ""}<button class="admin-icon-btn delete-btn" type="button" data-delete="${path}/${item._id}" title="Delete donation" aria-label="Delete donation">🗑</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  const query = document.getElementById("adminDonorSearch")?.value.toLowerCase() || "";
+  const mode = document.getElementById("adminPaymentFilter")?.value || "";
+  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.mobile} ${item.amount} ${item.paymentMode}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
+  const pageSize = getPageSize("donors"); const page = pageState.donors; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
+  container.innerHTML = `<div class="donation-table-wrap"><table class="donation-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th><th>Actions</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td>${item.mobile || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</td><td><div class="admin-actions">${item.receiptNumber ? `<button class="admin-icon-btn view-btn" type="button" data-view-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">👁</button><button class="admin-icon-btn download-btn" type="button" data-download-receipt="${escapeHtml(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">⤓</button>` : ""}<button class="admin-icon-btn delete-btn" type="button" data-delete="${path}/${item._id}" title="Delete donation" aria-label="Delete donation">🗑</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted">No matching donors.</td></tr>'}</tbody></table></div>`;
+  renderPagination("adminDonorPagination", filtered.length, pageSize, page, next => { pageState.donors = next; renderDonationTable(items, path); });
 }
+
+const pageState = { donors: 0, expense: 0 };
+const pageSizeState = { donors: 25, expense: 10 };
+document.getElementById("adminDonorRows")?.addEventListener("change", event => { pageSizeState.donors = event.target.value === "all" ? "all" : Number(event.target.value); pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); });
+function getPageSize(key) { return pageSizeState[key]; }
+function renderPagination(id, total, size, page, onPage) { const panel = document.getElementById(id); if (!panel) return; const all = size === "all"; const first = total ? (all ? 1 : page * size + 1) : 0; const last = total ? (all ? total : Math.min((page + 1) * size, total)) : 0; const pages = all ? 1 : Math.max(1, Math.ceil(total / size)); panel.innerHTML = `<span>Showing ${first}-${last} of ${total} ${id.includes("Donor") ? "donors" : "expenses"}</span><button type="button" data-page="prev" ${page === 0 || all ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-page="${index}" class="${index === page ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-page="next" ${page >= pages - 1 || all ? "disabled" : ""}>Next</button>`; panel.querySelectorAll("button[data-page]").forEach(button => button.onclick = () => { const target = button.dataset.page === "prev" ? page - 1 : button.dataset.page === "next" ? page + 1 : Number(button.dataset.page); onPage(target); }); }
 
 function showReceiptModal(receiptNumber) {
   let modal = document.getElementById("receiptPreviewModal");
@@ -456,14 +466,17 @@ async function loadAdmin() {
   const r = await api("/public");
   if (!r.ok) return;
   const d = await r.json();
+  adminDonations = d.donations;
+  adminExpenses = d.expenses;
   document.getElementById("adminStats").innerHTML = [
     ["Donations", d.stats.totalDonations],
     ["Expenses", d.stats.totalExpenses],
     ["Balance", d.stats.balance],
+    ["Bills uploaded", d.stats.billsUploaded || 0],
   ]
     .map(
       ([a, b]) =>
-        `<div class="col-md-4"><div class="stat-card"><span class="label">${a}</span><strong>${money(b)}</strong></div></div>`,
+        `<div class="col-sm-6 col-lg-3"><div class="stat-card"><span class="label">${a}</span><strong>${money(b)}</strong></div></div>`,
     )
     .join("");
   renderList(
@@ -490,9 +503,26 @@ async function loadAdmin() {
     (x) => `${x.name} · ${x.venue || ""}`,
     "/events",
   );
-  renderList("galleryAdminList", d.gallery, (x) => `${x.title}`, "/gallery");
+  renderGalleryAdmin(d.gallery);
   document.getElementById("lastUpdated").textContent =
     `Last Updated: ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+let adminDonations = [];
+let adminExpenses = [];
+document.addEventListener("input", event => { if (event.target.id === "adminDonorSearch") { pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); } if (event.target.id === "expenseSearch") { pageState.expense = 0; renderExpenseTable(adminExpenses, "/expenses"); } });
+document.addEventListener("change", event => { if (event.target.id === "adminPaymentFilter") { pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); } });
+const donorModal = document.getElementById("donorModal");
+const donorModalForm = document.getElementById("donorModalForm");
+function closeDonorModal() { donorModal.classList.remove("is-open"); donorModal.setAttribute("aria-hidden", "true"); }
+document.getElementById("showDonorForm")?.addEventListener("click", () => { donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.reset(); donorModalForm.querySelector("[name=flatNumber]").focus(); });
+document.getElementById("closeDonorModal")?.addEventListener("click", closeDonorModal);
+document.getElementById("cancelDonor")?.addEventListener("click", closeDonorModal);
+donorModal?.addEventListener("click", event => { if (event.target === donorModal) closeDonorModal(); });
+async function saveDonor(keepOpen) { const response = await api("/donations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(donorModalForm))) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } donorModalForm.reset(); await loadAdmin(); if (!keepOpen) closeDonorModal(); }
+donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
+document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
+function renderGalleryAdmin(items) {
+  document.getElementById("galleryAdminList").innerHTML = items.map((item) => `<div class="gallery-admin-row"><img src="${item.path}" alt=""><div><strong>${item.originalName || "Image"}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button type="button" data-gallery-replace="${item._id}" title="Replace image">Replace</button><button type="button" data-delete="/gallery/${item._id}" title="Delete image">Delete</button></div></div>`).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
 }
 function renderList(id, items, label, path) {
   const header =
@@ -523,7 +553,7 @@ async function submitAdmin(form, endpoint) {
 }
 document.getElementById("expenseForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  submitAdmin(e.target, "/expenses");
+  api("/expenses", { method: "POST", body: new FormData(e.target) }).then(async response => { if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save expense"); return; } e.target.reset(); loadAdmin(); });
 });
 document.getElementById("memberForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -542,4 +572,18 @@ document.getElementById("galleryForm").addEventListener("submit", async (e) => {
   if (!r.ok) alert("Upload failed");
   e.target.reset();
   loadAdmin();
+});
+document.addEventListener("click", async (event) => {
+  const bill = event.target.closest("[data-bill-view]");
+  if (bill) { const item = adminExpenses.find(expense => String(expense._id) === bill.dataset.billView); if (!item) return; const modal = document.createElement("div"); modal.className = "bill-preview-modal"; modal.innerHTML = `<div class="bill-preview-panel"><button type="button" class="bill-preview-close">✕</button><strong>Bill Preview</strong><a class="bill-download" download="${item.billOriginalName || "bill"}">↓ Download bill</a><div class="bill-preview-loading">Loading bill...</div></div>`; document.body.appendChild(modal); modal.addEventListener("click", close => { if (close.target === modal || close.target.closest(".bill-preview-close")) modal.remove(); }); const response = await api(`/expenses/${item._id}/bill`); if (!response.ok) return; const blobUrl = URL.createObjectURL(await response.blob()); modal.querySelector(".bill-download").href = blobUrl; modal.querySelector(".bill-preview-loading").outerHTML = item.billMimeType === "application/pdf" ? `<iframe src="${blobUrl}" title="Bill preview"></iframe>` : `<img src="${blobUrl}" alt="Bill preview">`; return; }
+  const replaceBill = event.target.closest("[data-bill-replace]");
+  if (replaceBill) { const input = document.createElement("input"); input.type = "file"; input.accept = ".pdf,.jpg,.jpeg,.png"; input.onchange = async () => { if (!input.files[0]) return; const form = new FormData(); form.append("bill", input.files[0]); await api(`/expenses/${replaceBill.dataset.billReplace}/bill`, { method: "POST", body: form }); loadAdmin(); }; input.click(); return; }
+  const replace = event.target.closest("[data-gallery-replace]");
+  if (replace) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => { if (!input.files[0]) return; const form = new FormData(); form.append("image", input.files[0]); await api(`/gallery/${replace.dataset.galleryReplace}/replace`, { method: "POST", body: form }); loadAdmin(); };
+    input.click();
+  }
 });

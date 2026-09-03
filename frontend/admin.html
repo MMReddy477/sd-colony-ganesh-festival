@@ -111,6 +111,8 @@
                 <option>Bank transfer</option></select
               ><button class="btn btn-saffron col-auto">Add donor</button>
             </form>
+            <div class="donor-toolbar"><label class="donor-search">Search donors <input id="adminDonorSearch" type="search" placeholder="Search by Name, Flat Number, Mobile or Amount..." /></label><label class="donor-filter">Payment mode <select id="adminPaymentFilter"><option value="">All</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label class="donor-rows">Rows per page <select id="adminDonorRows"><option>10</option><option selected>25</option><option>50</option><option>100</option><option value="all">All</option></select></label><button type="button" class="btn btn-saffron" id="showDonorForm">+ Add Donor</button></div>
+            <div id="adminDonorPagination" class="pagination-panel"></div>
             <div id="donationAdminList" class="admin-list"></div>
           </section>
           <section class="admin-card">
@@ -126,22 +128,24 @@
                 Export Excel
               </button>
             </div>
-            <form id="expenseForm" class="row g-2">
+            <form id="expenseForm" class="row g-2" enctype="multipart/form-data">
               <input
                 name="name"
                 class="form-control"
-                placeholder="Expense name"
+                placeholder="Expense name *"
                 required
-              /><input
+              /><select name="paymentMode" class="form-select" required><option value="">Payment mode *</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select><input
                 name="amount"
                 type="number"
                 min="0"
                 class="form-control"
-                placeholder="Amount"
+                placeholder="Amount *"
                 required
-              /><button class="btn btn-dark-red col-auto">Add expense</button>
+              /><input name="date" type="date" class="form-control" required /><input name="bill" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="form-control" /><button class="btn btn-dark-red col-auto">Add expense</button>
             </form>
+            <div class="table-tools"><label>Search expenses <input id="expenseSearch" type="search" placeholder="Search expenses"></label></div>
             <div id="expenseAdminList" class="admin-list"></div>
+            <div id="expensePagination" class="pagination-panel"></div>
           </section>
           <section class="admin-card">
             <div class="card-head">
@@ -199,9 +203,6 @@
                 <p class="eyebrow">Memories</p>
                 <h2>Gallery</h2>
               </div>
-              <a class="btn btn-sm btn-outline-dark" href="/api/gallery/zip"
-                >Download ZIP</a
-              >
             </div>
             <form
               id="galleryForm"
@@ -209,10 +210,6 @@
               enctype="multipart/form-data"
             >
               <input
-                name="title"
-                class="form-control"
-                placeholder="Album title"
-              /><input
                 name="images"
                 type="file"
                 accept="image/*"
@@ -225,6 +222,7 @@
         </div>
       </main>
     </div>
+    <div id="donorModal" class="finance-modal" aria-hidden="true"><div class="finance-modal-panel donor-modal-panel" role="dialog" aria-modal="true" aria-labelledby="donorModalTitle"><button class="finance-close" id="closeDonorModal" type="button" aria-label="Close">×</button><p class="eyebrow">Community contribution</p><h3 id="donorModalTitle">Add Donor</h3><form id="donorModalForm" class="donor-modal-form"><input name="flatNumber" placeholder="Flat Number *" required><input name="donorName" placeholder="Donor Name *" required><input name="mobile" placeholder="Mobile Number"><input name="amount" type="number" min="0" placeholder="Amount *" required><select name="paymentMode" required><option value="">Payment Mode *</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select><div class="donor-modal-actions"><button type="submit" class="btn btn-saffron">Save Donor</button><button type="button" id="saveAddMore" class="btn btn-outline-dark">Save &amp; Add More</button><button type="button" id="cancelDonor" class="btn btn-link">Cancel</button></div></form></div></div>
     <script src="/admin.js"></script>
     <script>
       (() => {

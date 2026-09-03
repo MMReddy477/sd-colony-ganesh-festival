@@ -55,15 +55,14 @@ publicExpenseTableObserver.observe(document.body, {
   attributeFilter: ["class"],
 });
 document.addEventListener("DOMContentLoaded", () => {
-  const zipLink = document.querySelector('a[href="/api/gallery/zip"]');
-  if (zipLink) {
-    const button = document.createElement("button");
-    button.id = "downloadSelected";
-    button.type = "button";
-    button.className = "btn btn-dark-red";
-    button.textContent = "Download selected ↧";
-    zipLink.replaceWith(button);
-  }
+  document.getElementById("downloadSelected")?.addEventListener("click", () => downloadGallery(getSelectedGallery()));
+  document.getElementById("downloadAll")?.addEventListener("click", () => downloadGallery(galleryImages));
+  document.getElementById("gallerySelectAll")?.addEventListener("change", (event) => {
+    document.querySelectorAll(".gallery-select").forEach((input) => { input.checked = event.target.checked; });
+    updateGallerySelection();
+  });
+  document.getElementById("startSlideshow")?.addEventListener("click", () => { openGallery(0); setSlideshow(true); });
+  document.getElementById("galleryViewerPause")?.addEventListener("click", () => setSlideshow(!slideshowPlaying));
 });
 const money = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -145,22 +144,88 @@ async function loadPortal() {
           `<div class="col-sm-6 col-lg-3"><article class="member-card"><p class="eyebrow">${m.designation || "Committee member"}</p><h3>${m.name}</h3><p>${m.mobile || "Available through the committee desk"}</p></article></div>`,
       )
       .join("") || "<p>Committee details coming soon.</p>";
-  document.getElementById("galleryList").innerHTML =
-    data.gallery
-      .map(
-        (g) =>
-          `<figure class="gallery-item"><div class="gallery-placeholder">ॐ</div><figcaption>${g.title}<a class="float-end text-white" href="${g.path}" download>↧</a></figcaption></figure>`,
-      )
-      .join("") || "<p>Memories will appear here after the first upload.</p>";
-  document.getElementById("donationsList").innerHTML =
-    data.donations
-      .map(
-        (d) =>
-          `<tr><td>${d.donorName}</td><td>${date(d.date)}</td><td>${d.paymentMode || "Cash"}</td><td class="text-end fw-bold">${money(d.amount)}</td></tr>`,
-      )
-      .join("") || '<tr><td colspan="4">No donations recorded yet.</td></tr>';
+  renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/Ganesh%20Idol.jpg" }]);
+  renderPublicDonors(data.donations);
 }
 loadPortal();
+let publicDonorRows = [];
+let publicDonorPage = 0;
+let publicDonorPageSize = 10;
+function renderPublicDonors(items) {
+  publicDonorRows = items;
+  const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
+  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.mobile} ${item.paymentMode}`.toLowerCase().includes(query));
+  const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td>${d.donorName || "--"}</td><td>${date(d.date)}</td><td>${d.paymentMode || "Cash"}</td><td class="text-end fw-bold">${money(d.amount)}</td></tr>`).join("") || '<tr><td colspan="4">No matching donors.</td></tr>';
+  const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
+  const panel = document.getElementById("publicDonorPagination");
+  panel.innerHTML = `<label>Rows per page: <select id="publicRowsPerPage"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="all">All</option></select></label><span>Showing ${first}-${last} of ${total} donors</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
+  panel.querySelector("select").value = size;
+}
+document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
+document.addEventListener("change", event => { if (event.target.id === "publicRowsPerPage") { publicDonorPageSize = event.target.value === "all" ? "all" : Number(event.target.value); publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
+document.addEventListener("click", event => { const button = event.target.closest("[data-public-page]"); if (!button) return; const value = button.dataset.publicPage; publicDonorPage += value === "prev" ? -1 : value === "next" ? 1 : Number(value) - publicDonorPage; renderPublicDonors(publicDonorRows); });
+let galleryImages = [];
+let galleryIndex = 0;
+let slideshowTimer;
+let slideshowPlaying = false;
+function renderGallery(images) {
+  galleryImages = images;
+  const list = document.getElementById("galleryList");
+  if (!list) return;
+  document.getElementById("galleryTotal").textContent = `Total images: ${images.length}`;
+  list.innerHTML = images.map((image, index) => `<figure class="gallery-card"><button class="gallery-item" type="button" data-gallery-index="${index}"><img src="${image.path}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy"><span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select image ${index + 1}"></span></button></figure>`).join("");
+  list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
+  list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
+  updateGallerySelection();
+}
+function getSelectedGallery() { return [...document.querySelectorAll(".gallery-select:checked")].map((input) => galleryImages[Number(input.dataset.gallerySelect)]); }
+function updateGallerySelection() { const selected = getSelectedGallery().length; document.getElementById("gallerySelectedCount").textContent = `Selected: ${selected}`; const all = document.getElementById("gallerySelectAll"); if (all) all.checked = selected > 0 && selected === galleryImages.length; }
+function downloadGallery(images) { images.forEach((image, index) => setTimeout(() => { const link = document.createElement("a"); link.href = image.path; link.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`; link.click(); }, index * 300)); }
+function openGallery(index) {
+  galleryIndex = (index + galleryImages.length) % galleryImages.length;
+  const image = galleryImages[galleryIndex];
+  const viewer = document.getElementById("galleryViewer");
+  document.getElementById("galleryViewerImage").src = image.path;
+  document.getElementById("galleryViewerImage").alt = image.title || "Ganesh Utsav memory";
+  document.getElementById("galleryViewerCounter").textContent = `Image ${galleryIndex + 1} of ${galleryImages.length}`;
+  document.getElementById("galleryViewerTitle").textContent = image.title || "Ganesh Utsav memory";
+  document.getElementById("galleryViewerCaption").textContent = image.caption || "";
+  const download = document.getElementById("galleryViewerDownload");
+  download.href = image.path;
+  download.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
+  viewer.classList.add("is-open");
+  viewer.setAttribute("aria-hidden", "false");
+}
+function closeGallery() {
+  setSlideshow(false);
+  const viewer = document.getElementById("galleryViewer");
+  viewer.classList.remove("is-open");
+  viewer.setAttribute("aria-hidden", "true");
+}
+function setSlideshow(playing) { slideshowPlaying = playing; clearInterval(slideshowTimer); const button = document.getElementById("galleryViewerPause"); if (button) button.textContent = playing ? "⏸ Pause" : "▶ Play"; if (playing) slideshowTimer = setInterval(() => openGallery(galleryIndex + 1), 4000); }
+document.addEventListener("click", (event) => {
+  const tile = event.target.closest("[data-gallery-index]");
+  if (tile) openGallery(Number(tile.dataset.galleryIndex));
+  if (event.target.closest(".gallery-viewer-close")) closeGallery();
+  if (event.target.closest(".gallery-viewer-prev")) openGallery(galleryIndex - 1);
+  if (event.target.closest(".gallery-viewer-next")) openGallery(galleryIndex + 1);
+  if (event.target === document.getElementById("galleryViewer")) closeGallery();
+});
+document.addEventListener("keydown", (event) => {
+  const viewer = document.getElementById("galleryViewer");
+  if (!viewer.classList.contains("is-open")) return;
+  if (event.key === "Escape") closeGallery();
+  if (event.key === "ArrowLeft") openGallery(galleryIndex - 1);
+  if (event.key === "ArrowRight") openGallery(galleryIndex + 1);
+  if (event.key === " ") { event.preventDefault(); setSlideshow(!slideshowPlaying); }
+  if (event.key.toLowerCase() === "d") document.getElementById("galleryViewerDownload").click();
+});
+let galleryTouchStart = 0;
+document.getElementById("galleryViewer")?.addEventListener("touchstart", (event) => { galleryTouchStart = event.changedTouches[0].screenX; }, { passive: true });
+document.getElementById("galleryViewer")?.addEventListener("touchend", (event) => { const distance = event.changedTouches[0].screenX - galleryTouchStart; if (Math.abs(distance) > 50) openGallery(galleryIndex + (distance < 0 ? 1 : -1)); }, { passive: true });
+let galleryLastTap = 0;
+document.getElementById("galleryViewerImage")?.addEventListener("touchend", () => { const now = Date.now(); if (now - galleryLastTap < 300) document.getElementById("galleryViewerImage").classList.toggle("is-zoomed"); galleryLastTap = now; });
 document.querySelector(".contact-details strong").textContent =
   "SD Colony Ganesh Utsav Committee";
 const contactDetails = document.querySelector(".contact-details");
@@ -172,45 +237,6 @@ if (contactDetails) {
     contactLines[1].textContent =
       "Community Hall, Main Street · Open daily 9AM–11PM";
 }
-fetch("/api/public")
-  .then((response) => response.json())
-  .then((data) => {
-    const images = data.gallery.length
-      ? data.gallery
-      : [
-          {
-            title: "Ganesh Utsav memories",
-            path: "/Ganesh%20Idol.jpg",
-            originalName: "Ganesh Idol.jpg",
-          },
-        ];
-    const list = document.getElementById("galleryList");
-    list.innerHTML = images
-      .map(
-        (image, index) =>
-          `<figure class="gallery-item"><img src="${image.path}" alt="${image.title}" loading="lazy"><figcaption><label><input class="gallery-select" type="checkbox" value="${image.path}" data-name="${image.originalName || image.title || `ganesh-memory-${index + 1}.jpg`}"> Select</label><span>${image.title}</span><a class="gallery-download" href="${image.path}" download="${image.originalName || image.title || `ganesh-memory-${index + 1}.jpg`}" title="Download this image">↧</a></figcaption></figure>`,
-      )
-      .join("");
-    const download = document.getElementById("downloadSelected");
-    if (download)
-      download.addEventListener("click", () => {
-        const selected = [
-          ...document.querySelectorAll(".gallery-select:checked"),
-        ];
-        if (!selected.length) {
-          alert("Select at least one image first.");
-          return;
-        }
-        selected.forEach((input, index) =>
-          setTimeout(() => {
-            const link = document.createElement("a");
-            link.href = input.value;
-            link.download = input.dataset.name;
-            link.click();
-          }, index * 350),
-        );
-      });
-  });
 document.addEventListener("DOMContentLoaded", () => {
   fetch("/api/public")
     .then((response) => response.json())

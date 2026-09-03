@@ -106,9 +106,14 @@
               <p class="eyebrow">From last year's memories</p>
               <h2>Gallery</h2>
             </div>
-            <a class="btn btn-dark-red" href="/api/gallery/zip"
-              >Download all ↧</a
-            >
+            <div class="gallery-actions">
+              <span id="galleryTotal">Total images: 0</span>
+              <span id="gallerySelectedCount">Selected: 0</span>
+              <label class="gallery-select-all"><input id="gallerySelectAll" type="checkbox"> Select all</label>
+              <button id="downloadSelected" class="btn btn-dark-red" type="button">Download selected</button>
+              <button id="downloadAll" class="btn btn-outline-dark" type="button">Download all</button>
+              <button id="startSlideshow" class="btn btn-saffron" type="button">Start slideshow</button>
+            </div>
           </div>
           <div class="gallery-grid" id="galleryList"></div>
         </div>
@@ -135,6 +140,8 @@
               <tbody id="donationsList"></tbody>
             </table>
           </div>
+          <div class="public-table-tools"><label>Search donors <input id="publicDonorSearch" type="search" placeholder="Search by name, flat, mobile"></label></div>
+          <div id="publicDonorPagination" class="pagination-panel"></div>
         </div>
       </section>
       <section id="contact" class="contact-band">
@@ -153,6 +160,19 @@
         </div>
       </section>
     </main>
+    <div id="galleryViewer" class="gallery-viewer" aria-hidden="true">
+      <button class="gallery-viewer-close" type="button" aria-label="Close viewer">✕</button>
+      <button class="gallery-viewer-prev" type="button" aria-label="Previous image">◀</button>
+      <div class="gallery-viewer-content">
+        <img id="galleryViewerImage" alt="" />
+        <p id="galleryViewerCounter"></p>
+        <h3 id="galleryViewerTitle"></h3>
+        <p id="galleryViewerCaption"></p>
+      </div>
+      <button class="gallery-viewer-next" type="button" aria-label="Next image">▶</button>
+      <a id="galleryViewerDownload" class="gallery-viewer-download" download title="Download current image">↓ Download</a>
+      <div class="gallery-viewer-controls"><button id="galleryViewerPause" type="button">▶ Play</button></div>
+    </div>
     <footer>
       <div class="container d-flex justify-content-between">
         <span>© 2026 Ganesh Utsav Committee</span
