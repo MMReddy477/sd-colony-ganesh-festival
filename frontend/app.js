@@ -73,6 +73,20 @@ document
         window.bootstrap.Collapse.getOrCreateInstance(nav).hide();
     }),
   );
+const publicNavLinks = [...document.querySelectorAll("#nav .nav-link")];
+const publicSections = publicNavLinks
+  .map((link) => document.querySelector(link.getAttribute("href")))
+  .filter(Boolean);
+const updatePublicNav = (id) => publicNavLinks.forEach((link) => link.classList.toggle("active", link.getAttribute("href") === `#${id}`));
+if (window.IntersectionObserver) {
+  const publicNavObserver = new IntersectionObserver((entries) => {
+    const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (visible) updatePublicNav(visible.target.id);
+  }, { rootMargin: "-92px 0px -55% 0px", threshold: [0.1, 0.35, 0.6] });
+  publicSections.forEach((section) => publicNavObserver.observe(section));
+}
+window.addEventListener("hashchange", () => updatePublicNav(window.location.hash.slice(1) || "home"));
+updatePublicNav(window.location.hash.slice(1) || "home");
 setTimeout(() => {
   const contactDetails = document.querySelector(".contact-details");
   if (!contactDetails) return;
