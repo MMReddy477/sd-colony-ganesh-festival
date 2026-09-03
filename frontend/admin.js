@@ -503,6 +503,8 @@ async function loadAdmin() {
   adminDonations = d.donations;
   adminMembers = d.members;
   adminEvents = d.events;
+  const contactForm = document.getElementById("contactForm");
+  if (contactForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = contactForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
   const expenseResponse = await api("/expenses");
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   document.getElementById("adminStats").innerHTML = [
@@ -645,6 +647,13 @@ document.getElementById("passwordForm")?.addEventListener("submit", async (event
   message.textContent = response.ok ? "Password updated successfully." : ((await response.json().catch(() => ({}))).message || "Could not update password.");
   message.className = response.ok ? "text-success" : "text-danger";
   if (response.ok) event.target.reset();
+});
+document.getElementById("contactForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = document.getElementById("contactMessage");
+  const response = await api("/settings/contact", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData(event.target)) });
+  message.textContent = response.ok ? "Contact numbers updated successfully." : ((await response.json().catch(() => ({}))).message || "Could not update contact numbers.");
+  message.className = response.ok ? "text-success" : "text-danger";
 });
 document.querySelectorAll("[data-toggle-password]").forEach((button) => {
   button.addEventListener("click", () => {

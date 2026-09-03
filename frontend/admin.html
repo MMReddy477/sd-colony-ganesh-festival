@@ -226,6 +226,7 @@
         </div>
         <section id="account" class="admin-card admin-settings-card">
           <div class="card-head"><div><p class="eyebrow">Account</p><h2>Account Settings</h2></div></div>
+          <form id="contactForm" class="settings-grid"><label>Contact Email<input name="contactEmail" type="email" required></label><label>Phone Number 1<input name="phone1" type="tel" required></label><label>Phone Number 2<input name="phone2" type="tel"></label><div class="settings-wide settings-actions"><button class="btn btn-saffron" type="submit">Update Contact Numbers</button><span id="contactMessage" role="status"></span></div></form>
           <form id="passwordForm" class="settings-grid"><label>Current Password *<span class="password-field"><input name="currentPassword" type="password" required autocomplete="current-password"><button type="button" data-toggle-password>Show</button></span></label><label>New Password *<span class="password-field"><input name="newPassword" type="password" required minlength="8" autocomplete="new-password"><button type="button" data-toggle-password>Show</button></span></label><label>Confirm Password *<span class="password-field"><input name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"><button type="button" data-toggle-password>Show</button></span></label><div class="settings-wide settings-actions"><button class="btn btn-dark-red" type="submit">Update Password</button><span id="passwordMessage" role="status"></span></div></form>
         </section>
       </main>

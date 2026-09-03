@@ -125,6 +125,9 @@ async function loadPortal() {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
+  const contact = data.contact || {};
+  const contactDetails = document.querySelector(".contact-details");
+  if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
   document.title = data.committeeName;
   document.getElementById("heroDonations").textContent = money(
     data.stats.totalDonations,
