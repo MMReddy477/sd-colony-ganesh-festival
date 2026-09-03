@@ -64,11 +64,21 @@ const formatDate = (value, fallback = "--") => {
 };
 const date = (value) =>
   formatDate(value, "Date to be announced");
+const publicMenuToggle = document.getElementById("publicMenuToggle");
+const publicMenu = document.getElementById("nav");
+publicMenuToggle?.addEventListener("click", () => {
+  const isOpen = publicMenu.classList.toggle("is-open");
+  publicMenuToggle.setAttribute("aria-expanded", String(isOpen));
+  publicMenuToggle.setAttribute("aria-label", isOpen ? "Close navigation" : "Open navigation");
+});
 document
   .querySelectorAll("#nav .nav-link, #nav .navbar-brand, #nav .mobile-admin-item a")
   .forEach((link) =>
     link.addEventListener("click", () => {
       const nav = document.getElementById("nav");
+      nav.classList.remove("is-open");
+      publicMenuToggle?.setAttribute("aria-expanded", "false");
+      publicMenuToggle?.setAttribute("aria-label", "Open navigation");
       if (nav.classList.contains("show") && window.bootstrap)
         window.bootstrap.Collapse.getOrCreateInstance(nav).hide();
     }),
