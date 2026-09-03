@@ -11,7 +11,7 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Time</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td>${item.mobile || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${new Date(item.createdAt || item.date).toLocaleString("en-IN")}</td></tr>`).join("") || '<tr><td colspan="6">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Flat number</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
@@ -139,11 +139,11 @@ function renderPublicDonors(items) {
   publicDonorRows = items;
   const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
   const mode = document.getElementById("publicPaymentFilter")?.value || "";
-  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.mobile} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
+  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Flat Number</th><th>Donor Name</th><th>Mobile Number</th><th>Amount</th><th>Payment Mode</th><th>Time</th><th>Receipt</th>";
-  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Flat Number">${safe(d.flatNumber || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Mobile Number">${safe(d.mobile || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Time">${safe(formatDonorDate(d.createdAt || d.date))}</td><td data-label="Receipt">${d.receiptNumber ? `<a class="receipt-action" href="/api/receipts/${encodeURIComponent(d.receiptNumber)}/image.svg" target="_blank" rel="noopener">👁 View</a> <a class="receipt-action" href="/api/receipts/${encodeURIComponent(d.receiptNumber)}/public-pdf" download>⬇ Download PDF</a>` : "--"}</td></tr>`).join("") || '<tr><td colspan="7" class="donor-empty">🐘 No supporters found.<br><small>Try another name, flat number, or mobile number.</small></td></tr>';
+  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Flat Number</th><th>Donor Name</th><th>Amount</th><th>Payment Mode</th><th>Receipt</th>";
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Flat Number">${safe(d.flatNumber || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5" class="donor-empty">🐘 No supporters found.<br><small>Try another name or flat number.</small></td></tr>';
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
@@ -428,10 +428,27 @@ document.addEventListener("DOMContentLoaded", () =>
   setTimeout(hidePageLoader, 150),
 );
 setTimeout(hidePageLoader, 2000);
+function showPublicReceiptPreview(receiptNumber) {
+  let modal = document.getElementById("publicReceiptPreviewModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "publicReceiptPreviewModal";
+    modal.className = "receipt-preview-modal";
+    modal.innerHTML = `<div class="receipt-preview-panel" role="dialog" aria-modal="true" aria-label="Receipt preview"><div class="receipt-preview-header"><strong>Receipt Preview</strong><span class="receipt-preview-number"></span><button type="button" class="receipt-close" aria-label="Close receipt preview">×</button></div><div class="receipt-preview-box"><img class="receipt-preview-image" alt="Donation receipt"></div></div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener("click", event => { if (event.target === modal || event.target.closest(".receipt-close")) modal.classList.remove("is-open"); });
+  }
+  modal.querySelector(".receipt-preview-number").textContent = receiptNumber;
+  modal.querySelector(".receipt-preview-image").src = "/api/receipts/" + encodeURIComponent(receiptNumber) + "/image.svg?refresh=" + Date.now();
+  modal.querySelector(".receipt-preview-image").alt = "Donation receipt " + receiptNumber;
+  modal.classList.add("is-open");
+}
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-public-receipt]");
   if (!button || !button.dataset.publicReceipt) return;
-  button.disabled = true;
+  event.preventDefault();
+  showPublicReceiptPreview(button.dataset.publicReceipt);
+  return;
   try {
     const response = await fetch(
       "/api/receipts/" +

@@ -110,8 +110,8 @@
               <span id="galleryTotal">Total images: 0</span>
               <span id="gallerySelectedCount">Selected: 0</span>
               <label class="gallery-select-all"><input id="gallerySelectAll" type="checkbox"> Select all</label>
-              <button id="downloadSelected" class="btn btn-dark-red" type="button">Download selected</button>
-              <button id="downloadAll" class="btn btn-outline-dark" type="button">Download all</button>
+              <button id="downloadSelected" class="btn btn-dark-red" type="button">Download Selected</button>
+              <button id="downloadAll" class="btn btn-outline-dark" type="button">Download</button>
               <button id="startSlideshow" class="btn btn-saffron" type="button">Start slideshow</button>
             </div>
           </div>
@@ -127,8 +127,8 @@
               A public record of the generous devotees supporting Ganesh Utsav celebrations.
             </p>
           </div>
-          <div class="table-responsive">
-            <table class="table align-middle">
+          <div class="table-responsive public-donations-table-wrap">
+            <table class="table align-middle public-donations-table">
               <thead>
                 <tr>
                   <th>Donor</th>
@@ -140,7 +140,7 @@
               <tbody id="donationsList"></tbody>
             </table>
           </div>
-          <div class="public-table-tools"><label>🔍 <input id="publicDonorSearch" type="search" placeholder="Search by Name, Flat Number or Mobile Number" /></label><label>Payment mode <select id="publicPaymentFilter"><option value="">All</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label>Rows per page <select id="publicRowsPerPage"><option>10</option><option selected>25</option><option>50</option><option>100</option><option value="all">All</option></select></label></div>
+          <div class="public-table-tools"><label>🔍 <input id="publicDonorSearch" type="search" placeholder="Search by Name, Flat Number or Amount" /></label><label>Payment mode <select id="publicPaymentFilter"><option value="">All</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label>Rows per page <select id="publicRowsPerPage"><option>10</option><option selected>25</option><option>50</option><option>100</option><option value="all">All</option></select></label></div>
           <div id="publicDonorPagination" class="pagination-panel"></div>
         </div>
       </section>
