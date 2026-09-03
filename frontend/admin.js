@@ -513,8 +513,20 @@ async function loadAdmin() {
     "/events",
   );
   renderGalleryAdmin(d.gallery);
+  await loadSettings();
   document.getElementById("lastUpdated").textContent =
     `Last Updated: ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+async function loadSettings() {
+  const response = await api("/settings");
+  if (!response.ok) return;
+  const settings = await response.json();
+  const form = document.getElementById("committeeSettingsForm");
+  if (!form) return;
+  Object.entries(settings).forEach(([name, value]) => {
+    const field = form.elements.namedItem(name);
+    if (field && value !== null && value !== undefined) field.value = value;
+  });
 }
 let adminDonations = [];
 let adminExpenses = [];
@@ -581,6 +593,47 @@ document.getElementById("galleryForm").addEventListener("submit", async (e) => {
   if (!r.ok) alert("Upload failed");
   e.target.reset();
   loadAdmin();
+});
+document.getElementById("committeeSettingsForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = document.getElementById("settingsMessage");
+  const response = await api("/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.fromEntries([...new FormData(event.target)].filter(([name]) => name !== "logo"))),
+  });
+  message.textContent = response.ok ? "Committee settings saved." : ((await response.json().catch(() => ({}))).message || "Could not save settings.");
+  message.className = response.ok ? "text-success" : "text-danger";
+  const logo = event.target.elements.namedItem("logo");
+  if (response.ok && logo.files?.[0]) {
+    const logoResponse = await api("/settings/logo", { method: "POST", body: new FormData(event.target) });
+    if (!logoResponse.ok) {
+      message.textContent = "Settings saved, but logo upload failed.";
+      message.className = "text-danger";
+      return;
+    }
+  }
+  event.target.reset();
+  await loadSettings();
+});
+document.getElementById("passwordForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = document.getElementById("passwordMessage");
+  const response = await api("/auth/password", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData(event.target)),
+  });
+  message.textContent = response.ok ? "Password updated successfully." : ((await response.json().catch(() => ({}))).message || "Could not update password.");
+  message.className = response.ok ? "text-success" : "text-danger";
+  if (response.ok) event.target.reset();
+});
+document.querySelectorAll("[data-toggle-password]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = button.parentElement.querySelector("input");
+    input.type = input.type === "password" ? "text" : "password";
+    button.textContent = input.type === "password" ? "Show" : "Hide";
+  });
 });
 document.addEventListener("click", async (event) => {
   const bill = event.target.closest("[data-bill-view]");
