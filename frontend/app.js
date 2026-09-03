@@ -401,7 +401,7 @@ const applyLanguage = () => {
     } else {
       if (heading)
         heading.innerHTML =
-          "🕉️ SD COLONY GANESH UTSAV<br><em>COMMITTEE 🕉️</em>";
+          "SD COLONY GANESH UTSAV<br><em>COMMITTEE</em>";
       if (lead)
         lead.textContent = "Celebrating Faith • Unity • Tradition";
       const blessing = heroCopy.querySelector('.hero-blessing');
