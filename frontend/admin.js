@@ -408,14 +408,24 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 const token = localStorage.getItem("ganeshToken");
-const api = (path, options = {}) =>
-  fetch("/api" + path, {
+const api = async (path, options = {}) => {
+  const response = await fetch("/api" + path, {
     ...options,
     headers: {
       ...(options.headers || {}),
       Authorization: `Bearer ${localStorage.getItem("ganeshToken")}`,
     },
   });
+  if (response.status === 401 && !path.startsWith("/auth/login")) {
+    localStorage.removeItem("ganeshToken");
+    document.getElementById("dashboardView")?.classList.add("d-none");
+    document.getElementById("loginView")?.classList.remove("d-none");
+    document.getElementById("loginError").textContent = "Your session expired. Please log in again.";
+    document.getElementById("loginError").classList.remove("d-none");
+    document.getElementById("donorModal")?.classList.remove("is-open");
+  }
+  return response;
+};
 const money = (v) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
