@@ -220,10 +220,27 @@ function closeGallery() {
   setSlideshow(false);
   const viewer = document.getElementById("galleryViewer");
   viewer.classList.remove("is-open");
+  viewer.classList.remove("hero-image-viewer");
   viewer.setAttribute("aria-hidden", "true");
 }
 function setSlideshow(playing) { slideshowPlaying = playing; clearInterval(slideshowTimer); const button = document.getElementById("galleryViewerPause"); if (button) button.textContent = playing ? "⏸ Pause" : "▶ Play"; if (playing) slideshowTimer = setInterval(() => openGallery(galleryIndex + 1), 4000); }
 document.addEventListener("click", (event) => {
+  const heroImage = event.target.closest("[data-hero-image]");
+  if (heroImage) {
+    const viewer = document.getElementById("galleryViewer");
+    document.getElementById("galleryViewerImage").src = heroImage.dataset.heroImage;
+    document.getElementById("galleryViewerImage").alt = "Ganesh Utsav festival schedule";
+    document.getElementById("galleryViewerCounter").textContent = "Festival schedule";
+    document.getElementById("galleryViewerTitle").textContent = "Ganesh Utsav 2026 schedule";
+    document.getElementById("galleryViewerCaption").textContent = "Tap Download to save the schedule image.";
+    const download = document.getElementById("galleryViewerDownload");
+    download.href = heroImage.dataset.heroImage;
+    download.download = "ganesh-utsav-2026-schedule.jpeg";
+    viewer.classList.add("is-open");
+    viewer.setAttribute("aria-hidden", "false");
+    viewer.classList.add("hero-image-viewer");
+    return;
+  }
   const tile = event.target.closest("[data-gallery-index]");
   if (tile) openGallery(Number(tile.dataset.galleryIndex));
   if (event.target.closest(".gallery-viewer-close")) closeGallery();
@@ -231,6 +248,7 @@ document.addEventListener("click", (event) => {
   if (event.target.closest(".gallery-viewer-next")) openGallery(galleryIndex + 1);
   if (event.target === document.getElementById("galleryViewer")) closeGallery();
 });
+document.querySelector("[data-hero-image]")?.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); } });
 document.addEventListener("keydown", (event) => {
   const viewer = document.getElementById("galleryViewer");
   if (!viewer.classList.contains("is-open")) return;
