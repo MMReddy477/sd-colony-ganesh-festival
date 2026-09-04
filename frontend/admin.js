@@ -510,7 +510,8 @@ async function loadAdmin() {
   const r = await api("/public");
   if (!r.ok) return;
   const d = await r.json();
-  adminDonations = d.donations;
+  const donationResponse = await api("/donations");
+  adminDonations = donationResponse.ok ? await donationResponse.json() : [];
   adminMembers = d.members;
   adminEvents = d.events;
   const contactForm = document.getElementById("contactForm");
@@ -530,7 +531,7 @@ async function loadAdmin() {
     .join("");
   renderList(
     "donationAdminList",
-    d.donations,
+    adminDonations,
     (x) => `${x.donorName} · ${money(x.amount)}`,
     "/donations",
   );
