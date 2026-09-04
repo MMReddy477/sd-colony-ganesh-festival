@@ -62,8 +62,8 @@ const formatDate = (value, fallback = "--") => {
   if (Number.isNaN(parsed.getTime())) return fallback;
   return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${parsed.getFullYear()}`;
 };
-const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const match = raw.match(/^(samyukta|sirius)-?(\d+)$/i); return match ? `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()}-${match[2]}` : raw; };
-const sortByPlotNumber = (left, right) => { const parse = value => { const match = normalizePlotNumber(value).match(/^(Samyukta|Sirius)-(\d+)$/); return match ? [match[1] === "Samyukta" ? 0 : 1, Number(match[2])] : [2, Number.MAX_SAFE_INTEGER]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); return a[0] - b[0] || a[1] - b[1] || normalizePlotNumber(left.flatNumber).localeCompare(normalizePlotNumber(right.flatNumber)); };
+const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const match = raw.match(/^(samyukta|sirius)-?(\d+)$/i); return match ? `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()}-${match[2]}` : raw; };
+const sortByPlotNumber = (left, right) => { const parse = value => { const normalized = normalizePlotNumber(value); const match = normalized.match(/^(PlotNo|Samyukta|Sirius)-(\d+)$/); if (!match) return [3, Number.MAX_SAFE_INTEGER]; const priority = { PlotNo: 0, Samyukta: 1, Sirius: 2 }; return [priority[match[1]], Number(match[2])]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); return a[0] - b[0] || a[1] - b[1] || normalizePlotNumber(left.flatNumber).localeCompare(normalizePlotNumber(right.flatNumber)); };
 const date = (value) =>
   formatDate(value, "Date to be announced");
 const publicMenuToggle = document.getElementById("publicMenuToggle");
