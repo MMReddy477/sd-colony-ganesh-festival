@@ -62,6 +62,8 @@ const formatDate = (value, fallback = "--") => {
   if (Number.isNaN(parsed.getTime())) return fallback;
   return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${parsed.getFullYear()}`;
 };
+const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const match = raw.match(/^(samyukta|sirius)-?(\d+)$/i); return match ? `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()}-${match[2]}` : raw; };
+const sortByPlotNumber = (left, right) => { const parse = value => { const match = normalizePlotNumber(value).match(/^(Samyukta|Sirius)-(\d+)$/); return match ? [match[1] === "Samyukta" ? 0 : 1, Number(match[2])] : [2, Number.MAX_SAFE_INTEGER]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); return a[0] - b[0] || a[1] - b[1] || normalizePlotNumber(left.flatNumber).localeCompare(normalizePlotNumber(right.flatNumber)); };
 const date = (value) =>
   formatDate(value, "Date to be announced");
 const publicMenuToggle = document.getElementById("publicMenuToggle");
@@ -167,14 +169,14 @@ let publicDonorRows = [];
 let publicDonorPage = 0;
 let publicDonorPageSize = 10;
 function renderPublicDonors(items) {
-  publicDonorRows = items;
+  publicDonorRows = [...items].sort(sortByPlotNumber);
   const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
   const mode = document.getElementById("publicPaymentFilter")?.value || "";
-  const filtered = items.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
+  const filtered = publicDonorRows.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Amount</th><th>Payment Mode</th><th>Receipt</th>";
-  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(d.flatNumber || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(normalizePlotNumber(d.flatNumber) || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>Previous</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>Next</button>`;
