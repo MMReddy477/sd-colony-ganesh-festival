@@ -537,7 +537,7 @@ document.getElementById("deleteAllFinance")?.addEventListener("click", async (ev
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await api("/donations", { method: "DELETE" });
+    const response = await api("/donations/delete-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: "DELETE ALL" }) });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete contributions");
     adminDonations = [];
     renderDonationTable([], "/donations");
