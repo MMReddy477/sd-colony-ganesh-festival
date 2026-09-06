@@ -542,6 +542,7 @@ document.getElementById("deleteAllFinance")?.addEventListener("click", async (ev
     adminDonations = [];
     renderDonationTable([], "/donations");
     await loadAdmin();
+    if (adminDonations.length) throw new Error("Some contribution records are still present. Please try again.");
     showDeleteSuccess("All Devotee Contributions records deleted successfully.");
   } catch (error) {
     button.disabled = false;
