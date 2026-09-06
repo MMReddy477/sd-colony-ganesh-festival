@@ -487,6 +487,7 @@ const token = localStorage.getItem("ganeshToken");
 const api = async (path, options = {}) => {
   const response = await fetch("/api" + path, {
     ...options,
+    cache: options.method && options.method !== "GET" ? options.cache : "no-store",
     headers: {
       ...(options.headers || {}),
       Authorization: `Bearer ${localStorage.getItem("ganeshToken")}`,
@@ -502,6 +503,7 @@ const api = async (path, options = {}) => {
   }
   return response;
 };
+const showDeleteSuccess = (message) => { const modal = document.getElementById("deleteSuccessModal"); const text = document.getElementById("deleteSuccessMessage"); if (!modal || !text) return; text.textContent = message; modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); window.setTimeout(() => { modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); }, 2200); };
 const money = (v) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -537,8 +539,10 @@ document.getElementById("deleteAllFinance")?.addEventListener("click", async (ev
   try {
     const response = await api("/donations", { method: "DELETE" });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete contributions");
+    adminDonations = [];
+    renderDonationTable([], "/donations");
     await loadAdmin();
-    alert("All Devotee Contributions records were deleted.");
+    showDeleteSuccess("All Devotee Contributions records deleted successfully.");
   } catch (error) {
     button.disabled = false;
     alert(error.message);
@@ -558,6 +562,7 @@ document.addEventListener("click", async (event) => {
       throw new Error(data.message || "Delete failed");
     }
     await loadAdmin();
+    showDeleteSuccess("Record deleted successfully.");
   } catch (error) {
     button.disabled = false;
     alert(error.message);
