@@ -181,12 +181,7 @@ async function loadPortal() {
     )
     .join("");
   document.getElementById("eventsList").innerHTML = data.events.length
-    ? data.events
-        .map(
-          (e) =>
-            `<div class="col-md-4"><article class="event-card"><div class="event-date">${date(e.date)} · ${e.time || "Time TBA"}</div><h3 class="mt-3">${e.name}</h3><p>${e.description || "Join the community for an evening of devotion and celebration."}</p><small>${e.venue || "Community Hall"}</small></article></div>`,
-        )
-        .join("")
+    ? `<div class="member-table-wrap public-events-table-wrap"><table class="member-table event-table public-events-table"><thead><tr><th>Event name</th><th>Date</th><th>Time</th><th>Venue</th></tr></thead><tbody>${data.events.map(e => `<tr><td><strong>${e.name || "--"}</strong><small>${e.description || "Join the community for an evening of devotion and celebration."}</small></td><td>${e.date ? date(e.date) : "--"}</td><td>${e.time || "Time TBA"}</td><td>${e.venue || "Community Hall"}</td></tr>`).join("")}</tbody></table></div>`
     : "<p>No events announced yet.</p>";
   document.getElementById("membersList").innerHTML =
     data.members
