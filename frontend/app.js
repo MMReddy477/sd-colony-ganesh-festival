@@ -29,6 +29,7 @@ const publicDonationTableObserver = new MutationObserver(async () => {
 });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
+  childList: true,
   attributes: true,
   attributeFilter: ["class"],
 });
