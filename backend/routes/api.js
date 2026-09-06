@@ -80,6 +80,7 @@ router.post('/auth/login', [body('username').trim().notEmpty().withMessage('User
   res.json({ token: jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '4h' }) });
 });
 router.get('/public', async (_req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const [members, events, gallery, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name'), Event.find().sort('date'), Gallery.find().sort({ displayOrder: 1, createdAt: -1 }), Donation.find({ $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date'), Expense.find().sort('-date'), SiteSettings.findOne({ key: 'contact' }).lean()]);
   donations.sort(comparePlotNumbers);
   const totalDonations = donations.reduce((sum, x) => sum + x.amount, 0); const totalExpenses = expenses.reduce((sum, x) => sum + x.amount, 0);
