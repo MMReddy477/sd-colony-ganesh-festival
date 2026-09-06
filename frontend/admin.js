@@ -95,6 +95,7 @@ const donationPopupObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   const donations = [...data.donations].sort(sortByPlotNumber);
+  adminLiveDonations = donations;
   const pageSize = 10;
   let page = 0;
   const renderDonationPopup = () => {
@@ -585,6 +586,7 @@ async function loadAdmin() {
     `Last Updated: ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
 }
 let adminDonations = [];
+let adminLiveDonations = [];
 let adminExpenses = [];
 let adminMembers = [];
 let adminEvents = [];
@@ -621,7 +623,7 @@ donorModal?.addEventListener("click", event => { if (event.target === donorModal
 async function saveDonor(keepOpen) { const endpoint = editingDonationId ? `/donations/${editingDonationId}` : "/donations"; const response = await api(endpoint, { method: editingDonationId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(donorModalForm))) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } await loadAdmin(); if (!keepOpen || editingDonationId) closeDonorModal(); else resetDonorModal(); }
 donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
 document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
-document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => item._id === button.dataset.editDonation); if (!donation) return; editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); document.getElementById("donorModalTitle").textContent = "Edit Donor"; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
+document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => String(item._id) === String(button.dataset.editDonation)) || adminLiveDonations.find(item => String(item._id) === String(button.dataset.editDonation)); if (!donation || !donorModalForm) return; document.getElementById("adminFinanceModal")?.classList.remove("is-open"); editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); document.getElementById("donorModalTitle").textContent = "Edit Donor"; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
 function renderGalleryAdmin(items) {
   document.getElementById("galleryAdminList").innerHTML = items.map((item) => `<div class="gallery-admin-row"><img src="${item.path}" alt=""><div><strong>${item.originalName || "Image"}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Edit image" aria-label="Edit image">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete image" aria-label="Delete image">🗑</button></div></div>`).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
 }
