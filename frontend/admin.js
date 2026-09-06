@@ -535,10 +535,10 @@ document.getElementById("deleteAllFinance")?.addEventListener("click", async (ev
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await api("/finance", { method: "DELETE" });
-    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete finance records");
+    const response = await api("/donations", { method: "DELETE" });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete contributions");
     await loadAdmin();
-    alert("All finance records were deleted.");
+    alert("All Devotee Contributions records were deleted.");
   } catch (error) {
     button.disabled = false;
     alert(error.message);
