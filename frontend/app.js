@@ -10,8 +10,9 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
+  const donations = [...data.donations].sort((left, right) => new Date(right.createdAt || right.date || 0) - new Date(left.createdAt || left.date || 0));
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${data.donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
@@ -31,7 +32,7 @@ const publicExpenseTableObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Time</th></tr></thead><tbody>${data.expenses.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatDonorDate(item.createdAt || item.date)}</td></tr>`).join("") || '<tr><td colspan="4">No expenditure recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${data.expenses.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("") || '<tr><td colspan="5">No expenditure recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 publicExpenseTableObserver.observe(document.body, {
   subtree: true,
@@ -62,6 +63,14 @@ const formatDate = (value, fallback = "--") => {
   if (Number.isNaN(parsed.getTime())) return fallback;
   return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${parsed.getFullYear()}`;
 };
+const formatExpenseDate = value => {
+  if (!value) return "--";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return formatDate(value);
+  const month = parsed.toLocaleString("en-US", { month: "short" });
+  return `${String(parsed.getDate()).padStart(2, "0")}-${month}-${parsed.getFullYear()}`;
+};
+const formatExpenseTime = value => value ? new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--";
 const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const match = raw.match(/^(samyukta|sirius)-?(\d+)$/i); return match ? `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()}-${match[2]}` : raw; };
 const alphanumericSort = (a, b) => { const aparts = String(a).split(/(\d+)/); const bparts = String(b).split(/(\d+)/); for (let i = 0; i < Math.min(aparts.length, bparts.length); i++) { const isNum = /^\d+$/.test(aparts[i]); if (isNum) { const diff = Number(aparts[i]) - Number(bparts[i]); if (diff) return diff; } else { if (aparts[i] !== bparts[i]) return aparts[i].localeCompare(bparts[i]); } } return aparts.length - bparts.length; };
 const sortByPlotNumber = (left, right) => { const parse = value => { const normalized = normalizePlotNumber(value); const cleanMatch = normalized.match(/^PlotNo-(\d+)$/); if (cleanMatch) return [0, Number(cleanMatch[1]), '']; const samyuktaMatch = normalized.match(/^Samyukta-(\d+)$/); if (samyuktaMatch) return [3, Number(samyuktaMatch[1]), '']; const siriusMatch = normalized.match(/^Sirius-(\d+)$/); if (siriusMatch) return [4, Number(siriusMatch[1]), '']; const rawValue = String(value || '').trim().toLowerCase(); if (rawValue.includes('plot') || rawValue.match(/^plotno/i)) return [1, 0, normalized]; return [2, 0, normalized]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); if (a[0] !== b[0]) return a[0] - b[0]; if (a[0] === 0 || a[0] === 3 || a[0] === 4) return a[1] - b[1]; if (a[0] === 1) return alphanumericSort(a[2], b[2]); return a[2].localeCompare(b[2]); };
@@ -321,7 +330,7 @@ document.addEventListener("click", async (event) => {
       : '<p class="muted">No donations recorded yet.</p>';
   if (label === "Total expenditure")
     content = data.expenses.length
-      ? `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense Name</th><th>Amount</th><th>Payment Mode</th><th>Expense Date</th></tr></thead><tbody>${data.expenses.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatDonorDate(item.date)}</td></tr>`).join("")}</tbody></table></div>`
+      ? `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${data.expenses.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenditure recorded yet.</p>';
   if (label === "Current balance")
     content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div class="balance-result"><span>Final balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
