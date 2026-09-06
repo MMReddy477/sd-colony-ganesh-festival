@@ -83,7 +83,7 @@ router.get('/public', async (_req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   const [members, events, gallery, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name'), Event.find().sort('date'), Gallery.find().sort({ displayOrder: 1, createdAt: -1 }), Donation.find({ $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date'), Expense.find().sort('-date'), SiteSettings.findOne({ key: 'contact' }).lean()]);
   donations.sort(comparePlotNumbers);
-  const totalDonations = donations.reduce((sum, x) => sum + x.amount, 0); const totalExpenses = expenses.reduce((sum, x) => sum + x.amount, 0);
+  const totalDonations = donations.filter(donation => donation.status !== 'Yet to receive').reduce((sum, donation) => sum + Number(donation.amount || 0), 0); const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   const publicExpenses = expenses.map(expense => ({ _id: expense._id, name: expense.name, amount: expense.amount, date: expense.date, createdAt: expense.createdAt, description: expense.description, category: expense.category, paymentMode: expense.paymentMode }));
   const publicContact = contact || { contactEmail: 'hello@ganeshutsav.org', phone1: '8555958559', phone2: '9676344244', upiId: '' };
   if (publicContact.upiId) publicContact.qrData = await QRCode.toDataURL(`upi://pay?pa=${encodeURIComponent(publicContact.upiId)}&pn=${encodeURIComponent(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee')}`);
