@@ -183,8 +183,10 @@ document.addEventListener("click", async (event) => {
       '<div class="finance-modal-panel" role="dialog" aria-modal="true"><button class="finance-close" type="button" aria-label="Close">×</button><p class="eyebrow">Live finance record</p><h3></h3><div class="finance-content"></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener("click", (item) => {
-      if (item.target === modal || item.target.closest(".finance-close"))
+      if (item.target === modal || item.target.closest(".finance-close")) {
         modal.classList.remove("is-open");
+        document.body.classList.remove("admin-finance-open");
+      }
     });
   }
   modal.querySelector("h3").textContent = title;
@@ -202,6 +204,7 @@ document.addEventListener("click", async (event) => {
     renderExpenseDetails();
   }
   modal.classList.add("is-open");
+  document.body.classList.add("admin-finance-open");
 });
 window.addEventListener("DOMContentLoaded", () => {
   const hour = new Date().getHours();
