@@ -520,6 +520,22 @@ document.getElementById("logout").addEventListener("click", () => {
   location.reload();
 });
 
+document.getElementById("deleteAllDonations")?.addEventListener("click", async (event) => {
+  const confirmation = window.prompt('This permanently deletes all devotee contributions and receipts. Type DELETE ALL to continue.');
+  if (confirmation !== "DELETE ALL") return;
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const response = await api("/donations", { method: "DELETE" });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete contributions");
+    await loadAdmin();
+    alert("All devotee contributions were deleted.");
+  } catch (error) {
+    button.disabled = false;
+    alert(error.message);
+  }
+});
+
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-delete]");
   if (!button) return;

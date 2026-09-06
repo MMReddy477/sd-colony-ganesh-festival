@@ -57,7 +57,7 @@
           </button>
         </div>
         <div id="adminNavLinks" class="admin-nav-links container-fluid" aria-label="Admin navigation">
-          <a href="#dashboard">🏠 Dashboard</a><a href="#donations">💰 Donations</a><a href="#expenses">📤 Expenditure</a><a href="#live-finance">📊 Live Finance</a><a href="#gallery">🖼️ Gallery</a><a href="#committee">👥 Committee</a><a href="#events">🎉 Events</a><a href="#account">🔐 Account</a>
+          <a href="#dashboard">🏠 Dashboard</a><a href="#donations">💰 Devotee Contributions</a><a href="#expenses">📤 Expenditure</a><a href="#live-finance">📊 Live Finance</a><a href="#gallery">🖼️ Gallery</a><a href="#committee">👥 Committee</a><a href="#events">🎉 Events</a><a href="#account">🔐 Account</a>
         </div>
       </nav>
       <main class="container py-5">
@@ -76,7 +76,7 @@
             <div class="card-head">
               <div>
                 <p class="eyebrow">Finance</p>
-                <h2>Donations</h2>
+                <h2>Devotee Contributions</h2>
               </div>
               <div class="btn-group">
                 <button
@@ -115,7 +115,7 @@
                 <option>Bank transfer</option></select
               ><button class="btn btn-saffron col-auto">Add donor</button>
             </form>
-            <div class="donor-toolbar"><label class="donor-search">Search donors <input id="adminDonorSearch" type="search" placeholder="Search by Name, Plot No., Mobile or Amount..." /></label><label class="donor-filter">Payment mode <select id="adminPaymentFilter"><option value="">All</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label class="donor-rows">Rows per page <select id="adminDonorRows"><option selected>10</option><option>25</option><option>50</option><option>100</option><option value="all">All</option></select></label><button type="button" class="btn btn-saffron" id="showDonorForm">+ Add Donor</button></div>
+            <div class="donor-toolbar"><label class="donor-search">Search contributions <input id="adminDonorSearch" type="search" placeholder="Search by Name, Plot No., Mobile or Amount..." /></label><label class="donor-filter">Payment mode <select id="adminPaymentFilter"><option value="">All</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label class="donor-rows">Rows per page <select id="adminDonorRows"><option selected>10</option><option>25</option><option>50</option><option>100</option><option value="all">All</option></select></label><button type="button" class="btn btn-saffron" id="showDonorForm">+ Add Contribution</button><button type="button" class="btn btn-outline-danger" id="deleteAllDonations" title="Delete all devotee contributions">Delete all</button></div>
             <div id="adminDonorPagination" class="pagination-panel"></div>
             <div id="donationAdminList" class="admin-list"></div>
           </section>
