@@ -11,8 +11,21 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   if (!response.ok) return;
   const data = await response.json();
   const donations = [...data.donations].sort(sortByPlotNumber);
-  modal.querySelector(".finance-content").innerHTML =
-    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${donations.map((item) => `<tr><td>${normalizePlotNumber(item.flatNumber) || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
+  const pageSize = 10;
+  let page = 0;
+  const renderDonations = () => {
+    const query = modal.querySelector("[data-public-donation-search]")?.value.trim().toLowerCase() || "";
+    const filtered = donations.filter(item => String(item.donorName || "").toLowerCase().includes(query));
+    const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, pageCount - 1);
+    const visible = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    const first = filtered.length ? page * pageSize + 1 : 0;
+    const last = Math.min((page + 1) * pageSize, filtered.length);
+    modal.querySelector(".finance-content").innerHTML = `<div class="public-donation-tools"><label for="publicDonationSearch">Search donor name<input id="publicDonationSearch" data-public-donation-search type="search" placeholder="Search by name" value="${escapeHtml(query)}"></label><span>Showing ${first}-${last} of ${filtered.length} donations</span></div><div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Mobile number</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${visible.map((item) => `<tr><td data-label="Plot No.">${normalizePlotNumber(item.flatNumber) || "--"}</td><td data-label="Donor name">${item.donorName || "--"}</td><td data-label="Mobile number">${item.mobile || "--"}</td><td data-label="Amount"><strong>${money(item.amount)}</strong></td><td data-label="Payment mode">${item.paymentMode || "--"}</td><td data-label="Receipt">${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="6" class="donor-empty">No donations found.</td></tr>'}</tbody></table></div><div class="public-donation-pagination"><button type="button" data-public-donation-page="prev" ${page === 0 ? "disabled" : ""}>Previous</button><span>Page ${page + 1} of ${pageCount}</span><button type="button" data-public-donation-page="next" ${page >= pageCount - 1 ? "disabled" : ""}>Next</button></div>`;
+    modal.querySelector("[data-public-donation-search]")?.addEventListener("input", () => { page = 0; renderDonations(); });
+    modal.querySelectorAll("[data-public-donation-page]").forEach(button => button.addEventListener("click", () => { page += button.dataset.publicDonationPage === "next" ? 1 : -1; renderDonations(); }));
+  };
+  renderDonations();
 });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
@@ -55,6 +68,7 @@ const money = (value) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value || 0);
+const escapeHtml = value => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const formatDate = (value, fallback = "--") => {
   if (!value) return fallback;
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
