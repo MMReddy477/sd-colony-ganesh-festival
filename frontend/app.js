@@ -27,6 +27,32 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   };
   renderDonations();
 });
+
+const addMobileColumn = (table, label) => {
+  const header = table.querySelector("thead tr");
+  if (header && !header.querySelector("[data-mobile-column]")) {
+    const cell = document.createElement("th");
+    cell.textContent = "Mobile Number";
+    cell.dataset.mobileColumn = "true";
+    header.insertBefore(cell, header.children[2]);
+  }
+  table.querySelectorAll("tbody tr").forEach(row => {
+    if (row.querySelector("[data-mobile-column]")) return;
+    const source = row.children[1];
+    if (!source) return;
+    const cell = document.createElement("td");
+    const donor = publicDonorRows.find(item => String(item.donorName || "") === String(source.textContent || ""));
+    cell.textContent = donor?.mobile || "--";
+    cell.dataset.label = label;
+    cell.dataset.mobileColumn = "true";
+    row.insertBefore(cell, row.children[2]);
+  });
+};
+const mainPublicDonationTableObserver = new MutationObserver(() => {
+  const table = document.querySelector("#donationsList")?.closest("table");
+  if (table) addMobileColumn(table, "Mobile Number");
+});
+mainPublicDonationTableObserver.observe(document.body, { childList: true, subtree: true });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
   childList: true,
