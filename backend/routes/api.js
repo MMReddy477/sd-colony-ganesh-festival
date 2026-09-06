@@ -17,6 +17,7 @@ const upload = multer({ dest: uploadDir, limits: { fileSize: 5 * 1024 * 1024 }, 
 const billUpload = multer({ dest: uploadDir, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(application\/pdf|image\/(jpeg|png))$/.test(file.mimetype)) });
 const clean = (req, res, next) => { const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg }); next(); };
 const displayDate = value => { if (!value) return '--'; const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/); if (match) return `${match[3]}-${match[2]}-${match[1]}`; const parsed = new Date(value); if (Number.isNaN(parsed.getTime())) return '--'; return `${String(parsed.getDate()).padStart(2, '0')}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${parsed.getFullYear()}`; };
+const displayDonationDate = value => { if (!value) return '--'; const parsed = new Date(value); if (Number.isNaN(parsed.getTime())) return '--'; return `${String(parsed.getDate()).padStart(2, '0')}-${parsed.toLocaleString('en-IN', { month: 'short' })}-${String(parsed.getFullYear()).slice(-2)}`; };
 const receiptDownloadName = (donation, receiptNumber, extension) => { const safe = (value, fallback) => String(value || fallback).trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || fallback; return `${safe(donation.flatNumber, 'Receipt')}_${safe(donation.donorName, receiptNumber)}.${extension}`; };
 const normalizePlotNumber = value => { const raw = String(value || '').trim().replace(/\s+/g, '-').replace(/-+/g, '-'); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const match = raw.match(/^(samyukta|sirius)-?(\d+)$/i); return match ? `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()}-${match[2]}` : raw; };
 const alphanumericSort = (a, b) => { const aparts = String(a).split(/(\d+)/); const bparts = String(b).split(/(\d+)/); for (let i = 0; i < Math.min(aparts.length, bparts.length); i++) { const isNum = /^\d+$/.test(aparts[i]); if (isNum) { const diff = Number(aparts[i]) - Number(bparts[i]); if (diff) return diff; } else { if (aparts[i] !== bparts[i]) return aparts[i].localeCompare(bparts[i]); } } return aparts.length - bparts.length; };
@@ -164,6 +165,7 @@ router.get('/reports/:type/:format', async (req, res) => {
   const Model = req.params.type === 'donations' ? Donation : Expense;
   const filter = req.params.type === 'donations' ? { $or: [{ status: 'Received' }, { status: { $exists: false } }] } : {};
   const rows = await Model.find(req.params.type === 'donations' && ['xlsx', 'pdf'].includes(req.params.format) ? {} : filter).sort('-date').lean();
+  if (req.params.type === 'donations' && ['xlsx', 'pdf'].includes(req.params.format)) rows.sort(comparePlotNumbers);
   if (req.params.format === 'xlsx') {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet(req.params.type === 'donations' ? 'Donations' : 'Expenses');
@@ -174,23 +176,23 @@ router.get('/reports/:type/:format', async (req, res) => {
         { header: 'Status', key: 'status', width: 18 }, { header: 'Date', key: 'date', width: 14 },
         { header: 'Payment Mode', key: 'paymentMode', width: 18 }, { header: 'Actions', key: 'actions', width: 12 }
       ];
-      rows.forEach(row => sheet.addRow({ flatNumber: row.flatNumber || '--', donorName: row.donorName || '--', mobile: row.mobile || '--', amount: Number(row.amount || 0), status: row.status || 'Received', date: displayDate(row.date), paymentMode: row.paymentMode || '--', actions: 'View / Download' }));
+      rows.forEach(row => sheet.addRow({ flatNumber: row.flatNumber || '--', donorName: row.donorName || '--', mobile: row.mobile || '--', amount: Number(row.amount || 0), status: row.status || 'Received', date: displayDonationDate(row.date), paymentMode: row.paymentMode || '--', actions: 'View / Download' }));
     } else {
       sheet.columns = Object.keys(rows[0] || { name: '', amount: '', date: '' }).map(key => ({ header: key, key }));
       rows.forEach(row => sheet.addRow({ ...row, date: displayDate(row.date) }));
     }
     sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
     sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6F202B' } };
-    sheet.eachRow(row => row.eachCell(cell => { cell.border = { top: { style: 'thin', color: { argb: 'FFD9C8B8' } }, left: { style: 'thin', color: { argb: 'FFD9C8B8' } }, bottom: { style: 'thin', color: { argb: 'FFD9C8B8' } }, right: { style: 'thin', color: { argb: 'FFD9C8B8' } } }; cell.alignment = { vertical: 'middle', wrapText: true }; }));
+    sheet.eachRow((row, rowNumber) => row.eachCell((cell, columnNumber) => { const isDonations = req.params.type === 'donations'; const status = isDonations ? row.getCell(5).value : null; const received = status === 'Received'; cell.border = { top: { style: 'thin', color: { argb: 'FFD9C8B8' } }, left: { style: 'thin', color: { argb: 'FFD9C8B8' } }, bottom: { style: 'thin', color: { argb: 'FFD9C8B8' } }, right: { style: 'thin', color: { argb: 'FFD9C8B8' } } }; cell.alignment = { vertical: 'middle', wrapText: true }; if (isDonations && rowNumber > 1 && rowNumber % 2 === 0 && columnNumber !== 5) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8ED' } }; if (isDonations && rowNumber > 1 && columnNumber === 4) cell.font = { bold: true, color: { argb: 'FF0F7B4D' } }; if (isDonations && rowNumber > 1 && columnNumber === 5) { cell.font = { bold: true, color: { argb: received ? 'FF176B34' : 'FFA65300' } }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: received ? 'FFDFF3E5' : 'FFFFECD1' } }; } }));
     res.attachment(`${req.params.type}.xlsx`); return workbook.xlsx.write(res);
   }
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 28 });
   res.attachment(`${req.params.type}.pdf`); doc.pipe(res);
   if (req.params.type === 'donations') {
     const columns = [['Plot No.', 72], ['Donor Name', 112], ['Mobile Number', 100], ['Amount', 70], ['Status', 92], ['Date', 72], ['Payment Mode', 92], ['Actions', 100]];
-    const startX = 28; const rowHeight = 28; const drawRow = (values, header = false) => { let x = startX; values.forEach((value, index) => { const width = columns[index][1]; doc.rect(x, doc.y, width, rowHeight).fillAndStroke(header ? '#6f202b' : (index === 3 ? '#eef8f0' : '#fffdf7'), '#c9b8a8'); doc.fillColor(header ? '#fff8ed' : (index === 3 ? '#0f7b4d' : '#241d1b')).fontSize(header ? 9 : 8).text(String(value), x + 5, doc.y + 9, { width: width - 10, height: rowHeight - 8, ellipsis: true }); x += width; }); doc.y += rowHeight; };
+    const startX = 28; const rowHeight = 28; const drawRow = (values, header = false, rowIndex = 0) => { let x = startX; values.forEach((value, index) => { const width = columns[index][1]; const received = values[4] === 'Received'; const statusCell = index === 4; const fill = header ? '#6f202b' : statusCell ? (received ? '#dff3e5' : '#ffecd1') : index === 3 ? '#eef8f0' : rowIndex % 2 === 0 ? '#fff8ed' : '#fffdf7'; const textColor = header ? '#fff8ed' : statusCell ? (received ? '#176b34' : '#a65300') : index === 3 ? '#0f7b4d' : '#241d1b'; doc.rect(x, doc.y, width, rowHeight).fillAndStroke(fill, '#c9b8a8'); doc.fillColor(textColor).fontSize(header ? 9 : 8).font(header || index === 3 || statusCell ? 'Helvetica-Bold' : 'Helvetica').text(String(value), x + 5, doc.y + 9, { width: width - 10, height: rowHeight - 8, ellipsis: true }); x += width; }); doc.y += rowHeight; };
     doc.fontSize(16).fillColor('#6f202b').text('Donations Report', { align: 'center' }); doc.moveDown(.6); drawRow(columns.map(column => column[0]), true);
-    rows.forEach(row => drawRow([row.flatNumber || '--', row.donorName || '--', row.mobile || '--', `Rs. ${Number(row.amount || 0).toLocaleString('en-IN')}`, row.status || 'Received', displayDate(row.date), row.paymentMode || '--', 'View / Download']));
+    rows.forEach((row, index) => drawRow([row.flatNumber || '--', row.donorName || '--', row.mobile || '--', `Rs. ${Number(row.amount || 0).toLocaleString('en-IN')}`, row.status || 'Received', displayDonationDate(row.date), row.paymentMode || '--', 'View / Download'], false, index + 1));
   } else { doc.fontSize(18).fillColor('#241d1b').text(`${req.params.type} report`); rows.forEach(row => doc.moveDown().fontSize(11).text(`${row.donorName || row.name} | Rs. ${row.amount} | ${displayDate(row.date)}`)); }
   doc.end();
 });
