@@ -520,16 +520,16 @@ document.getElementById("logout").addEventListener("click", () => {
   location.reload();
 });
 
-document.getElementById("deleteAllDonations")?.addEventListener("click", async (event) => {
-  const confirmation = window.prompt('This permanently deletes all devotee contributions and receipts. Type DELETE ALL to continue.');
+document.getElementById("deleteAllFinance")?.addEventListener("click", async (event) => {
+  const confirmation = window.prompt('This permanently deletes all Devotee Contributions, Expenditure, receipts, and uploaded bills. Type DELETE ALL to continue.');
   if (confirmation !== "DELETE ALL") return;
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await api("/donations", { method: "DELETE" });
-    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete contributions");
+    const response = await api("/finance", { method: "DELETE" });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete finance records");
     await loadAdmin();
-    alert("All devotee contributions were deleted.");
+    alert("All finance records were deleted.");
   } catch (error) {
     button.disabled = false;
     alert(error.message);
