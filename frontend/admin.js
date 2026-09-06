@@ -520,9 +520,18 @@ document.getElementById("logout").addEventListener("click", () => {
   location.reload();
 });
 
+const financeDeleteModal = document.getElementById("financeDeleteModal");
+const financeDeleteInput = document.getElementById("financeDeleteInput");
+let financeDeleteAction = null;
+const closeFinanceDelete = () => { financeDeleteModal?.classList.remove("is-open"); financeDeleteModal?.setAttribute("aria-hidden", "true"); financeDeleteAction?.(false); financeDeleteAction = null; };
+const requestFinanceDelete = () => new Promise(resolve => { financeDeleteAction = resolve; if (financeDeleteInput) financeDeleteInput.value = ""; financeDeleteModal?.classList.add("is-open"); financeDeleteModal?.setAttribute("aria-hidden", "false"); financeDeleteInput?.focus(); });
+document.getElementById("closeFinanceDelete")?.addEventListener("click", closeFinanceDelete);
+document.getElementById("cancelFinanceDelete")?.addEventListener("click", closeFinanceDelete);
+document.getElementById("confirmFinanceDelete")?.addEventListener("click", () => { const confirmed = financeDeleteInput?.value.trim() === "DELETE ALL"; if (!confirmed) { financeDeleteInput?.setCustomValidity("Type DELETE ALL exactly to continue."); financeDeleteInput?.reportValidity(); return; } financeDeleteInput?.setCustomValidity(""); financeDeleteModal?.classList.remove("is-open"); financeDeleteModal?.setAttribute("aria-hidden", "true"); financeDeleteAction?.(true); financeDeleteAction = null; });
+financeDeleteModal?.addEventListener("click", event => { if (event.target === financeDeleteModal) closeFinanceDelete(); });
 document.getElementById("deleteAllFinance")?.addEventListener("click", async (event) => {
-  const confirmation = window.prompt('This permanently deletes all Devotee Contributions, Expenditure, receipts, and uploaded bills. Type DELETE ALL to continue.');
-  if (confirmation !== "DELETE ALL") return;
+  const confirmed = await requestFinanceDelete();
+  if (!confirmed) return;
   const button = event.currentTarget;
   button.disabled = true;
   try {
