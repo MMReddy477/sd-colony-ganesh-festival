@@ -83,17 +83,16 @@ const escapeHtml = value => String(value ?? "").replace(/&/g, "&amp;").replace(/
 const formatDate = (value, fallback = "--") => {
   if (!value) return fallback;
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+  if (match) return `${match[3]}-${new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).toLocaleString("en-IN", { month: "short" })}-${String(match[1]).slice(-2)}`;
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return fallback;
-  return `${String(parsed.getDate()).padStart(2, "0")}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${parsed.getFullYear()}`;
+  return `${String(parsed.getDate()).padStart(2, "0")}-${parsed.toLocaleString("en-IN", { month: "short" })}-${String(parsed.getFullYear()).slice(-2)}`;
 };
 const formatExpenseDate = value => {
   if (!value) return "--";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return formatDate(value);
-  const month = parsed.toLocaleString("en-US", { month: "short" });
-  return `${String(parsed.getDate()).padStart(2, "0")}-${month}-${parsed.getFullYear()}`;
+  return formatDate(parsed);
 };
 const formatExpenseTime = value => value ? new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--";
 const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const match = raw.match(/^(samyukta|sirius)-?(\d+)$/i); return match ? `${match[1][0].toUpperCase()}${match[1].slice(1).toLowerCase()}-${match[2]}` : raw; };
