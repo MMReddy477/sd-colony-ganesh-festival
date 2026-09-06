@@ -522,34 +522,6 @@ document.getElementById("logout").addEventListener("click", () => {
   location.reload();
 });
 
-const financeDeleteModal = document.getElementById("financeDeleteModal");
-const financeDeleteInput = document.getElementById("financeDeleteInput");
-let financeDeleteAction = null;
-const closeFinanceDelete = () => { financeDeleteModal?.classList.remove("is-open"); financeDeleteModal?.setAttribute("aria-hidden", "true"); financeDeleteAction?.(false); financeDeleteAction = null; };
-const requestFinanceDelete = () => new Promise(resolve => { financeDeleteAction = resolve; if (financeDeleteInput) financeDeleteInput.value = ""; financeDeleteModal?.classList.add("is-open"); financeDeleteModal?.setAttribute("aria-hidden", "false"); financeDeleteInput?.focus(); });
-document.getElementById("closeFinanceDelete")?.addEventListener("click", closeFinanceDelete);
-document.getElementById("cancelFinanceDelete")?.addEventListener("click", closeFinanceDelete);
-document.getElementById("confirmFinanceDelete")?.addEventListener("click", () => { const confirmed = financeDeleteInput?.value.trim() === "DELETE ALL"; if (!confirmed) { financeDeleteInput?.setCustomValidity("Type DELETE ALL exactly to continue."); financeDeleteInput?.reportValidity(); return; } financeDeleteInput?.setCustomValidity(""); financeDeleteModal?.classList.remove("is-open"); financeDeleteModal?.setAttribute("aria-hidden", "true"); financeDeleteAction?.(true); financeDeleteAction = null; });
-financeDeleteModal?.addEventListener("click", event => { if (event.target === financeDeleteModal) closeFinanceDelete(); });
-document.getElementById("deleteAllFinance")?.addEventListener("click", async (event) => {
-  const confirmed = await requestFinanceDelete();
-  if (!confirmed) return;
-  const button = event.currentTarget;
-  button.disabled = true;
-  try {
-    const response = await api("/donations/delete-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: "DELETE ALL" }) });
-    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Could not delete contributions");
-    adminDonations = [];
-    renderDonationTable([], "/donations");
-    await loadAdmin();
-    if (adminDonations.length) throw new Error("Some contribution records are still present. Please try again.");
-    showDeleteSuccess("All Devotee Contributions records deleted successfully.");
-  } catch (error) {
-    button.disabled = false;
-    alert(error.message);
-  }
-});
-
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-delete]");
   if (!button) return;
