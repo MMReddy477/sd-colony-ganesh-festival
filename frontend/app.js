@@ -158,7 +158,7 @@ setTimeout(() => {
     "Building a brighter Ganesh Utsav together, with transparent giving, joyful traditions, and room for every family.";
 }, 0);
 async function loadPortal() {
-  const response = await fetch("/api/public");
+  const response = await fetch("/api/public", { cache: "no-store" });
   if (!response.ok) return;
   const data = await response.json();
   const contact = data.contact || {};
@@ -197,6 +197,7 @@ loadPortal();
 setInterval(loadPortal, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPortal(); });
 window.addEventListener("focus", loadPortal);
+window.addEventListener("pageshow", (event) => { if (event.persisted) loadPortal(); });
 let publicDonorRows = [];
 let publicDonorPage = 0;
 let publicDonorPageSize = 10;
@@ -315,17 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const list = document.getElementById("membersList");
       if (!list) return;
       list.innerHTML = `<div class="member-table-wrap"><table class="member-table"><thead><tr><th>Name</th><th>Designation</th><th>Mobile number</th></tr></thead><tbody>${data.members.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.designation || "--"}</td><td>${item.mobile || "--"}</td></tr>`).join("") || '<tr><td colspan="3">Committee details coming soon.</td></tr>'}</tbody></table></div>`;
-    });
-});
-document.addEventListener("DOMContentLoaded", () => {
-  const venue = document.querySelector('#eventForm [name="venue"]');
-  if (venue && !venue.value) venue.value = "Between Sirius & Samyukta";
-  fetch("/api/public")
-    .then((response) => response.json())
-    .then((data) => {
-      const list = document.getElementById("eventsList");
-      if (!list) return;
-      list.innerHTML = `<div class="member-table-wrap"><table class="member-table event-table"><thead><tr><th>Event name</th><th>Date</th><th>Time</th><th>Venue</th></tr></thead><tbody>${data.events.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.date ? date(item.date) : "--"}</td><td>${item.time || "--"}</td><td>${item.venue || "Between Sirius & Samyukta"}</td></tr>`).join("") || '<tr><td colspan="4">No events announced yet.</td></tr>'}</tbody></table></div>`;
     });
 });
 document.addEventListener("click", async (event) => {
