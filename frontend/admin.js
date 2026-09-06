@@ -411,7 +411,9 @@ document.addEventListener("click", async (event) => {
     const blob = await response.blob();
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = button.dataset.report.replace("/", "-");
+    link.download = button.dataset.report === "finance/xlsx"
+      ? "SD_Colony_Ganesh_Utsav_2026_Details.xlsx"
+      : button.dataset.report.replace("/", "-");
     link.click();
     URL.revokeObjectURL(link.href);
   }
