@@ -72,6 +72,16 @@ window.addEventListener("DOMContentLoaded", () => {
     donationMode.title = "Select payment mode";
   }
   const expenseForm = document.getElementById("expenseForm");
+  const expenseDate = expenseForm?.querySelector('[name="date"]');
+  if (expenseDate) {
+    expenseDate.type = "date";
+    expenseDate.addEventListener("click", () => {
+      expenseDate.focus();
+      if (typeof expenseDate.showPicker === "function") {
+        try { expenseDate.showPicker(); } catch (_) {}
+      }
+    });
+  }
   const amount = expenseForm && expenseForm.querySelector('[name="amount"]');
   if (amount && !expenseForm.querySelector('[name="paymentMode"]')) {
     const select = document.createElement("select");
