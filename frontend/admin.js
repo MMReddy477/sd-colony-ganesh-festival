@@ -708,7 +708,9 @@ async function submitAdmin(form, endpoint) {
 document.getElementById("expenseForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const date = e.target.elements.date.value.trim();
-  const dateMatch = date.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const displayMatch = date.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  const dateMatch = isoMatch ? [date, isoMatch[3], isoMatch[2], isoMatch[1]] : displayMatch;
   if (!dateMatch) { e.target.elements.date.setCustomValidity("Enter the date as dd-mm-yyyy"); e.target.elements.date.reportValidity(); return; }
   const parsedDate = new Date(Number(dateMatch[3]), Number(dateMatch[2]) - 1, Number(dateMatch[1]));
   if (parsedDate.getFullYear() !== Number(dateMatch[3]) || parsedDate.getMonth() !== Number(dateMatch[2]) - 1 || parsedDate.getDate() !== Number(dateMatch[1])) { e.target.elements.date.setCustomValidity("Enter a valid date"); e.target.elements.date.reportValidity(); return; }
