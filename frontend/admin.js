@@ -47,31 +47,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }, 0);
 });
 
-const adminDonationTableObserver = new MutationObserver(() => {
-  const table = document.querySelector("#donationAdminList .donation-table");
-  if (table) {
-    const header = table.querySelector("thead tr");
-    if (header && !header.querySelector("[data-mobile-column]")) {
-      const cell = document.createElement("th");
-      cell.textContent = "Mobile Number";
-      cell.dataset.mobileColumn = "true";
-      header.insertBefore(cell, header.children[2]);
-    }
-    table.querySelectorAll("tbody tr").forEach(row => {
-      if (row.querySelector("[data-mobile-column]")) return;
-      const source = row.children[1];
-      if (!source) return;
-      const cell = document.createElement("td");
-      const id = row.querySelector("[data-edit-donation]")?.dataset.editDonation;
-      const donor = adminDonations.find(item => String(item._id) === String(id));
-      cell.textContent = donor?.mobile || "--";
-      cell.dataset.label = "Mobile Number";
-      cell.dataset.mobileColumn = "true";
-      row.insertBefore(cell, row.children[2]);
-    });
-  }
-});
-adminDonationTableObserver.observe(document.body, { childList: true, subtree: true });
 function renderExpenseTable(items, path) {
   const container = document.getElementById("expenseAdminList");
   const query = document.getElementById("expenseSearch")?.value.toLowerCase() || "";
