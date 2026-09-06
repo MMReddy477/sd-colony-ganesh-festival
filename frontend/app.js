@@ -200,6 +200,9 @@ async function loadPortal() {
   renderPublicDonors(data.donations);
 }
 loadPortal();
+setInterval(loadPortal, 15000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPortal(); });
+window.addEventListener("focus", loadPortal);
 let publicDonorRows = [];
 let publicDonorPage = 0;
 let publicDonorPageSize = 10;
