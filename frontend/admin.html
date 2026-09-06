@@ -179,8 +179,8 @@
           <section id="events" class="admin-card">
             <div class="card-head">
               <div>
-                <p class="eyebrow">Programming</p>
-                <h2>Events</h2>
+                <p class="eyebrow">Devotee Ritual Details</p>
+                <h2>Devotee Ritual Details</h2>
               </div>
             </div>
             <form id="eventForm" class="row g-2">
@@ -189,14 +189,14 @@
                 class="form-control"
                 placeholder="Event name"
                 required
-              /><label class="event-date-field">Event date (dd-mm-yyyy)<input name="date" type="date" class="form-control" aria-label="Event date" /></label><input
+              /><input name="mobile" class="form-control" placeholder="Contact Number" inputmode="tel" /><select name="status" class="form-select"><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Completed">Completed</option></select><label class="event-date-field">Preferred date (dd-mm-yyyy)<input name="date" type="date" class="form-control" aria-label="Preferred date" /></label><input
                 name="time"
                 class="form-control"
-                placeholder="Time"
+                placeholder="Preferred time"
               /><input
                 name="venue"
                 class="form-control"
-                placeholder="Venue"
+                placeholder="Venue / Location"
               /><button class="btn btn-dark-red col-auto">Add event</button>
             </form>
             <div id="eventAdminList" class="admin-list"></div>
