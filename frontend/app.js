@@ -10,9 +10,9 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
-  const donations = [...data.donations].sort((left, right) => new Date(right.createdAt || right.date || 0) - new Date(left.createdAt || left.date || 0));
+  const donations = [...data.donations].sort(sortByPlotNumber);
   modal.querySelector(".finance-content").innerHTML =
-    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${donations.map((item) => `<tr><td>${item.flatNumber || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
+    `<div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor name</th><th>Amount</th><th>Payment mode</th><th>Receipt</th></tr></thead><tbody>${donations.map((item) => `<tr><td>${normalizePlotNumber(item.flatNumber) || "--"}</td><td>${item.donorName || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${item.receiptNumber}">👁 View</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5">No donations recorded yet.</td></tr>'}</tbody></table></div>`;
 });
 publicDonationTableObserver.observe(document.body, {
   subtree: true,
