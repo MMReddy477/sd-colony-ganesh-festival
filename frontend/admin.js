@@ -415,7 +415,11 @@ document.addEventListener("click", async (event) => {
       link.href = objectUrl;
       link.download = button.dataset.report === "finance/xlsx"
         ? "SD_Colony_Ganesh_Utsav_2026_Details.xlsx"
-        : button.dataset.report.replace("/", "-");
+        : button.dataset.report === "donations/xlsx"
+          ? "Ganesh_Utsav_2026_Donation_Details.xlsx"
+          : button.dataset.report === "expenses/xlsx"
+            ? "Ganesh_Utsav_2026_Expenditure_Details.xlsx"
+            : button.dataset.report.replace("/", "-");
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();
