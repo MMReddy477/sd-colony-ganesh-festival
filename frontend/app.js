@@ -177,7 +177,7 @@ async function loadPortal() {
   ]
     .map(
       ([label, value]) =>
-        `<div class="col-md-4"><div class="stat-card"><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
+        `<div class="col-md-4"><div class="stat-card${label === "Current balance" ? " balance-stat" : ""}"><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
     )
     .join("");
   document.getElementById("eventsList").innerHTML = data.events.length

@@ -602,7 +602,7 @@ async function loadAdmin() {
   ]
     .map(
       ([a, b]) =>
-        `<div class="col-sm-6 col-lg-3"><div class="stat-card"><span class="label">${a}</span><strong>${money(b)}</strong></div></div>`,
+        `<div class="col-sm-6 col-lg-3"><div class="stat-card${a === "Balance" ? " balance-stat" : ""}"><span class="label">${a}</span><strong>${money(b)}</strong></div></div>`,
     )
     .join("");
   renderList(
