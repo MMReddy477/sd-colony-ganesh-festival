@@ -403,19 +403,29 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-report]")) {
     const button = event.target.closest("[data-report]");
     if (!button) return;
-    const response = await api("/reports/" + button.dataset.report);
-    if (!response.ok) {
-      alert("Report download failed");
-      return;
+    const originalLabel = button.textContent.trim();
+    button.disabled = true;
+    button.textContent = "Preparing download...";
+    try {
+      const response = await api("/reports/" + button.dataset.report);
+      if (!response.ok) throw new Error("Report download failed");
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = button.dataset.report === "finance/xlsx"
+        ? "SD_Colony_Ganesh_Utsav_2026_Details.xlsx"
+        : button.dataset.report.replace("/", "-");
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      window.setTimeout(() => { link.remove(); URL.revokeObjectURL(objectUrl); }, 1500);
+    } catch (error) {
+      alert(error.message || "Report download failed");
+    } finally {
+      button.disabled = false;
+      button.textContent = originalLabel;
     }
-    const blob = await response.blob();
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = button.dataset.report === "finance/xlsx"
-      ? "SD_Colony_Ganesh_Utsav_2026_Details.xlsx"
-      : button.dataset.report.replace("/", "-");
-    link.click();
-    URL.revokeObjectURL(link.href);
   }
 });
 const submitForm = async (form, endpoint) => {
