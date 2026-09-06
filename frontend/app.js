@@ -71,8 +71,17 @@ const publicExpenseTableObserver = new MutationObserver(async () => {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
-  modal.querySelector(".finance-content").innerHTML =
-    `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${data.expenses.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("") || '<tr><td colspan="5">No expenditure recorded yet.</td></tr>'}</tbody></table></div>`;
+  const expenses = [...data.expenses];
+  let page = 0;
+  const renderExpenses = () => {
+    const pageSize = 10;
+    const pages = Math.max(1, Math.ceil(expenses.length / pageSize));
+    page = Math.min(page, pages - 1);
+    const visible = expenses.slice(page * pageSize, (page + 1) * pageSize);
+    modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${expenses.length ? page * pageSize + 1 : 0}-${Math.min((page + 1) * pageSize, expenses.length)} of ${expenses.length} expenses</div><div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("") || '<tr><td colspan="5">No expenditure recorded yet.</td></tr>'}</tbody></table></div><div class="public-donation-pagination expense-pagination"><button type="button" data-expense-page="prev" ${page === 0 ? "disabled" : ""}>Previous</button><span>Page ${page + 1} of ${pages}</span><button type="button" data-expense-page="next" ${page >= pages - 1 ? "disabled" : ""}>Next</button></div>`;
+    modal.querySelectorAll("[data-expense-page]").forEach(button => button.addEventListener("click", () => { page += button.dataset.expensePage === "next" ? 1 : -1; renderExpenses(); }));
+  };
+  renderExpenses();
 });
 publicExpenseTableObserver.observe(document.body, {
   subtree: true,
@@ -390,6 +399,19 @@ document.addEventListener("click", async (event) => {
   }
   modal.querySelector("h3").textContent = title;
   modal.querySelector(".finance-content").innerHTML = content;
+  if (label === "Total expenditure") {
+    const expenses = data.expenses;
+    let expensePage = 0;
+    const renderExpenses = () => {
+      const pageSize = 10;
+      const pages = Math.max(1, Math.ceil(expenses.length / pageSize));
+      expensePage = Math.min(expensePage, pages - 1);
+      const visible = expenses.slice(expensePage * pageSize, (expensePage + 1) * pageSize);
+      modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${expenses.length ? expensePage * pageSize + 1 : 0}-${Math.min((expensePage + 1) * pageSize, expenses.length)} of ${expenses.length} expenses</div><div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("") || '<tr><td colspan="5">No expenditure recorded yet.</td></tr>'}</tbody></table></div><div class="public-donation-pagination expense-pagination"><button type="button" data-expense-page="prev" ${expensePage === 0 ? "disabled" : ""}>Previous</button><span>Page ${expensePage + 1} of ${pages}</span><button type="button" data-expense-page="next" ${expensePage >= pages - 1 ? "disabled" : ""}>Next</button></div>`;
+      modal.querySelectorAll("[data-expense-page]").forEach(button => button.addEventListener("click", () => { expensePage += button.dataset.expensePage === "next" ? 1 : -1; renderExpenses(); }));
+    };
+    renderExpenses();
+  }
   modal.classList.add("is-open");
 });
 const teluguText = {

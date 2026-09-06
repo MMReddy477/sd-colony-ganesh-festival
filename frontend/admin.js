@@ -189,6 +189,18 @@ document.addEventListener("click", async (event) => {
   }
   modal.querySelector("h3").textContent = title;
   modal.querySelector(".finance-content").innerHTML = content;
+  if (label === "Expenses") {
+    let expensePage = 0;
+    const renderExpenseDetails = () => {
+      const pageSize = 10;
+      const pages = Math.max(1, Math.ceil(adminExpenses.length / pageSize));
+      expensePage = Math.min(expensePage, pages - 1);
+      const visible = adminExpenses.slice(expensePage * pageSize, (expensePage + 1) * pageSize);
+      modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${adminExpenses.length ? expensePage * pageSize + 1 : 0}-${Math.min((expensePage + 1) * pageSize, adminExpenses.length)} of ${adminExpenses.length} expenses</div><div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}" title="View bill" aria-label="View bill">📄</button>` : "--"}</td><td><button class="admin-icon-btn" data-edit-record="expense:${item._id}" title="Edit expense" aria-label="Edit expense">✎</button> <button class="admin-icon-btn delete-btn" data-delete="/expenses/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></td></tr>`).join("") || '<tr><td colspan="7">No expenses recorded yet.</td></tr>'}</tbody></table></div><div class="admin-finance-pagination expense-pagination"><button type="button" data-admin-expense-page="prev" ${expensePage === 0 ? "disabled" : ""}>Previous</button><span>Page ${expensePage + 1} of ${pages}</span><button type="button" data-admin-expense-page="next" ${expensePage >= pages - 1 ? "disabled" : ""}>Next</button></div>`;
+      modal.querySelectorAll("[data-admin-expense-page]").forEach(button => button.addEventListener("click", () => { expensePage += button.dataset.adminExpensePage === "next" ? 1 : -1; renderExpenseDetails(); }));
+    };
+    renderExpenseDetails();
+  }
   modal.classList.add("is-open");
 });
 window.addEventListener("DOMContentLoaded", () => {
