@@ -197,8 +197,8 @@ router.get('/reports/:type/:format', async (req, res) => {
       ];
       rows.forEach(row => sheet.addRow({ flatNumber: row.flatNumber || '--', donorName: row.donorName || '--', mobile: row.mobile || '--', amount: Number(row.amount || 0), status: row.status || 'Received', date: displayDonationDate(row.date), paymentMode: row.paymentMode || '--', actions: 'View / Download' }));
     } else {
-      sheet.columns = Object.keys(rows[0] || { name: '', amount: '', date: '' }).map(key => ({ header: key, key }));
-      rows.forEach(row => sheet.addRow({ ...row, date: displayDate(row.date) }));
+      sheet.columns = [{ header: 'Expense Name', key: 'name', width: 32 }, { header: 'Amount', key: 'amount', width: 16 }, { header: 'Payment Mode', key: 'paymentMode', width: 20 }];
+      rows.forEach(row => sheet.addRow({ name: row.name || '--', amount: Number(row.amount || 0), paymentMode: row.paymentMode || '--' }));
     }
     const reportTotal = req.params.type === 'donations'
       ? rows.filter(row => row.status !== 'Yet to receive').reduce((sum, row) => sum + Number(row.amount || 0), 0)
@@ -208,7 +208,7 @@ router.get('/reports/:type/:format', async (req, res) => {
     sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
     sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6F202B' } };
     sheet.eachRow((row, rowNumber) => row.eachCell((cell, columnNumber) => { const isDonations = req.params.type === 'donations'; const status = isDonations ? row.getCell(5).value : null; const received = status === 'Received'; cell.border = { top: { style: 'thin', color: { argb: 'FFD9C8B8' } }, left: { style: 'thin', color: { argb: 'FFD9C8B8' } }, bottom: { style: 'thin', color: { argb: 'FFD9C8B8' } }, right: { style: 'thin', color: { argb: 'FFD9C8B8' } } }; cell.alignment = { vertical: 'middle', wrapText: true }; if (isDonations && rowNumber > 1 && rowNumber % 2 === 0 && columnNumber !== 5) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8ED' } }; if (isDonations && rowNumber > 1 && columnNumber === 4) cell.font = { bold: true, color: { argb: 'FF0F7B4D' } }; if (isDonations && rowNumber > 1 && columnNumber === 5) { cell.font = { bold: true, color: { argb: received ? 'FF176B34' : 'FFA65300' } }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: received ? 'FFDFF3E5' : 'FFFFECD1' } }; } }));
-    const totalRow = sheet.lastRow; totalRow.font = { bold: true, color: { argb: 'FF0F7B4D' } }; totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF8F0' } }; if (req.params.type === 'expenses') sheet.eachRow((row, rowNumber) => { if (rowNumber > 1) row.getCell(2).font = { bold: true, color: { argb: 'FF0F7B4D' } }; });
+    const totalRow = sheet.lastRow; totalRow.font = { bold: true, color: { argb: 'FF241D1B' } }; totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF8F0' } }; totalRow.getCell(2).font = { bold: true, color: { argb: 'FF0F7B4D' } }; if (req.params.type === 'expenses') sheet.eachRow((row, rowNumber) => { if (rowNumber > 1 && rowNumber < sheet.rowCount) row.getCell(2).font = { bold: true, color: { argb: 'FF0F7B4D' } }; });
     res.attachment(req.params.type === 'donations' ? 'Ganesh_Utsav_2026_Donation_Details.xlsx' : 'Ganesh_Utsav_2026_Expenditure_Details.xlsx'); return workbook.xlsx.write(res);
   }
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 28 });
