@@ -150,15 +150,17 @@ document.addEventListener("click", async (event) => {
         ? "Expense details"
         : "Balance details";
   let content = "";
-  if (label === "Donations")
-    content = data.donations.length
-      ? data.donations
+  if (label === "Donations") {
+    const regularDonations = data.donations.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType));
+    content = regularDonations.length
+      ? regularDonations
           .map(
             (item) =>
               `<div class="finance-detail"><span>${item.flatNumber || "--"} · ${item.donorName}<small>${item.mobile || "--"} · ${item.paymentMode || "--"} · ${formatDate(item.createdAt || item.date)}</small></span><strong>${money(item.amount)}</strong></div>`,
           )
           .join("")
-      : '<p class="muted">No donations recorded yet.</p>';
+        : '<p class="muted">No donations recorded yet.</p>';
+      }
   if (label === "Expenses")
     content = adminExpenses.length
       ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th><th>Bill</th><th>Action</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}" title="View bill" aria-label="View bill">📄</button>` : "--"}</td><td><button class="admin-icon-btn" data-edit-record="expense:${item._id}" title="Edit expense" aria-label="Edit expense">✎</button> <button class="admin-icon-btn delete-btn" data-delete="/expenses/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></td></tr>`).join("")}</tbody></table></div>`

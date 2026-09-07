@@ -98,6 +98,7 @@ const formatExpenseTime = value => value ? new Date(value).toLocaleTimeString("e
 const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const siriusMatch = raw.match(/^(sirius|sirus)[_-]?(\d+)$/i); if (siriusMatch) return `Sirius_${siriusMatch[2]}`; const samyuktaMatch = raw.match(/^(samyukta)-?(\d+)$/i); return samyuktaMatch ? `Samyukta-${samyuktaMatch[2]}` : raw; };
 const alphanumericSort = (a, b) => { const aparts = String(a).split(/(\d+)/); const bparts = String(b).split(/(\d+)/); for (let i = 0; i < Math.min(aparts.length, bparts.length); i++) { const isNum = /^\d+$/.test(aparts[i]); if (isNum) { const diff = Number(aparts[i]) - Number(bparts[i]); if (diff) return diff; } else { if (aparts[i] !== bparts[i]) return aparts[i].localeCompare(bparts[i]); } } return aparts.length - bparts.length; };
 const sortByPlotNumber = (left, right) => { const parse = value => { const normalized = normalizePlotNumber(value); const cleanMatch = normalized.match(/^PlotNo-(\d+)$/); if (cleanMatch) return [0, Number(cleanMatch[1]), '']; const samyuktaMatch = normalized.match(/^Samyukta-(\d+)$/); if (samyuktaMatch) return [3, Number(samyuktaMatch[1]), '']; const siriusMatch = normalized.match(/^Sirius_(\d+)$/); if (siriusMatch) return [4, Number(siriusMatch[1]), '']; const rawValue = String(value || '').trim().toLowerCase(); if (rawValue.includes('plot') || rawValue.match(/^plotno/i)) return [1, 0, normalized]; return [2, 0, normalized]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); if (a[0] !== b[0]) return a[0] - b[0]; if (a[0] === 0 || a[0] === 3 || a[0] === 4) return a[1] - b[1]; if (a[0] === 1) return alphanumericSort(a[2], b[2]); return a[2].localeCompare(b[2]); };
+const sortSpecialContributions = (left, right) => { const rank = value => { const normalized = normalizePlotNumber(value); if (/^Sirius_\d+$/i.test(normalized)) return 0; if (/^Samyukta-\d+$/i.test(normalized)) return 1; return 2; }; const rankDifference = rank(left.flatNumber) - rank(right.flatNumber); return rankDifference || sortByPlotNumber(left, right); };
 const date = (value) =>
   formatDate(value, "Date to be announced");
 const publicMenuToggle = document.getElementById("publicMenuToggle");
@@ -170,7 +171,7 @@ async function loadPortal() {
   document.getElementById("heroDonations").textContent = money(
     data.stats.totalDonations,
   );
-  const contributionTotal = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const contributionTotal = type => type === "Laddu Auction 2025" && data.stats.ladduAuctionTotal != null ? data.stats.ladduAuctionTotal : data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   document.getElementById("stats").innerHTML = [
     ["Total donations", data.stats.totalDonations],
     ["Total expenditure", data.stats.totalExpenses],
@@ -208,7 +209,7 @@ function renderPublicDonors(items) {
   publicDonorRows = [...items].sort(sortByPlotNumber);
   const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
   const mode = document.getElementById("publicPaymentFilter")?.value || "";
-  const filtered = publicDonorRows.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
+  const filtered = publicDonorRows.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType) && `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Contribution Type</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
@@ -331,7 +332,7 @@ document.addEventListener("click", async (event) => {
   const isAuction = contributionType === "Laddu Auction 2025";
   let content = "";
   if (contributionType) {
-    const donations = data.donations.filter(item => item.contributionType === contributionType).sort(sortByPlotNumber);
+    const donations = data.donations.filter(item => item.contributionType === contributionType).sort(sortSpecialContributions);
     const rows = donations.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td>${escapeHtml(isAuction ? (item.itemName || item.contributionType || "--") : (item.contributionType || "Ganesh Idol Sponsor"))}</td><td class="amount-positive">${money(item.amount)}</td><td>${formatDate(item.date || item.createdAt)}</td><td>${escapeHtml(item.paymentMode || "Cash")}</td><td>${item.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">&#128065;</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${escapeHtml(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">&#11123;</button></span>` : "--"}</td></tr>`).join("");
     const columns = "<th>Plot No.</th><th>Donor Name</th><th>Contribution Type</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
     content = `<div class="category-popup-wrap"><table class="donation-popup-table"><thead><tr>${columns}</tr></thead><tbody>${rows || `<tr><td colspan="${isAuction ? 7 : 6}" class="donor-empty">No ${escapeHtml(label.toLowerCase())} records yet.</td></tr>`}</tbody></table></div>`;
@@ -344,15 +345,17 @@ document.addEventListener("click", async (event) => {
       : label === "Total expenditure"
         ? "Expenditure details"
         : "Balance details";
-  if (label === "Total donations")
-    content = data.donations.length
-      ? data.donations
+  if (label === "Total donations") {
+    const regularDonations = data.donations.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType));
+    content = regularDonations.length
+      ? regularDonations
           .map(
             (item) =>
               `<div class="finance-detail"><span>${item.donorName}<small>${date(item.date)} · ${item.paymentMode || "Cash"}</small></span><strong>${money(item.amount)}</strong></div>`,
           )
           .join("")
       : '<p class="muted">No donations recorded yet.</p>';
+  }
   if (label === "Total expenditure")
     content = data.expenses.length
       ? `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${data.expenses.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("")}</tbody></table></div>`
