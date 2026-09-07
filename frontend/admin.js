@@ -604,10 +604,12 @@ async function loadAdmin() {
   if (contactForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = contactForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
   const expenseResponse = await api("/expenses");
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
+  const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && item.contributionType !== "Ganesh Idol Sponsor").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   document.getElementById("adminStats").innerHTML = [
-    ["Donations", adminDonations.filter(item => item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0)],
-    ["Expenses", adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)],
-    ["Balance", adminDonations.filter(item => item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0) - adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)],
+    ["Donations", adminTotalDonations],
+    ["Expenses", adminTotalExpenses],
+    ["Balance", adminTotalDonations - adminTotalExpenses],
   ]
     .map(
       ([a, b]) =>
