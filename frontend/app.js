@@ -192,6 +192,7 @@ async function loadPortal() {
       .join("") || "<p>Committee details coming soon.</p>";
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
   renderPublicDonors(data.donations);
+  renderSpecialContributionTables(data.donations);
 }
 loadPortal();
 setInterval(loadPortal, 15000);
@@ -213,6 +214,17 @@ function renderPublicDonors(items) {
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" aria-label="Previous page" title="Previous page" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>‹</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" aria-label="Next page" title="Next page" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>›</button>`;
+}
+function renderSpecialContributionTables(items) {
+  const safe = value => String(value ?? "--").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const render = (targetId, type, includeType) => {
+    const rows = items.filter(item => item.contributionType === type).sort(sortByPlotNumber);
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    target.innerHTML = `<table class="table align-middle public-donations-table special-contribution-table"><thead><tr><th>Plot No.</th><th>Donor Name</th>${includeType ? "<th>Contribution Type</th>" : ""}<th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th></tr></thead><tbody>${rows.map(item => `<tr><td>${safe(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${safe(item.donorName || "--")}</td>${includeType ? `<td>${safe(item.contributionType)}</td>` : ""}<td class="amount-positive">${money(item.amount)}</td><td>${formatDate(item.date || item.createdAt)}</td><td>${safe(item.paymentMode || "Cash")}</td><td>${item.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${safe(item.receiptNumber)}" title="View receipt" aria-label="View receipt">&#128065;</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${safe(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">&#11123;</button></span>` : "--"}</td></tr>`).join("") || `<tr><td colspan="${includeType ? 7 : 6}" class="donor-empty">No ${type.toLowerCase()} records yet.</td></tr>`}</tbody></table>`;
+  };
+  render("auctionContributionsTable", "Laddu Auction 2025", true);
+  render("sponsorContributionsTable", "Ganesh Idol Sponsor", false);
 }
 function formatDonorDate(value) { return value ? `${formatDate(value)} ${new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "--"; }
 document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
