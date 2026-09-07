@@ -110,7 +110,7 @@ const donationPopupObserver = new MutationObserver(async () => {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
-  const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && item.contributionType !== "Ganesh Idol Sponsor").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const donations = [...data.donations].sort(sortByPlotNumber);
   adminLiveDonations = donations;
