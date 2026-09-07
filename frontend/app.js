@@ -180,7 +180,7 @@ async function loadPortal() {
   ]
     .map(
       ([label, value]) =>
-        `<div class="col-md-4"><div class="stat-card${label === "Current balance" ? " balance-stat" : ""}"><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
+        `<div class="col-md-4"><div class="stat-card${label === "Current balance" ? " balance-stat" : ""}${label === "Laddu Auction 2025" || label === "Ganesh Idol Sponsor 2026" ? " contribution-stat-card" : ""}"${label === "Laddu Auction 2025" ? " data-contribution-type=\"Laddu Auction 2025\"" : label === "Ganesh Idol Sponsor 2026" ? " data-contribution-type=\"Ganesh Idol Sponsor\"" : ""}><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
     )
     .join("");
   document.getElementById("eventsList").innerHTML = data.events.length
@@ -327,8 +327,18 @@ document.addEventListener("click", async (event) => {
   const response = await fetch("/api/public");
   const data = await response.json();
   const label = card.querySelector(".label").textContent;
+  const contributionType = card.dataset.contributionType;
+  const isAuction = contributionType === "Laddu Auction 2025";
+  if (contributionType) {
+    const donations = data.donations.filter(item => item.contributionType === contributionType).sort(sortByPlotNumber);
+    const rows = donations.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td>${isAuction ? `<td>${escapeHtml(item.contributionType)}</td>` : ""}<td class="amount-positive">${money(item.amount)}</td><td>${formatDate(item.date || item.createdAt)}</td><td>${escapeHtml(item.paymentMode || "Cash")}</td><td>${item.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">&#128065;</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${escapeHtml(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">&#11123;</button></span>` : "--"}</td></tr>`).join("");
+    const columns = isAuction ? "<th>Plot No.</th><th>Donor Name</th><th>Contribution Type</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>" : "<th>Plot No.</th><th>Donor Name</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
+    content = `<div class="category-popup-wrap"><table class="donation-popup-table"><thead><tr>${columns}</tr></thead><tbody>${rows || `<tr><td colspan="${isAuction ? 7 : 6}" class="donor-empty">No ${escapeHtml(label.toLowerCase())} records yet.</td></tr>`}</tbody></table></div>`;
+  }
   const title =
-    label === "Total donations"
+    contributionType
+      ? label
+      : label === "Total donations"
       ? "Donation details"
       : label === "Total expenditure"
         ? "Expenditure details"
@@ -363,7 +373,10 @@ document.addEventListener("click", async (event) => {
     });
   }
   modal.querySelector("h3").textContent = title;
-  modal.querySelector(".finance-content").innerHTML = content;
+  const financeContent = modal.querySelector(".finance-content");
+  financeContent.classList.toggle("category-finance-content", Boolean(contributionType));
+  financeContent.closest(".finance-modal-panel")?.classList.toggle("category-finance-panel", Boolean(contributionType));
+  financeContent.innerHTML = content;
   if (label === "Total expenditure") {
     const expenses = data.expenses;
     let expensePage = 0;
