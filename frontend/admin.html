@@ -92,33 +92,6 @@
                 </button>
               </div>
             </div>
-            <form id="donationForm" class="row g-2">
-              <input
-                name="donorName"
-                class="form-control col"
-                placeholder="Donor name"
-                required
-              /><input
-                name="amount"
-                type="number"
-                min="0"
-                class="form-control col"
-                placeholder="Amount"
-                required
-              /><input
-                name="mobile"
-                class="form-control col"
-                placeholder="Mobile"
-              /><select name="contributionType" class="form-select col">
-                <option value="Regular Donation">Regular Donation</option>
-                <option value="Laddu Auction 2025">Laddu Auction 2025</option>
-                <option value="Ganesh Idol Sponsor">Ganesh Idol Sponsor</option>
-              </select><input name="itemName" class="form-control col contribution-extra contribution-auction" placeholder="Item name" hidden><input name="winningBidAmount" type="number" min="0" class="form-control col contribution-extra contribution-auction" placeholder="Winning bid amount" hidden><input name="sponsorshipAmount" type="number" min="0" class="form-control col contribution-extra contribution-sponsor" placeholder="Sponsorship amount" hidden><input name="sponsorType" class="form-control col contribution-extra contribution-sponsor" placeholder="Sponsor type (optional)" hidden><select name="paymentMode" class="form-select col">
-                <option>Cash</option>
-                <option>UPI</option>
-                <option>Bank transfer</option></select
-              ><button class="btn btn-saffron col-auto">Add donor</button>
-            </form>
             <div class="donor-toolbar"><label class="donor-search">Search contributions <input id="adminDonorSearch" type="search" placeholder="Search by Name, Plot No., Mobile or Amount..." /></label><label class="donor-filter">Payment mode <select id="adminPaymentFilter"><option value="">All</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label class="donor-rows">Rows per page <select id="adminDonorRows"><option selected>10</option><option>25</option><option>50</option><option>100</option><option value="all">All</option></select></label><button type="button" class="btn btn-saffron" id="showDonorForm">+ Add Contribution</button></div>
             <div id="adminDonorPagination" class="pagination-panel"></div>
             <div id="donationAdminList" class="admin-list"></div>
