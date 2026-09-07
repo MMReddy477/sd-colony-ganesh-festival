@@ -513,70 +513,55 @@ function showPublicReceiptPreview(receiptNumber) {
     modal = document.createElement("div");
     modal.id = "publicReceiptPreviewModal";
     modal.className = "receipt-preview-modal";
-    modal.innerHTML = `<div class="receipt-preview-panel" role="dialog" aria-modal="true" aria-label="Receipt preview"><div class="receipt-preview-header"><strong>Receipt Preview</strong><span class="receipt-preview-number"></span><button type="button" class="receipt-close" aria-label="Close receipt preview">×</button></div><div class="receipt-preview-box"><img class="receipt-preview-image" alt="Donation receipt"></div></div>`;
+    modal.innerHTML = `<div class="receipt-preview-panel" role="dialog" aria-modal="true" aria-label="Receipt preview"><div class="receipt-preview-header"><strong>Receipt Preview</strong><span class="receipt-preview-number"></span><button type="button" class="receipt-close" aria-label="Close receipt preview">×</button></div><div class="receipt-preview-box"><img class="receipt-preview-image" alt="Donation receipt"></div><div class="receipt-preview-footer"><button type="button" class="btn btn-dark-red public-receipt-download" data-download-public-receipt title="Download receipt">Download Receipt</button></div></div>`;
     document.body.appendChild(modal);
     modal.addEventListener("click", event => { if (event.target === modal || event.target.closest(".receipt-close")) modal.classList.remove("is-open"); });
   }
   modal.querySelector(".receipt-preview-number").textContent = receiptNumber;
   modal.querySelector(".receipt-preview-image").src = "/api/receipts/" + encodeURIComponent(receiptNumber) + "/image.svg?refresh=" + Date.now();
   modal.querySelector(".receipt-preview-image").alt = "Donation receipt " + receiptNumber;
+  modal.querySelector("[data-download-public-receipt]").dataset.receiptNumber = receiptNumber;
   modal.classList.add("is-open");
 }
-document.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-public-receipt]");
-  if (!button || !button.dataset.publicReceipt) return;
-  event.preventDefault();
-  showPublicReceiptPreview(button.dataset.publicReceipt);
-  return;
+async function downloadPublicReceipt(receiptNumber, button) {
+  const originalLabel = button.textContent;
+  const resetButton = message => { button.disabled = false; button.textContent = originalLabel; if (message) alert(message); };
+  button.disabled = true;
+  button.textContent = "Preparing...";
   try {
-    const response = await fetch(
-      "/api/receipts/" +
-        encodeURIComponent(button.dataset.publicReceipt) +
-        "/image.svg",
-    );
+    const response = await fetch("/api/receipts/" + encodeURIComponent(receiptNumber) + "/image.svg");
     if (!response.ok) throw new Error("Receipt unavailable");
-    const sourceUrl = URL.createObjectURL(
-      new Blob([await response.text()], { type: "image/svg+xml" }),
-    );
+    const sourceUrl = URL.createObjectURL(new Blob([await response.text()], { type: "image/svg+xml" }));
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = 2121;
-      canvas.height = 1500;
-      canvas
-        .getContext("2d")
-        .drawImage(image, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(
-        (jpg) => {
-          if (!jpg) {
-            alert("Unable to create receipt image");
-            button.disabled = false;
-            return;
-          }
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(jpg);
-          const donation = data.donations.find((item) => item.receiptNumber === button.dataset.publicReceipt) || {};
-          const safePart = (value, fallback) => String(value || fallback).trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || fallback;
-          link.download = `${safePart(donation.flatNumber, "Receipt")}_${safePart(donation.donorName, button.dataset.publicReceipt)}.jpg`;
-          link.click();
-          setTimeout(() => {
-            URL.revokeObjectURL(link.href);
-            URL.revokeObjectURL(sourceUrl);
-            button.disabled = false;
-          }, 1000);
-        },
-        "image/jpeg",
-        0.92,
-      );
+      canvas.width = 1536;
+      canvas.height = 2304;
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(jpg => {
+        URL.revokeObjectURL(sourceUrl);
+        if (!jpg) return resetButton("Unable to create receipt image");
+        const donation = publicDonorRows.find(item => item.receiptNumber === receiptNumber) || {};
+        const safePart = (value, fallback) => String(value || fallback).trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || fallback;
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(jpg);
+        link.download = `${safePart(donation.flatNumber, "Receipt")}_${safePart(donation.donorName, receiptNumber)}.jpg`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        resetButton();
+      }, "image/jpeg", 0.92);
     };
-    image.onerror = () => {
-      URL.revokeObjectURL(sourceUrl);
-      button.disabled = false;
-      alert("Unable to create receipt image");
-    };
+    image.onerror = () => { URL.revokeObjectURL(sourceUrl); resetButton("Unable to create receipt image"); };
     image.src = sourceUrl;
   } catch (error) {
-    button.disabled = false;
-    alert(error.message);
+    resetButton(error.message);
   }
+}
+document.addEventListener("click", event => {
+  const downloadButton = event.target.closest("[data-download-public-receipt]");
+  if (downloadButton) return downloadPublicReceipt(downloadButton.dataset.receiptNumber, downloadButton);
+  const viewButton = event.target.closest("[data-public-receipt]");
+  if (!viewButton || !viewButton.dataset.publicReceipt) return;
+  event.preventDefault();
+  showPublicReceiptPreview(viewButton.dataset.publicReceipt);
 });
