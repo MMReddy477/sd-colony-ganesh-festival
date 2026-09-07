@@ -40,8 +40,14 @@ app.get('/phonepe-qr.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..
 app.get('/ganesh-logo.png', (_req, res) => res.sendFile(path.join(__dirname, '..', 'ganesh-logo.png')));
 app.get('/GaneshIdol_detail.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'GaneshIdol_detail.jpeg')));
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'ganesh-utsav' }));
+app.use('/api', (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) return res.status(503).json({ error: 'Database unavailable' });
+  next();
+});
 app.use('/api', api);
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html')));
+
+app.listen(port, () => console.log(`Ganesh Utsav running on http://localhost:${port}`));
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ganesh_utsav')
   .then(async () => {
@@ -52,9 +58,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ganesh_ut
       { username, password: await bcrypt.hash(password, 12), role: 'admin' },
       { upsert: true, setDefaultsOnInsert: true }
     );
-    app.listen(port, () => console.log(`Ganesh Utsav running on http://localhost:${port}`));
   })
   .catch((error) => {
-    console.error('MongoDB connection failed:', error.message);
-    process.exit(1);
+    console.error('MongoDB connection failed; database features are unavailable:', error.message);
   });

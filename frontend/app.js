@@ -166,7 +166,7 @@ async function loadPortal() {
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
   const upiPanel = document.getElementById("upiPaymentPanel");
-  if (upiPanel) { upiPanel.hidden = false; upiPanel.innerHTML = `<div><p class="eyebrow">Digital offering</p><h3>Pay by PhonePe</h3><p>Scan this QR code to make a contribution${contact.upiId ? ` or use <strong>UPI ID: ${contact.upiId}</strong>` : ""}.</p></div><img src="/phonepe-qr.jpeg" alt="PhonePe payment QR code for Suryodaya Colony Welfare Association">`; }
+  if (upiPanel) { upiPanel.hidden = false; upiPanel.innerHTML = `<div><p class="eyebrow">Digital offering</p><h3>Pay by PhonePe</h3><p>Scan this QR code to make a contribution${contact.upiId ? ` or use <strong>UPI ID: ${contact.upiId}</strong>` : ""}.</p></div><img class="upi-qr-image" src="${contact.qrData || "/phonepe-qr.jpeg"}" alt="PhonePe payment QR code${contact.upiId ? ` for ${escapeHtml(contact.upiId)}` : ""}" decoding="async">`; }
   document.title = data.committeeName;
   document.getElementById("heroDonations").textContent = money(
     data.stats.totalDonations,
@@ -212,8 +212,8 @@ function renderPublicDonors(items) {
   const filtered = publicDonorRows.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber} ${item.contributionType} ${item.itemName}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Contribution Type</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
-  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(normalizePlotNumber(d.flatNumber) || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Contribution Type">${safe(d.contributionType || "Regular Donation")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Date">${formatDate(d.date || d.createdAt)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}" title="View receipt" aria-label="View receipt">&#128065;</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${safe(d.receiptNumber)}" title="Download receipt" aria-label="Download receipt">&#11123;</button></span>` : "--"}</td></tr>`).join("") || '<tr><td colspan="7" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
+  document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(normalizePlotNumber(d.flatNumber) || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Date">${formatDate(d.date || d.createdAt)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Actions">${d.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}" title="View receipt" aria-label="View receipt">&#128065;</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${safe(d.receiptNumber)}" title="Download receipt" aria-label="Download receipt">&#11123;</button></span>` : "--"}</td></tr>`).join("") || '<tr><td colspan="6" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" aria-label="Previous page" title="Previous page" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>‹</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" aria-label="Next page" title="Next page" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>›</button>`;
@@ -315,10 +315,10 @@ if (contactDetails) {
 }
 document.addEventListener("DOMContentLoaded", () => {
   fetch("/api/public")
-    .then((response) => response.json())
+    .then((response) => response.ok ? response.json() : null)
     .then((data) => {
       const list = document.getElementById("membersList");
-      if (!list) return;
+      if (!list || !data?.members) return;
       list.innerHTML = `<div class="member-table-wrap"><table class="member-table"><thead><tr><th>Name</th><th>Designation</th><th>Mobile number</th></tr></thead><tbody>${data.members.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.designation || "--"}</td><td>${item.mobile || "--"}</td></tr>`).join("") || '<tr><td colspan="3">Committee details coming soon.</td></tr>'}</tbody></table></div>`;
     });
 });
@@ -539,7 +539,7 @@ function showPublicReceiptPreview(receiptNumber) {
     modal = document.createElement("div");
     modal.id = "publicReceiptPreviewModal";
     modal.className = "receipt-preview-modal";
-    modal.innerHTML = `<div class="receipt-preview-panel" role="dialog" aria-modal="true" aria-label="Receipt preview"><div class="receipt-preview-header"><strong>Receipt Preview</strong><span class="receipt-preview-number"></span><button type="button" class="receipt-close" aria-label="Close receipt preview">×</button></div><div class="receipt-preview-box"><img class="receipt-preview-image" alt="Donation receipt"></div><div class="receipt-preview-footer"><button type="button" class="btn btn-dark-red public-receipt-download" data-download-public-receipt title="Download receipt">Download Receipt</button></div></div>`;
+    modal.innerHTML = `<div class="receipt-preview-panel" role="dialog" aria-modal="true" aria-label="Receipt preview"><div class="receipt-preview-header"><strong>Receipt Preview</strong><span class="receipt-preview-number"></span><button type="button" class="receipt-close" aria-label="Close receipt preview">×</button></div><div class="receipt-preview-box"><img class="receipt-preview-image" alt="Donation receipt"></div><div class="receipt-preview-footer"><button type="button" class="btn btn-dark-red public-receipt-download" data-download-public-receipt title="Download receipt"><span aria-hidden="true">&#11123;</span> Download Receipt</button></div></div>`;
     document.body.appendChild(modal);
     modal.addEventListener("click", event => { if (event.target === modal || event.target.closest(".receipt-close")) modal.classList.remove("is-open"); });
   }
