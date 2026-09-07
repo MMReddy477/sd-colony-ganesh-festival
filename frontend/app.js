@@ -166,7 +166,7 @@ async function loadPortal() {
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
   const upiPanel = document.getElementById("upiPaymentPanel");
-  if (upiPanel && contact.upiId) { upiPanel.hidden = false; upiPanel.innerHTML = `<div><p class="eyebrow">Digital offering</p><h3>Pay by UPI</h3><p>Scan the QR code or use <strong>UPI ID: ${contact.upiId}</strong></p></div><img src="${contact.qrData}" alt="UPI payment QR code for ${contact.upiId}">`; }
+  if (upiPanel) { upiPanel.hidden = false; upiPanel.innerHTML = `<div><p class="eyebrow">Digital offering</p><h3>Pay by PhonePe</h3><p>Scan this QR code to make a contribution${contact.upiId ? ` or use <strong>UPI ID: ${contact.upiId}</strong>` : ""}.</p></div><img src="/phonepe-qr.jpeg" alt="PhonePe payment QR code for Suryodaya Colony Welfare Association">`; }
   document.title = data.committeeName;
   document.getElementById("heroDonations").textContent = money(
     data.stats.totalDonations,
