@@ -209,7 +209,7 @@ function renderPublicDonors(items) {
   publicDonorRows = [...items].sort(sortByPlotNumber);
   const query = document.getElementById("publicDonorSearch")?.value.toLowerCase() || "";
   const mode = document.getElementById("publicPaymentFilter")?.value || "";
-  const filtered = publicDonorRows.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType) && `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
+  const filtered = publicDonorRows.filter(item => `${item.flatNumber} ${item.donorName} ${item.amount} ${item.paymentMode} ${item.receiptNumber} ${item.contributionType} ${item.itemName}`.toLowerCase().includes(query) && (!mode || item.paymentMode === mode));
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Contribution Type</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
