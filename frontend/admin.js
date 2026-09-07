@@ -601,7 +601,6 @@ async function loadAdmin() {
     ["Donations", d.stats.totalDonations],
     ["Expenses", d.stats.totalExpenses],
     ["Balance", d.stats.balance],
-    ["Bills uploaded", d.stats.billsUploaded || 0],
   ]
     .map(
       ([a, b]) =>
