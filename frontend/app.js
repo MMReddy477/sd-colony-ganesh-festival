@@ -329,6 +329,7 @@ document.addEventListener("click", async (event) => {
   const label = card.querySelector(".label").textContent;
   const contributionType = card.dataset.contributionType;
   const isAuction = contributionType === "Laddu Auction 2025";
+  let content = "";
   if (contributionType) {
     const donations = data.donations.filter(item => item.contributionType === contributionType).sort(sortByPlotNumber);
     const rows = donations.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td>${isAuction ? `<td>${escapeHtml(item.contributionType)}</td>` : ""}<td class="amount-positive">${money(item.amount)}</td><td>${formatDate(item.date || item.createdAt)}</td><td>${escapeHtml(item.paymentMode || "Cash")}</td><td>${item.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">&#128065;</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${escapeHtml(item.receiptNumber)}" title="Download receipt" aria-label="Download receipt">&#11123;</button></span>` : "--"}</td></tr>`).join("");
@@ -343,7 +344,6 @@ document.addEventListener("click", async (event) => {
       : label === "Total expenditure"
         ? "Expenditure details"
         : "Balance details";
-  let content = "";
   if (label === "Total donations")
     content = data.donations.length
       ? data.donations
