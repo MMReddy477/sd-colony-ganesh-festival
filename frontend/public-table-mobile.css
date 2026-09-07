@@ -54,4 +54,21 @@
     color: var(--ink) !important;
     font-weight: 400 !important;
   }
+
+  .section-light .public-donations-table tbody tr {
+    height: 44px !important;
+  }
+
+  .section-light .public-donations-table tbody td {
+    height: 44px !important;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle !important;
+  }
+
+  .section-light .public-donations-table tbody td:nth-child(6) {
+    overflow: visible;
+    text-overflow: clip;
+  }
 }
