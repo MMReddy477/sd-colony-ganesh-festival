@@ -110,6 +110,8 @@ const donationPopupObserver = new MutationObserver(async () => {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
+  const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const donations = [...data.donations].sort(sortByPlotNumber);
   adminLiveDonations = donations;
   const pageSize = 10;
@@ -151,9 +153,8 @@ document.addEventListener("click", async (event) => {
         : "Balance details";
   let content = "";
   if (label === "Donations") {
-    const regularDonations = data.donations.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType));
-    content = regularDonations.length
-      ? regularDonations
+    content = adminDonations.length
+      ? adminDonations
           .map(
             (item) =>
               `<div class="finance-detail"><span>${item.flatNumber || "--"} · ${item.donorName}<small>${item.mobile || "--"} · ${item.paymentMode || "--"} · ${formatDate(item.createdAt || item.date)}</small></span><strong>${money(item.amount)}</strong></div>`,
@@ -166,7 +167,7 @@ document.addEventListener("click", async (event) => {
       ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th><th>Bill</th><th>Action</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}" title="View bill" aria-label="View bill">📄</button>` : "--"}</td><td><button class="admin-icon-btn" data-edit-record="expense:${item._id}" title="Edit expense" aria-label="Edit expense">✎</button> <button class="admin-icon-btn delete-btn" data-delete="/expenses/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenses recorded yet.</p>';
   if (label === "Balance")
-    content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div class="balance-result"><span>Current balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
+    content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(adminTotalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(adminTotalExpenses)}</strong></div><div class="balance-result"><span>Current balance</span><strong>${money(adminTotalDonations - adminTotalExpenses)}</strong></div></div>`;
   let modal = document.getElementById("adminFinanceModal");
   if (!modal) {
     modal = document.createElement("div");
@@ -600,9 +601,9 @@ async function loadAdmin() {
   const expenseResponse = await api("/expenses");
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   document.getElementById("adminStats").innerHTML = [
-    ["Donations", d.stats.totalDonations],
-    ["Expenses", d.stats.totalExpenses],
-    ["Balance", d.stats.balance],
+    ["Donations", adminDonations.filter(item => item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0)],
+    ["Expenses", adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)],
+    ["Balance", adminDonations.filter(item => item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0) - adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)],
   ]
     .map(
       ([a, b]) =>
