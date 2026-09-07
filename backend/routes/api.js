@@ -30,7 +30,7 @@ router.get('/receipts/:number/image.svg', async (req, res) => {
   const receiptNumber = receipt?.receiptNumber || donation.receiptNumber || req.params.number;
   const dateText = displayDate(donation.date || Date.now());
   const amount = Number(donation.amount || 0).toLocaleString('en-IN');
-  const logoData = fs.readFileSync(path.join(__dirname, '..', '..', 'ganesh-logo.png')).toString('base64');
+  const logoData = fs.readFileSync(path.join(__dirname, '..', '..', 'ganesh-logo.png'), 'base64');
   const esc = value => svgText(value || 'Not provided');
   const donorRows = `<line x1="110" y1="483" x2="650" y2="483" stroke="#d4af37" stroke-width="2"/><text x="110" y="515" font-family="Arial,sans-serif" font-size="15" fill="#7a1f1f">&#128100; Donor Name : <tspan fill="#222" font-weight="700">${esc(donation.donorName)}</tspan></text><text x="110" y="552" font-family="Arial,sans-serif" font-size="15" fill="#7a1f1f">&#127968; Flat Number : <tspan fill="#222">${esc(donation.flatNumber)}</tspan></text><text x="110" y="589" font-family="Arial,sans-serif" font-size="15" fill="#7a1f1f">&#128241; Mobile Number : <tspan fill="#222">${esc(donation.mobile)}</tspan></text>`;
   const contributionRows = `<line x1="764" y1="483" x2="1304" y2="483" stroke="#d4af37" stroke-width="2"/><text x="764" y="515" font-family="Arial,sans-serif" font-size="15" fill="#7a1f1f">&#128176; Amount : <tspan fill="#0f7b4d" font-weight="700">&#8377; ${amount}</tspan></text><text x="764" y="552" font-family="Arial,sans-serif" font-size="15" fill="#7a1f1f">&#128179; Payment Mode : <tspan fill="#222">${esc(donation.paymentMode || 'Cash')}</tspan></text>`;
