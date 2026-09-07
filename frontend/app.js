@@ -209,7 +209,7 @@ function renderPublicDonors(items) {
   const size = publicDonorPageSize; const visible = size === "all" ? filtered : filtered.slice(publicDonorPage * size, (publicDonorPage + 1) * size);
   const safe = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   document.querySelector("#donationsList").closest("table").querySelector("thead tr").innerHTML = "<th>Plot No.</th><th>Donor Name</th><th>Date</th><th>Amount</th><th>Payment Mode</th><th>Actions</th>";
-  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(normalizePlotNumber(d.flatNumber) || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Date">${formatDate(d.date || d.createdAt)}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}" title="View receipt" aria-label="View receipt">👁</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="6" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
+  document.getElementById("donationsList").innerHTML = visible.map(d => `<tr><td data-label="Plot No.">${safe(normalizePlotNumber(d.flatNumber) || "--")}</td><td data-label="Donor Name">${safe(d.donorName || "--")}</td><td data-label="Date">${formatDate(d.date || d.createdAt)}</td><td data-label="Amount" class="amount-positive">${money(d.amount)}</td><td data-label="Payment Mode"><span class="payment-badge payment-${(d.paymentMode || "cash").toLowerCase().replace(/\s+/g, "-")}">${safe(d.paymentMode || "Cash")}</span></td><td data-label="Receipt">${d.receiptNumber ? `<span class="public-receipt-actions"><button class="receipt-action" type="button" data-public-receipt="${safe(d.receiptNumber)}" title="View receipt" aria-label="View receipt">View</button><button class="receipt-action public-receipt-row-download" type="button" data-public-download="${safe(d.receiptNumber)}" title="Download receipt" aria-label="Download receipt">Download</button></span>` : "--"}</td></tr>`).join("") || '<tr><td colspan="6" class="donor-empty">🐘 No supporters found.<br><small>Try another name or plot number.</small></td></tr>';
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" aria-label="Previous page" title="Previous page" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>‹</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" aria-label="Next page" title="Next page" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>›</button>`;
@@ -523,6 +523,8 @@ function showPublicReceiptPreview(receiptNumber) {
   modal.querySelector("[data-download-public-receipt]").dataset.receiptNumber = receiptNumber;
   modal.classList.add("is-open");
 }
+function viewReceipt(receiptNumber) { showPublicReceiptPreview(receiptNumber); }
+function downloadReceipt(receiptNumber, button) { return downloadPublicReceipt(receiptNumber, button); }
 async function downloadPublicReceipt(receiptNumber, button) {
   const originalLabel = button.textContent;
   const resetButton = message => { button.disabled = false; button.textContent = originalLabel; if (message) alert(message); };
@@ -558,10 +560,12 @@ async function downloadPublicReceipt(receiptNumber, button) {
   }
 }
 document.addEventListener("click", event => {
+  const rowDownload = event.target.closest("[data-public-download]");
+  if (rowDownload) return downloadReceipt(rowDownload.dataset.publicDownload, rowDownload);
   const downloadButton = event.target.closest("[data-download-public-receipt]");
   if (downloadButton) return downloadPublicReceipt(downloadButton.dataset.receiptNumber, downloadButton);
   const viewButton = event.target.closest("[data-public-receipt]");
   if (!viewButton || !viewButton.dataset.publicReceipt) return;
   event.preventDefault();
-  showPublicReceiptPreview(viewButton.dataset.publicReceipt);
+  viewReceipt(viewButton.dataset.publicReceipt);
 });
