@@ -180,7 +180,7 @@ async function loadPortal() {
   ]
     .map(
       ([label, value]) =>
-        `<div class="col-md-4"><div class="stat-card${label === "Current balance" ? " balance-stat" : ""}${label === "Laddu Auction 2025" || label === "Ganesh Idol Sponsor 2026" ? " contribution-stat-card" : ""}"${label === "Laddu Auction 2025" ? " data-contribution-type=\"Laddu Auction 2025\"" : label === "Ganesh Idol Sponsor 2026" ? " data-contribution-type=\"Ganesh Idol Sponsor\"" : ""}><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
+        `<div class="col-md-4"><div class="stat-card${label === "Current balance" ? " balance-stat" : ""}${label === "Laddu Auction 2025" || label === "Ganesh Idol Sponsor 2026" ? " contribution-stat-card" : ""}"${label === "Laddu Auction 2025" ? " data-contribution-type=\"Laddu Auction 2025\" role=\"button\" tabindex=\"0\" aria-label=\"View Laddu Auction 2025 contributions\"" : label === "Ganesh Idol Sponsor 2026" ? " data-contribution-type=\"Ganesh Idol Sponsor\" role=\"button\" tabindex=\"0\" aria-label=\"View Ganesh Idol Sponsor 2026 contributions\"" : ""}><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
     )
     .join("");
   document.getElementById("eventsList").innerHTML = data.events.length
@@ -391,6 +391,13 @@ document.addEventListener("click", async (event) => {
     renderExpenses();
   }
   modal.classList.add("is-open");
+});
+document.addEventListener("keydown", event => {
+  const card = event.target.closest?.(".contribution-stat-card");
+  if (card && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    card.click();
+  }
 });
 const teluguText = {
   gallery: "గ్యాలరీ",
