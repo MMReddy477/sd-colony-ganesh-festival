@@ -53,11 +53,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ganesh_ut
   .then(async () => {
     const username = process.env.ADMIN_USERNAME || 'admin';
     const password = process.env.ADMIN_PASSWORD || 'change-me-now';
-    await User.findOneAndUpdate(
-      { username },
-      { username, password: await bcrypt.hash(password, 12), role: 'admin' },
-      { upsert: true, setDefaultsOnInsert: true }
-    );
+    const existingUser = await User.findOne({ username });
+    if (!existingUser) {
+      await User.create({ username, password: await bcrypt.hash(password, 12), role: 'admin' });
+    }
   })
   .catch((error) => {
     console.error('MongoDB connection failed; database features are unavailable:', error.message);
