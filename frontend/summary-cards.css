@@ -1,0 +1,95 @@
+.summary-container {
+  display: grid;
+  grid-template-columns: 1.15fr repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.summary-container .balance-card,
+.summary-container .summary-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffaf2;
+  box-shadow: 0 8px 20px #4b1d2512;
+}
+
+.summary-container .balance-card h3,
+.summary-container .summary-card h4 {
+  margin: 0 0 .65rem;
+  color: var(--red);
+  text-align: center;
+}
+
+.summary-container .formula {
+  min-height: 2.5rem;
+  margin: 0;
+  color: #806a60;
+  font-size: .78rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.summary-container .amount,
+.summary-container .total {
+  display: block;
+  margin: .75rem 0;
+  color: #0f7b4d;
+  font-size: 1.7rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.summary-container .mini-table {
+  width: 100%;
+  margin: .25rem 0 0;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+
+.summary-container .mini-table th,
+.summary-container .mini-table td {
+  padding: .55rem .45rem;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.summary-container .mini-table th:last-child,
+.summary-container .mini-table td:last-child {
+  text-align: right;
+}
+
+.summary-container .summary-empty {
+  color: #806a60;
+  font-size: .75rem;
+  text-align: center !important;
+}
+
+.summary-container .view-btn {
+  display: block;
+  margin: 1rem auto 0;
+  padding: .55rem .9rem;
+  border-radius: 6px;
+  background: #f5e6c8;
+  color: var(--red);
+  font-size: .82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.summary-container .summary-card .view-btn {
+  margin-top: auto;
+}
+
+@media (max-width: 800px) {
+  .summary-container {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-container .formula {
+    min-height: 0;
+  }
+}

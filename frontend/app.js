@@ -172,18 +172,26 @@ async function loadPortal() {
     data.stats.totalDonations,
   );
   const contributionTotal = type => type === "Laddu Auction 2025" && data.stats.ladduAuctionTotal != null ? data.stats.ladduAuctionTotal : data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  document.getElementById("stats").innerHTML = [
-    ["Total donations", data.stats.totalDonations],
-    ["Total expenditure", data.stats.totalExpenses],
-    ["Current balance", data.stats.balance],
-    ["Laddu Auction 2025", contributionTotal("Laddu Auction 2025")],
-    ["Ganesh Idol Sponsor 2026", contributionTotal("Ganesh Idol Sponsor")],
-  ]
-    .map(
-      ([label, value]) =>
-        `<div class="col-md-4"><div class="stat-card${label === "Current balance" ? " balance-stat" : ""}${label === "Laddu Auction 2025" || label === "Ganesh Idol Sponsor 2026" ? " contribution-stat-card" : ""}"${label === "Laddu Auction 2025" ? " data-contribution-type=\"Laddu Auction 2025\" role=\"button\" tabindex=\"0\" aria-label=\"View Laddu Auction 2025 contributions\"" : label === "Ganesh Idol Sponsor 2026" ? " data-contribution-type=\"Ganesh Idol Sponsor\" role=\"button\" tabindex=\"0\" aria-label=\"View Ganesh Idol Sponsor 2026 contributions\"" : ""}><span class="label">${label}</span><strong>${money(value)}</strong></div></div>`,
-    )
-    .join("");
+  const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
+  const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => `<tr><td>${escapeHtml(item.donorName || "--")}</td><td>${money(item.amount)}</td></tr>`).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
+  document.getElementById("stats").innerHTML = `
+    <article class="balance-card stat-card balance-stat" role="button" tabindex="0" aria-label="View balance details">
+      <h3>Remaining Balance</h3>
+      <p class="formula">General Donations + Laddu Auction (Ganesh Utsav 2025) - Event Expenditure</p>
+      <strong class="amount">${money(data.stats.balance)}</strong>
+    </article>
+    <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Laddu Auction 2025" role="button" tabindex="0" aria-label="View Laddu Auction 2025 contributions">
+      <h4>Laddu Auction (Ganesh Utsav 2025)</h4>
+      <strong class="total">${money(contributionTotal("Laddu Auction 2025"))}</strong>
+      <table class="mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${summaryRows("Laddu Auction 2025", "No auction records yet.")}</tbody></table>
+      <span class="view-btn">View all</span>
+    </article>
+    <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Ganesh Idol Sponsor" role="button" tabindex="0" aria-label="View Ganesh Idol Sponsorship 2026 contributions">
+      <h4>Ganesh Idol Sponsorship 2026</h4>
+      <strong class="total">${money(contributionTotal("Ganesh Idol Sponsor"))}</strong>
+      <table class="mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${summaryRows("Ganesh Idol Sponsor", "No sponsorship records yet.")}</tbody></table>
+      <span class="view-btn">View all</span>
+    </article>`;
   document.getElementById("eventsList").innerHTML = data.events.length
     ? `<div class="member-table-wrap public-events-table-wrap"><table class="member-table event-table public-events-table"><thead><tr><th>Devotee Name</th><th>Contact Number</th><th>Pooja Type</th><th>Preferred Date</th><th>Preferred Time</th><th>Venue / Location</th><th>Request Status</th><th>Actions</th></tr></thead><tbody>${data.events.map(e => { const status = e.status || "Pending"; return `<tr><td><strong>${e.name || "--"}</strong></td><td>${e.mobile || "--"}</td><td>Ganesh Pooja</td><td>${e.date ? date(e.date) : "--"}</td><td>${e.time || "--"}</td><td>${e.venue || "Between Sirius & Samyukta"}</td><td><span class="ritual-status ritual-status-${status.toLowerCase()}">${status}</span></td><td><span class="ritual-public-action" aria-label="Pooja request details">👁</span></td></tr>`; }).join("")}</tbody></table></div>`
     : "<p>No events announced yet.</p>";
@@ -330,8 +338,9 @@ document.addEventListener("click", async (event) => {
   if (!card) return;
   const response = await fetch("/api/public");
   const data = await response.json();
-  const label = card.querySelector(".label").textContent;
+  const label = card.querySelector(".label")?.textContent || card.querySelector("h3, h4")?.textContent || "";
   const contributionType = card.dataset.contributionType;
+  const isBalance = card.classList.contains("balance-stat");
   const isAuction = contributionType === "Laddu Auction 2025";
   let content = "";
   if (contributionType) {
@@ -363,7 +372,7 @@ document.addEventListener("click", async (event) => {
     content = data.expenses.length
       ? `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${data.expenses.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenditure recorded yet.</p>';
-  if (label === "Current balance")
+  if (isBalance)
     content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div><span>Laddu Auction 2025 <small>(included in balance)</small></span><strong>${money(data.stats.ladduAuctionTotal)}</strong></div><div class="balance-result"><span>Final balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
   let modal = document.getElementById("financeModal");
   if (!modal) {
@@ -399,7 +408,7 @@ document.addEventListener("click", async (event) => {
   modal.classList.add("is-open");
 });
 document.addEventListener("keydown", event => {
-  const card = event.target.closest?.(".contribution-stat-card");
+  const card = event.target.closest?.(".stat-card");
   if (card && (event.key === "Enter" || event.key === " ")) {
     event.preventDefault();
     card.click();
