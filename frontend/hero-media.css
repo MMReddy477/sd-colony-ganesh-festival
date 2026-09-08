@@ -4,7 +4,7 @@
   max-height: none !important;
   aspect-ratio: 1 !important;
   border: 8px solid #fff8edaa !important;
-  border-radius: 50% !important;
+  border-radius: 24px !important;
   overflow: hidden !important;
   transform: rotate(1deg) !important;
   background: #fff8ed !important;
@@ -13,7 +13,7 @@
 .hero.hero-redesign .hero-visual img {
   width: 100% !important;
   height: 100% !important;
-  border-radius: 50% !important;
+  border-radius: 16px !important;
   object-fit: contain !important;
   object-position: center !important;
   background: #fff8ed !important;
