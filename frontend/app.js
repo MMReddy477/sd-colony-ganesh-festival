@@ -398,6 +398,22 @@ document.addEventListener("click", async (event) => {
   financeContent.classList.toggle("category-finance-content", Boolean(contributionType));
   financeContent.closest(".finance-modal-panel")?.classList.toggle("category-finance-panel", Boolean(contributionType));
   financeContent.innerHTML = content;
+  if (isGeneralDonations) {
+    const regularDonations = data.donations.filter(item => !["Laddu Auction 2025", "Ganesh Idol Sponsor"].includes(item.contributionType)).sort(sortByPlotNumber);
+    let donationPage = 0;
+    const renderGeneralDonations = () => {
+      const query = financeContent.querySelector("[data-general-donation-search]")?.value.trim().toLowerCase() || "";
+      const filtered = regularDonations.filter(item => `${item.donorName || ""} ${item.flatNumber || ""} ${item.amount || ""} ${item.paymentMode || ""}`.toLowerCase().includes(query));
+      const pageSize = 10;
+      const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      donationPage = Math.min(donationPage, pages - 1);
+      const visible = filtered.slice(donationPage * pageSize, (donationPage + 1) * pageSize);
+      financeContent.innerHTML = `<div class="public-donation-tools"><label for="generalDonationSearch">Search donor<input id="generalDonationSearch" data-general-donation-search type="search" placeholder="Search by donor, plot or amount" value="${escapeHtml(query)}"></label><span>Showing ${filtered.length ? donationPage * pageSize + 1 : 0}-${Math.min((donationPage + 1) * pageSize, filtered.length)} of ${filtered.length} donations</span></div><div class="donation-popup-wrap"><table class="donation-popup-table"><thead><tr><th>Plot No.</th><th>Donor Name</th><th>Amount</th><th>Payment Mode</th><th>Actions</th></tr></thead><tbody>${visible.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td><strong>${money(item.amount)}</strong></td><td>${escapeHtml(item.paymentMode || "Cash")}</td><td>${item.receiptNumber ? `<button class="receipt-action" type="button" data-public-receipt="${escapeHtml(item.receiptNumber)}" title="View receipt" aria-label="View receipt">👁</button>` : "--"}</td></tr>`).join("") || '<tr><td colspan="5" class="donor-empty">No donations found.</td></tr>'}</tbody></table></div><div class="public-donation-pagination"><button type="button" data-general-donation-page="prev" ${donationPage === 0 ? "disabled" : ""}>‹</button><span>Page ${donationPage + 1} of ${pages}</span><button type="button" data-general-donation-page="next" ${donationPage >= pages - 1 ? "disabled" : ""}>›</button></div>`;
+      financeContent.querySelector("[data-general-donation-search]")?.addEventListener("input", () => { donationPage = 0; renderGeneralDonations(); });
+      financeContent.querySelectorAll("[data-general-donation-page]").forEach(button => button.addEventListener("click", () => { donationPage += button.dataset.generalDonationPage === "next" ? 1 : -1; renderGeneralDonations(); }));
+    };
+    renderGeneralDonations();
+  }
   if (label === "Total expenditure") {
     const expenses = data.expenses;
     let expensePage = 0;
