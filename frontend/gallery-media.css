@@ -1,0 +1,38 @@
+.gallery-item > video,
+.gallery-admin-media > video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #241d1b;
+}
+
+.gallery-admin-media {
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #241d1b;
+}
+
+.gallery-admin-media > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-viewer-video {
+  display: block;
+  width: min(88vw, 1100px);
+  max-height: 70vh;
+  background: #000;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .gallery-viewer-video {
+    width: 92vw;
+    max-height: 65vh;
+  }
+}

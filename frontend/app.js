@@ -247,8 +247,9 @@ function renderGallery(images) {
   galleryImages = images;
   const list = document.getElementById("galleryList");
   if (!list) return;
-  document.getElementById("galleryTotal").textContent = `Total images: ${images.length}`;
-  list.innerHTML = images.map((image, index) => `<figure class="gallery-card"><button class="gallery-item" type="button" data-gallery-index="${index}"><img src="${image.path}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy"><span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select image ${index + 1}"></span></button></figure>`).join("");
+  const isVideo = image => image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
+  document.getElementById("galleryTotal").textContent = `Total media: ${images.length}`;
+  list.innerHTML = images.map((image, index) => { const media = isVideo(image) ? `<video src="${image.path}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>` : `<img src="${image.path}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`; return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`; }).join("");
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
   updateGallerySelection();
@@ -260,8 +261,25 @@ function openGallery(index) {
   galleryIndex = (index + galleryImages.length) % galleryImages.length;
   const image = galleryImages[galleryIndex];
   const viewer = document.getElementById("galleryViewer");
-  document.getElementById("galleryViewerImage").src = image.path;
-  document.getElementById("galleryViewerImage").alt = image.title || "Ganesh Utsav memory";
+  const viewerImage = document.getElementById("galleryViewerImage");
+  const existingVideo = document.getElementById("galleryViewerVideo");
+  const isVideo = image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
+  if (isVideo) {
+    viewerImage.hidden = true;
+    const viewerVideo = existingVideo || document.createElement("video");
+    viewerVideo.id = "galleryViewerVideo";
+    viewerVideo.controls = true;
+    viewerVideo.autoplay = false;
+    viewerVideo.preload = "metadata";
+    viewerVideo.className = "gallery-viewer-video";
+    viewerVideo.src = image.path;
+    if (!existingVideo) viewerImage.parentElement.insertBefore(viewerVideo, viewerImage);
+  } else {
+    existingVideo?.remove();
+    viewerImage.hidden = false;
+    viewerImage.src = image.path;
+    viewerImage.alt = image.title || "Ganesh Utsav memory";
+  }
   document.getElementById("galleryViewerCounter").textContent = `Image ${galleryIndex + 1} of ${galleryImages.length}`;
   document.getElementById("galleryViewerTitle").textContent = image.title || "Ganesh Utsav memory";
   document.getElementById("galleryViewerCaption").textContent = image.caption || "";
@@ -274,6 +292,8 @@ function openGallery(index) {
 function closeGallery() {
   setSlideshow(false);
   const viewer = document.getElementById("galleryViewer");
+  document.getElementById("galleryViewerVideo")?.remove();
+  document.getElementById("galleryViewerImage").hidden = false;
   viewer.classList.remove("is-open");
   viewer.classList.remove("hero-image-viewer");
   viewer.setAttribute("aria-hidden", "true");
@@ -297,13 +317,14 @@ document.addEventListener("click", (event) => {
     return;
   }
   const tile = event.target.closest("[data-gallery-index]");
-  if (tile) openGallery(Number(tile.dataset.galleryIndex));
+  if (tile && !event.target.closest("video") && !event.target.closest(".gallery-select")) openGallery(Number(tile.dataset.galleryIndex));
   if (event.target.closest(".gallery-viewer-close")) closeGallery();
   if (event.target.closest(".gallery-viewer-prev")) openGallery(galleryIndex - 1);
   if (event.target.closest(".gallery-viewer-next")) openGallery(galleryIndex + 1);
   if (event.target === document.getElementById("galleryViewer")) closeGallery();
 });
 document.querySelector("[data-hero-image]")?.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); } });
+document.addEventListener("keydown", (event) => { const tile = event.target.closest?.("[data-gallery-index]"); if (tile && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openGallery(Number(tile.dataset.galleryIndex)); } });
 document.addEventListener("keydown", (event) => {
   const viewer = document.getElementById("galleryViewer");
   if (!viewer.classList.contains("is-open")) return;
