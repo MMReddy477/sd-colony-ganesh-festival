@@ -173,7 +173,7 @@ async function loadPortal() {
   );
   const contributionTotal = type => type === "Laddu Auction 2025" && data.stats.ladduAuctionTotal != null ? data.stats.ladduAuctionTotal : data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
-  const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => `<tr><td>${escapeHtml(item.donorName || "--")}</td><td>${money(item.amount)}</td></tr>`).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
+  const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => { const plot = normalizePlotNumber(item.flatNumber); const donor = item.donorName || "--"; return `<tr><td>${escapeHtml(plot ? `${donor} (${plot})` : donor)}</td><td>${money(item.amount)}</td></tr>`; }).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
   document.getElementById("stats").innerHTML = `
     <article class="summary-card general-donations-card">
       <h4>General Donations</h4>
