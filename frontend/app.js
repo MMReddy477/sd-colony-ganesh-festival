@@ -175,10 +175,15 @@ async function loadPortal() {
   const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
   const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => `<tr><td>${escapeHtml(item.donorName || "--")}</td><td>${money(item.amount)}</td></tr>`).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
   document.getElementById("stats").innerHTML = `
+    <article class="summary-card general-donations-card">
+      <h4>General Donations</h4>
+      <strong class="amount">${money(data.stats.totalDonations)}</strong>
+    </article>
     <article class="balance-card stat-card balance-stat" role="button" tabindex="0" aria-label="View balance details">
       <h3>Remaining Balance</h3>
       <p class="formula">General Donations + Laddu Auction (Ganesh Utsav 2025) - Event Expenditure</p>
       <strong class="amount">${money(data.stats.balance)}</strong>
+      <span class="view-btn">View all</span>
     </article>
     <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Laddu Auction 2025" role="button" tabindex="0" aria-label="View Laddu Auction 2025 contributions">
       <h4>Laddu Auction (Ganesh Utsav 2025)</h4>
