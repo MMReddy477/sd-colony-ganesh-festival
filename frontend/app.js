@@ -175,7 +175,7 @@ async function loadPortal() {
   const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
   const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => { const plot = normalizePlotNumber(item.flatNumber); const donor = item.donorName || "--"; return `<tr><td>${escapeHtml(plot ? `${donor} (${plot})` : donor)}</td><td>${money(item.amount)}</td></tr>`; }).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
   document.getElementById("stats").innerHTML = `
-    <article class="summary-card general-donations-card">
+    <article class="summary-card stat-card general-donations-card" role="button" tabindex="0" aria-label="View general donation details">
       <h4>General Donations</h4>
       <strong class="amount">${money(data.stats.totalDonations)}</strong>
     </article>
@@ -346,6 +346,7 @@ document.addEventListener("click", async (event) => {
   const label = card.querySelector(".label")?.textContent || card.querySelector("h3, h4")?.textContent || "";
   const contributionType = card.dataset.contributionType;
   const isBalance = card.classList.contains("balance-stat");
+  const isGeneralDonations = card.classList.contains("general-donations-card");
   const isAuction = contributionType === "Laddu Auction 2025";
   let content = "";
   if (contributionType) {
@@ -357,12 +358,12 @@ document.addEventListener("click", async (event) => {
   const title =
     contributionType
       ? label
-      : label === "Total donations"
+      : label === "Total donations" || isGeneralDonations
       ? "Donation details"
       : label === "Total expenditure"
         ? "Expenditure details"
         : "Balance details";
-  if (label === "Total donations") {
+  if (label === "Total donations" || isGeneralDonations) {
     const regularDonations = data.donations.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType));
     content = regularDonations.length
       ? regularDonations
