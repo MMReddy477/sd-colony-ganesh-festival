@@ -39,7 +39,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend'), { setHeaders: res
 app.get('/phonepe-qr.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'phonepe-qr.jpeg')));
 app.get('/ganesh-logo.png', (_req, res) => res.sendFile(path.join(__dirname, '..', 'ganesh-logo.png')));
 app.get('/GaneshIdol_detail.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'GaneshIdol_detail.jpeg')));
-app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'ganesh-utsav' }));
+app.get('/api/health', (_req, res) => res.status(mongoose.connection.readyState === 1 ? 200 : 503).json({ ok: mongoose.connection.readyState === 1, service: 'ganesh-utsav', database: mongoose.connection.readyState === 1 ? 'connected' : 'unavailable' }));
 app.use('/api', (req, res, next) => {
   if (mongoose.connection.readyState !== 1) return res.status(503).json({ error: 'Database unavailable' });
   next();

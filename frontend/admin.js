@@ -575,7 +575,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
     if (!response.ok) {
       errorEl.textContent =
-        data.message || "Login failed. Invalid credentials.";
+        data.message || data.error || (response.status === 503 ? "Database unavailable. Please check the server database connection." : "Login failed. Invalid credentials.");
       errorEl.classList.remove("d-none");
       console.error("Login error:", response.status, data);
       return;

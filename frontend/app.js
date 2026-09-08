@@ -159,8 +159,15 @@ setTimeout(() => {
     "Building a brighter Ganesh Utsav together, with transparent giving, joyful traditions, and room for every family.";
 }, 0);
 async function loadPortal() {
-  const response = await fetch("/api/public", { cache: "no-store" });
-  if (!response.ok) return;
+  const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
+  if (!response?.ok) {
+    const stats = document.getElementById("stats");
+    const events = document.getElementById("eventsList");
+    const message = response?.status === 503 ? "Finance records are temporarily unavailable. Please check the database connection." : "Finance records could not be loaded. Please try again shortly.";
+    if (stats) stats.innerHTML = `<p class="portal-data-error" role="alert">${message}</p>`;
+    if (events) events.innerHTML = `<p class="portal-data-error" role="alert">${message}</p>`;
+    return;
+  }
   const data = await response.json();
   const contact = data.contact || {};
   const contactDetails = document.querySelector(".contact-details");

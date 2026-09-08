@@ -95,6 +95,18 @@
   margin-bottom: auto;
 }
 
+.portal-data-error {
+  width: 100%;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #e5b3a9;
+  border-radius: 8px;
+  background: #fff1ef;
+  color: var(--red);
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 800px) {
   .summary-container {
     grid-template-columns: 1fr;
