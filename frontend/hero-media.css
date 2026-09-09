@@ -98,7 +98,7 @@
   line-height: 1.5;
   scrollamount: 2;
   will-change: transform;
-  transform: translateX(-120%);
+  transform: translateX(-125%);
   animation: public-scroll-left 22s linear infinite;
   animation-delay: 0s;
 }
@@ -109,10 +109,10 @@
 
 @keyframes public-scroll-left {
   0% {
-    transform: translateX(-120%);
+    transform: translateX(-125%);
   }
   100% {
-    transform: translateX(120%);
+    transform: translateX(125%);
   }
 }
 
