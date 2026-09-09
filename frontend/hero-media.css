@@ -65,21 +65,21 @@
   overflow: hidden;
   text-align: center;
   white-space: nowrap;
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
 }
 
 .welcome-scroll {
   padding: 10px 0;
   background: rgba(255, 248, 214, .95);
-  color: #8b0000;
+  color: #006400;
   font-weight: 700;
 }
 
 .ritual-scroll {
   padding: 8px 0;
   background: rgba(255, 255, 255, .9);
-  color: #003366;
+  color: #ff6600;
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
 }
@@ -91,6 +91,19 @@
   min-width: 100%;
   font-size: 1rem;
   line-height: 1.5;
+  scrollamount: 2;
+}
+
+marquee {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  line-height: 1.5;
+  scrollamount: 2;
+}
+
+marquee:hover {
+  animation-play-state: paused;
 }
 
 @media (max-width: 991.98px) {
