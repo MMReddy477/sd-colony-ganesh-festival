@@ -117,6 +117,15 @@
   }
 }
 
+@keyframes public-scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
 marquee {
   display: block;
   width: 100%;
@@ -204,7 +213,7 @@ marquee:hover {
   .ritual-scroll span {
     animation: public-scroll-left 24s linear infinite;
     animation-delay: 0s;
-    transform: translateX(0);
+    transform: translateX(100%);
   }
 
   .ritual-scroll span {

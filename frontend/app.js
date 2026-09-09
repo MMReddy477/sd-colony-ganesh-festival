@@ -192,8 +192,9 @@ setTimeout(() => {
 const initializePublicScrolls = () => {
   renderPublicScrolls({ welcomeMessage: defaultPublicWelcomeMessage }, [defaultPublicEvent]);
 };
-document.addEventListener("DOMContentLoaded", initializePublicScrolls);
 initializePublicScrolls();
+document.addEventListener("DOMContentLoaded", initializePublicScrolls, { once: true });
+
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
   if (!response?.ok) {
