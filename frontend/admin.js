@@ -602,6 +602,8 @@ async function loadAdmin() {
   adminEvents = d.events;
   const contactForm = document.getElementById("contactForm");
   if (contactForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = contactForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
+  const welcomeMessage = document.getElementById("welcomeMessage");
+  if (welcomeMessage && d.contact?.welcomeMessage != null) welcomeMessage.value = d.contact.welcomeMessage;
   const expenseResponse = await api("/expenses");
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && item.contributionType !== "Ganesh Idol Sponsor").reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -703,7 +705,11 @@ donorModalForm?.addEventListener("submit", event => { event.preventDefault(); sa
 document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
 document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => String(item._id) === String(button.dataset.editDonation)) || adminLiveDonations.find(item => String(item._id) === String(button.dataset.editDonation)); if (!donation || !donorModalForm) return; document.getElementById("adminFinanceModal")?.classList.remove("is-open"); editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, contributionType: donation.contributionType || "Regular Donation", itemName: donation.itemName, winningBidAmount: donation.winningBidAmount, sponsorshipAmount: donation.sponsorshipAmount, sponsorType: donation.sponsorType, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); updateContributionFields(donorModalForm); document.getElementById("donorModalTitle").textContent = "Edit Donor"; document.getElementById("donorEditContext").textContent = `Editing ${donation.donorName || "Unnamed donor"} · ${donation.flatNumber || "No plot number"}`; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
 function renderGalleryAdmin(items) {
-  document.getElementById("galleryAdminList").innerHTML = items.map((item) => { const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || ""); const media = isVideo ? `<video src="${item.path}" controls preload="metadata" aria-label="${item.originalName || "Gallery video"}"></video>` : `<img src="${item.path}" alt="${item.originalName || "Gallery image"}">`; return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`; }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
+  const fallbackPath = "/GaneshIdol_detail.jpeg";
+  const mediaPath = item => { const value = String(item.path || item.filename || "").trim().replace(/\\/g, "/"); return value ? (value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`) : fallbackPath; };
+  const list = document.getElementById("galleryAdminList");
+  list.innerHTML = items.map((item) => { const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || ""); const media = isVideo ? `<video src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery video"}"></video>` : `<img src="${mediaPath(item)}" alt="${item.originalName || "Gallery image"}">`; return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`; }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
+  list.querySelectorAll(".gallery-admin-media > img").forEach((image) => image.addEventListener("error", () => { image.onerror = null; image.src = fallbackPath; }));
 }
 function renderList(id, items, label, path) {
   const header =
@@ -782,6 +788,19 @@ document.getElementById("contactForm")?.addEventListener("submit", async (event)
   const response = await api("/settings/contact", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData(event.target)) });
   message.textContent = response.ok ? "Contact numbers updated successfully." : ((await response.json().catch(() => ({}))).message || "Could not update contact numbers.");
   message.className = response.ok ? "text-success" : "text-danger";
+});
+document.getElementById("saveWelcomeMessage")?.addEventListener("click", async () => {
+  const field = document.getElementById("welcomeMessage");
+  const message = document.getElementById("scrollSettingsMessage");
+  const response = await api("/settings/scroll", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ welcomeMessage: field?.value || "" }) });
+  if (message) { message.textContent = response.ok ? "Welcome message saved." : "Could not save welcome message."; message.className = response.ok ? "text-success" : "text-danger"; }
+});
+document.getElementById("deleteWelcomeMessage")?.addEventListener("click", async () => {
+  const field = document.getElementById("welcomeMessage");
+  const message = document.getElementById("scrollSettingsMessage");
+  const response = await api("/settings/scroll", { method: "DELETE" });
+  if (response.ok && field) field.value = "";
+  if (message) { message.textContent = response.ok ? "Welcome message deleted." : "Could not delete welcome message."; message.className = response.ok ? "text-success" : "text-danger"; }
 });
 document.getElementById("deleteUpi")?.addEventListener("click", async () => {
   if (!window.confirm("Delete the public UPI ID and QR code?")) return;

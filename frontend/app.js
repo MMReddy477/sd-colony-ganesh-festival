@@ -101,6 +101,25 @@ const sortByPlotNumber = (left, right) => { const parse = value => { const norma
 const sortSpecialContributions = (left, right) => { const parse = value => { const raw = String(value ?? '').trim().replace(/[\s_-]+/g, '').toLowerCase(); const sirius = raw.match(/^(?:sirius|sirus)(\d+)$/); if (sirius) return [0, Number(sirius[1])]; const samyukta = raw.match(/^samyukta(\d+)$/); if (samyukta) return [1, Number(samyukta[1])]; return [2, 0]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); return a[0] - b[0] || a[1] - b[1] || sortByPlotNumber(left, right); };
 const date = (value) =>
   formatDate(value, "Date to be announced");
+function renderPublicScrolls(contact, events) {
+  const welcomeScroll = document.getElementById("welcomeScroll");
+  const welcomeMarquee = document.getElementById("welcomeMarquee");
+  const welcomeMessage = String(contact?.welcomeMessage || "").trim();
+  if (welcomeScroll && welcomeMarquee) {
+    welcomeMarquee.textContent = welcomeMessage;
+    welcomeScroll.hidden = !welcomeMessage;
+  }
+  const ritualScroll = document.getElementById("ritualScroll");
+  const ritualMarquee = document.getElementById("ritualMarquee");
+  const tickerDate = value => { const dateValue = new Date(value); return Number.isNaN(dateValue.getTime()) ? "Date to be announced" : `${String(dateValue.getDate()).padStart(2, "0")}-${dateValue.toLocaleString("en-IN", { month: "short" })}-${dateValue.getFullYear()}`; };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcoming = (events || []).filter(item => item.date && new Date(item.date) >= today && item.status !== "Completed");
+  if (ritualScroll && ritualMarquee) {
+    ritualMarquee.textContent = upcoming.map(item => `${tickerDate(item.date)} - ${item.name || "Devotee"} - ${item.time || "Time to be announced"} - Ganesh Pooja`).join("  |  ");
+    ritualScroll.hidden = upcoming.length === 0;
+  }
+}
 const publicMenuToggle = document.getElementById("publicMenuToggle");
 const publicMenu = document.getElementById("nav");
 publicMenuToggle?.addEventListener("click", () => {
@@ -170,6 +189,7 @@ async function loadPortal() {
   }
   const data = await response.json();
   const contact = data.contact || {};
+  renderPublicScrolls(contact, data.events);
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
   const upiPanel = document.getElementById("upiPaymentPanel");
@@ -250,13 +270,27 @@ let galleryImages = [];
 let galleryIndex = 0;
 let slideshowTimer;
 let slideshowPlaying = false;
+const galleryFallbackPath = "/GaneshIdol_detail.jpeg";
+function galleryMediaPath(image) {
+  const value = String(image?.path || image?.filename || "").trim().replace(/\\/g, "/");
+  if (!value) return galleryFallbackPath;
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+  return value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`;
+}
+function setGalleryImageFallback(event) {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied) return;
+  image.dataset.fallbackApplied = "true";
+  image.src = galleryFallbackPath;
+}
 function renderGallery(images) {
   galleryImages = images;
   const list = document.getElementById("galleryList");
   if (!list) return;
   const isVideo = image => image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
   document.getElementById("galleryTotal").textContent = `Total media: ${images.length}`;
-  list.innerHTML = images.map((image, index) => { const media = isVideo(image) ? `<video src="${image.path}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>` : `<img src="${image.path}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`; return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`; }).join("");
+  list.innerHTML = images.map((image, index) => { const mediaPath = galleryMediaPath(image); const media = isVideo(image) ? `<video src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>` : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`; return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`; }).join("");
+  list.querySelectorAll(".gallery-item > img").forEach((image) => image.addEventListener("error", setGalleryImageFallback));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
   updateGallerySelection();
