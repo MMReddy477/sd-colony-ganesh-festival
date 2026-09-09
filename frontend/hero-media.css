@@ -108,8 +108,9 @@
 
 @media (max-width: 767.98px) {
   .hero.hero-redesign {
+    --public-nav-offset: 264px;
     min-height: 50vh !important;
-    padding: 140px 0 32px !important;
+    padding: 180px 0 32px !important;
     background-attachment: scroll;
   }
 
@@ -155,6 +156,7 @@
 
   .public-scrolls {
     top: var(--public-nav-offset);
+    z-index: 20;
   }
 
   .welcome-scroll span,
