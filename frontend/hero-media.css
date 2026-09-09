@@ -99,28 +99,27 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
 }
 
-.welcome-scroll span,
-.ritual-scroll span {
-  display: inline-block;
-  width: max-content;
+.welcome-scroll marquee,
+.ritual-scroll marquee {
+  display: block;
+  width: 100%;
   min-width: 100%;
   padding-right: 2rem;
   font-size: 1rem;
   line-height: 1.5;
-  scrollamount: 2;
-  will-change: transform;
-  transform: translateX(100%);
-  animation: public-scroll-right 22s linear infinite;
+  white-space: nowrap;
+  overflow: hidden;
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+
+.welcome-scroll marquee {
   animation-delay: 0s;
 }
 
-.welcome-scroll span {
-  animation-delay: 0s;
-}
-
-.ritual-scroll span {
+.ritual-scroll marquee {
   animation-delay: .25s;
-  animation-duration: 22s;
 }
 
 @keyframes public-scroll-right {
