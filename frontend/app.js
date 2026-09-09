@@ -189,7 +189,11 @@ setTimeout(() => {
   message.textContent =
     "Building a brighter Ganesh Utsav together, with transparent giving, joyful traditions, and room for every family.";
 }, 0);
-renderPublicScrolls({ welcomeMessage: defaultPublicWelcomeMessage }, [defaultPublicEvent]);
+const initializePublicScrolls = () => {
+  renderPublicScrolls({ welcomeMessage: defaultPublicWelcomeMessage }, [defaultPublicEvent]);
+};
+document.addEventListener("DOMContentLoaded", initializePublicScrolls);
+initializePublicScrolls();
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
   if (!response?.ok) {
