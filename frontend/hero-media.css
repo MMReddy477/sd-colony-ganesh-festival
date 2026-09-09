@@ -22,7 +22,7 @@
 .hero.hero-redesign {
   min-height: 60vh !important;
   padding: 90px 0 48px !important;
-  background-image: linear-gradient(135deg, #ffcc66 0%, #ff9933 40%, #b30000 100%) !important;
+  background-image: linear-gradient(135deg, #8d2d24 0%, #7a1f1f 52%, #5b1718 100%) !important;
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
@@ -36,7 +36,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgba(255, 248, 214, .12), rgba(75, 23, 24, .2));
+  background: linear-gradient(180deg, rgba(36, 29, 27, .08), rgba(36, 29, 27, .2));
   pointer-events: none;
 }
 

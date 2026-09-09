@@ -104,7 +104,8 @@ const date = (value) =>
 function renderPublicScrolls(contact, events) {
   const welcomeScroll = document.getElementById("welcomeScroll");
   const welcomeMarquee = document.getElementById("welcomeMarquee");
-  const welcomeMessage = String(contact?.welcomeMessage || "").trim();
+  const defaultWelcomeMessage = "🙏 శ్రీ గణేశ చతుర్థి మహోత్సవములకు మీకు హృదయపూర్వక స్వాగతం - సూర్యోదయ కాలనీ 🙏 | 🙏 Heartfelt Welcome to Sri Ganesh Chaturthi Celebrations 2026 - Suryodaya Colony 🙏";
+  const welcomeMessage = String(contact?.welcomeMessage || defaultWelcomeMessage).trim();
   if (welcomeScroll && welcomeMarquee) {
     welcomeMarquee.textContent = welcomeMessage;
     welcomeScroll.hidden = !welcomeMessage;
