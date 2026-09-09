@@ -20,14 +20,16 @@
 }
 
 .hero.hero-redesign {
+  --public-nav-offset: 140px;
   min-height: 60vh !important;
-  padding: 90px 0 48px !important;
+  padding: 220px 0 48px !important;
   background-image: linear-gradient(135deg, #8d2d24 0%, #7a1f1f 52%, #5b1718 100%) !important;
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   isolation: isolate;
+  overflow: visible;
   transition: min-height .5s ease-in-out, padding .5s ease-in-out;
 }
 
@@ -46,7 +48,7 @@
 
 .public-scrolls {
   position: absolute;
-  top: 0;
+  top: var(--public-nav-offset);
   left: 0;
   z-index: 10;
   width: 100%;
@@ -93,7 +95,8 @@
 
 @media (max-width: 991.98px) {
   .hero.hero-redesign {
-    padding: 90px 0 40px !important;
+    --public-nav-offset: 82px;
+    padding: 150px 0 40px !important;
   }
 
   .hero.hero-redesign .hero-visual {
@@ -106,7 +109,7 @@
 @media (max-width: 767.98px) {
   .hero.hero-redesign {
     min-height: 50vh !important;
-    padding: 100px 0 32px !important;
+    padding: 140px 0 32px !important;
     background-attachment: scroll;
   }
 
