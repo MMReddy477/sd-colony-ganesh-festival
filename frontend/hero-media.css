@@ -21,7 +21,7 @@
 
 .hero.hero-redesign {
   min-height: 50vh !important;
-  padding: 64px 0 48px !important;
+  padding: 116px 0 48px !important;
   background-image: linear-gradient(rgba(255, 215, 0, .12), rgba(255, 223, 128, .08)), url('/GaneshIdol_detail.jpeg') !important;
   background-attachment: fixed;
   background-position: center;
@@ -45,7 +45,9 @@
 }
 
 .public-scrolls {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 10;
   width: 100%;
   max-width: none;
@@ -91,7 +93,7 @@
 
 @media (max-width: 991.98px) {
   .hero.hero-redesign {
-    padding: 48px 0 40px !important;
+    padding: 104px 0 40px !important;
   }
 
   .hero.hero-redesign .hero-visual {
@@ -104,7 +106,7 @@
 @media (max-width: 767.98px) {
   .hero.hero-redesign {
     min-height: 40vh !important;
-    padding: 36px 0 32px !important;
+    padding: 96px 0 32px !important;
     background-attachment: scroll;
   }
 
