@@ -19,7 +19,36 @@
   background: #fff8ed !important;
 }
 
+.hero.hero-redesign {
+  min-height: 50vh !important;
+  padding: 64px 0 48px !important;
+  background-image: linear-gradient(rgba(255, 215, 0, .12), rgba(255, 223, 128, .08)), url('/GaneshIdol_detail.jpeg') !important;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  isolation: isolate;
+  transition: min-height .5s ease-in-out, padding .5s ease-in-out;
+}
+
+.hero.hero-redesign::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(255, 248, 214, .3), rgba(75, 23, 24, .28));
+  pointer-events: none;
+}
+
+.hero.hero-redesign .hero-inner {
+  z-index: 1;
+}
+
 @media (max-width: 991.98px) {
+  .hero.hero-redesign {
+    padding: 48px 0 40px !important;
+  }
+
   .hero.hero-redesign .hero-visual {
     width: min(62vw, 380px) !important;
     height: min(62vw, 380px) !important;
@@ -28,6 +57,12 @@
 }
 
 @media (max-width: 767.98px) {
+  .hero.hero-redesign {
+    min-height: 40vh !important;
+    padding: 36px 0 32px !important;
+    background-attachment: scroll;
+  }
+
   .hero.hero-redesign .hero-visual {
     width: min(78vw, 320px) !important;
     height: min(78vw, 320px) !important;
