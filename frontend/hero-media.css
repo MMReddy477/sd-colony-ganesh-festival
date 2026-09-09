@@ -92,7 +92,10 @@
   font-size: 1rem;
   line-height: 1.5;
   scrollamount: 2;
-  animation: public-scroll-left 18s linear infinite;
+  will-change: transform;
+  transform: translateX(0);
+  animation: public-scroll-left 22s linear infinite;
+  animation-delay: 0s;
 }
 
 .ritual-scroll span {
@@ -128,7 +131,7 @@ marquee:hover {
   .hero.hero-redesign {
     --public-nav-offset: 0px;
     min-height: 50vh !important;
-    padding: 270px 0 32px !important;
+    padding: 150px 0 32px !important;
     background-attachment: scroll;
     flex-direction: column;
   }
@@ -179,12 +182,14 @@ marquee:hover {
     left: auto;
     z-index: 20;
     flex: 0 0 auto;
-    margin: 0 0 24px;
+    margin: -10px 0 18px;
   }
 
   .welcome-scroll span,
   .ritual-scroll span {
-    animation: public-scroll-left 20s linear infinite;
+    animation: public-scroll-left 24s linear infinite;
+    animation-delay: 0s;
+    transform: translateX(0);
   }
 
   .ritual-scroll span {

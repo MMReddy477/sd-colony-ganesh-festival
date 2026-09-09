@@ -95,6 +95,14 @@ const formatExpenseDate = value => {
   return formatDate(parsed);
 };
 const formatExpenseTime = value => value ? new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--";
+const defaultPublicWelcomeMessage = "🙏 శ్రీ గణేశ చతుర్థి మహోత్సవములకు మీకు హృదయపూర్వక స్వాగతం - సూర్యోదయ కాలనీ 🙏 | 🙏 Heartfelt Welcome to Sri Ganesh Chaturthi Celebrations 2026 - Suryodaya Colony 🙏";
+const defaultPublicEvent = {
+  date: "2026-09-14",
+  name: "Ganesh Idol installation",
+  time: "8:00 AM - 9:00 AM",
+  status: "Upcoming",
+};
+const escapedDefaultPublicEvent = () => "14-Sep-2026 - Ganesh Idol installation - 8:00 AM - 9:00 AM - Ganesh Pooja";
 const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const siriusMatch = raw.match(/^(sirius|sirus)[_-]?(\d+)$/i); if (siriusMatch) return `Sirius_${siriusMatch[2]}`; const samyuktaMatch = raw.match(/^(samyukta)-?(\d+)$/i); return samyuktaMatch ? `Samyukta-${samyuktaMatch[2]}` : raw; };
 const alphanumericSort = (a, b) => { const aparts = String(a).split(/(\d+)/); const bparts = String(b).split(/(\d+)/); for (let i = 0; i < Math.min(aparts.length, bparts.length); i++) { const isNum = /^\d+$/.test(aparts[i]); if (isNum) { const diff = Number(aparts[i]) - Number(bparts[i]); if (diff) return diff; } else { if (aparts[i] !== bparts[i]) return aparts[i].localeCompare(bparts[i]); } } return aparts.length - bparts.length; };
 const sortByPlotNumber = (left, right) => { const parse = value => { const normalized = normalizePlotNumber(value); const cleanMatch = normalized.match(/^PlotNo-(\d+)$/); if (cleanMatch) return [0, Number(cleanMatch[1]), '']; const samyuktaMatch = normalized.match(/^Samyukta-(\d+)$/); if (samyuktaMatch) return [3, Number(samyuktaMatch[1]), '']; const siriusMatch = normalized.match(/^Sirius_(\d+)$/); if (siriusMatch) return [4, Number(siriusMatch[1]), '']; const rawValue = String(value || '').trim().toLowerCase(); if (rawValue.includes('plot') || rawValue.match(/^plotno/i)) return [1, 0, normalized]; return [2, 0, normalized]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); if (a[0] !== b[0]) return a[0] - b[0]; if (a[0] === 0 || a[0] === 3 || a[0] === 4) return a[1] - b[1]; if (a[0] === 1) return alphanumericSort(a[2], b[2]); return a[2].localeCompare(b[2]); };
@@ -104,8 +112,7 @@ const date = (value) =>
 function renderPublicScrolls(contact, events) {
   const welcomeScroll = document.getElementById("welcomeScroll");
   const welcomeMarquee = document.getElementById("welcomeMarquee");
-  const defaultWelcomeMessage = "🙏 శ్రీ గణేశ చతుర్థి మహోత్సవములకు మీకు హృదయపూర్వక స్వాగతం - సూర్యోదయ కాలనీ 🙏 | 🙏 Heartfelt Welcome to Sri Ganesh Chaturthi Celebrations 2026 - Suryodaya Colony 🙏";
-  const welcomeMessage = String(contact?.welcomeMessage || defaultWelcomeMessage).trim();
+  const welcomeMessage = String(contact?.welcomeMessage || defaultPublicWelcomeMessage).trim();
   if (welcomeScroll && welcomeMarquee) {
     welcomeMarquee.textContent = welcomeMessage;
     welcomeScroll.hidden = !welcomeMessage;
@@ -115,10 +122,14 @@ function renderPublicScrolls(contact, events) {
   const tickerDate = value => { const dateValue = new Date(value); return Number.isNaN(dateValue.getTime()) ? "Date to be announced" : `${String(dateValue.getDate()).padStart(2, "0")}-${dateValue.toLocaleString("en-IN", { month: "short" })}-${dateValue.getFullYear()}`; };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const upcoming = (events || []).filter(item => item.date && new Date(item.date) >= today && item.status !== "Completed");
+  const fallbackEvents = [defaultPublicEvent];
+  const upcoming = (events && events.length ? events : fallbackEvents).filter(item => item.date && new Date(item.date) >= today && item.status !== "Completed");
+  const ritualText = upcoming.length
+    ? upcoming.map(item => `${tickerDate(item.date)} - ${item.name || "Devotee"} - ${item.time || "Time to be announced"} - Ganesh Pooja`).join("  |  ")
+    : escapedDefaultPublicEvent();
   if (ritualScroll && ritualMarquee) {
-    ritualMarquee.textContent = upcoming.map(item => `${tickerDate(item.date)} - ${item.name || "Devotee"} - ${item.time || "Time to be announced"} - Ganesh Pooja`).join("  |  ");
-    ritualScroll.hidden = upcoming.length === 0;
+    ritualMarquee.textContent = ritualText;
+    ritualScroll.hidden = !ritualText;
   }
 }
 const publicMenuToggle = document.getElementById("publicMenuToggle");
@@ -178,6 +189,7 @@ setTimeout(() => {
   message.textContent =
     "Building a brighter Ganesh Utsav together, with transparent giving, joyful traditions, and room for every family.";
 }, 0);
+renderPublicScrolls({ welcomeMessage: defaultPublicWelcomeMessage }, [defaultPublicEvent]);
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
   if (!response?.ok) {
