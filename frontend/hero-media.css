@@ -114,7 +114,12 @@
   animation-delay: 0s;
 }
 
+.welcome-scroll span {
+  animation-delay: 0s;
+}
+
 .ritual-scroll span {
+  animation-delay: .25s;
   animation-duration: 22s;
 }
 
