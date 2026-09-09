@@ -108,10 +108,11 @@
 
 @media (max-width: 767.98px) {
   .hero.hero-redesign {
-    --public-nav-offset: 264px;
+    --public-nav-offset: 0px;
     min-height: 50vh !important;
-    padding: 180px 0 32px !important;
+    padding: 270px 0 32px !important;
     background-attachment: scroll;
+    flex-direction: column;
   }
 
   .hero.hero-redesign .hero-inner {
@@ -155,17 +156,21 @@
   }
 
   .public-scrolls {
-    top: var(--public-nav-offset);
+    position: relative;
+    top: auto;
+    left: auto;
     z-index: 20;
+    flex: 0 0 auto;
+    margin: 0 0 24px;
   }
 
   .welcome-scroll span,
   .ritual-scroll span {
-    animation-duration: 42s;
+    animation: public-scroll-left 60s linear infinite;
   }
 
   .ritual-scroll span {
-    animation-duration: 50s;
+    animation-duration: 72s;
   }
 
   .welcome-scroll,
