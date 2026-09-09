@@ -166,11 +166,11 @@
 
   .welcome-scroll span,
   .ritual-scroll span {
-    animation: public-scroll-left 60s linear infinite;
+    animation: public-scroll-left 28s linear infinite;
   }
 
   .ritual-scroll span {
-    animation-duration: 72s;
+    animation-duration: 34s;
   }
 
   .welcome-scroll,
