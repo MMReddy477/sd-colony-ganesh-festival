@@ -47,15 +47,16 @@
 }
 
 .public-scrolls {
-  position: absolute;
-  top: var(--public-nav-offset);
-  left: 0;
-  z-index: 10;
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 3;
   width: 100%;
   max-width: none;
   padding: 0;
   display: grid;
   gap: .45rem;
+  margin-top: 0;
 }
 
 .welcome-scroll,
@@ -98,7 +99,7 @@
   line-height: 1.5;
   scrollamount: 2;
   will-change: transform;
-  transform: translateX(-125%);
+  transform: translateX(-100%);
   animation: public-scroll-left 22s linear infinite;
   animation-delay: 0s;
 }
@@ -109,10 +110,10 @@
 
 @keyframes public-scroll-left {
   0% {
-    transform: translateX(-125%);
+    transform: translateX(-100%);
   }
   100% {
-    transform: translateX(125%);
+    transform: translateX(100%);
   }
 }
 
