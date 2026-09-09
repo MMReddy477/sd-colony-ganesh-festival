@@ -20,8 +20,8 @@
 }
 
 .hero.hero-redesign {
-  min-height: 55vh !important;
-  padding: 80px 0 48px !important;
+  min-height: 60vh !important;
+  padding: 90px 0 48px !important;
   background-image: linear-gradient(135deg, #ffcc66 0%, #ff9933 40%, #b30000 100%) !important;
   background-attachment: fixed;
   background-position: center;
@@ -93,7 +93,7 @@
 
 @media (max-width: 991.98px) {
   .hero.hero-redesign {
-    padding: 80px 0 40px !important;
+    padding: 90px 0 40px !important;
   }
 
   .hero.hero-redesign .hero-visual {
@@ -105,7 +105,7 @@
 
 @media (max-width: 767.98px) {
   .hero.hero-redesign {
-    min-height: 45vh !important;
+    min-height: 50vh !important;
     padding: 100px 0 32px !important;
     background-attachment: scroll;
   }
