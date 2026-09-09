@@ -21,6 +21,9 @@
 
 .hero.hero-redesign {
   --public-nav-offset: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   min-height: 60vh !important;
   padding: 220px 0 48px !important;
   background-image: linear-gradient(135deg, #8d2d24 0%, #7a1f1f 52%, #5b1718 100%) !important;
@@ -44,6 +47,12 @@
 
 .hero.hero-redesign .hero-inner {
   z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 420px);
+  align-items: center;
+  gap: 2rem;
+  width: min(100%, 1280px);
+  margin: 0 auto;
 }
 
 .public-scrolls {
@@ -51,12 +60,13 @@
   top: auto;
   left: auto;
   z-index: 3;
-  width: 100%;
+  width: min(100%, 1280px);
   max-width: none;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: .45rem;
-  margin-top: 0;
+  margin: 0 auto 18px;
 }
 
 .welcome-scroll,
@@ -162,6 +172,8 @@ marquee:hover {
 
   .hero.hero-redesign .hero-inner {
     width: 100%;
+    display: flex;
+    flex-direction: column;
     gap: 20px;
     text-align: center;
   }
@@ -205,8 +217,11 @@ marquee:hover {
     top: auto;
     left: auto;
     z-index: 20;
+    display: grid;
+    grid-template-columns: 1fr;
     flex: 0 0 auto;
     margin: -10px 0 18px;
+    width: 100%;
   }
 
   .welcome-scroll span,
