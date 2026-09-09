@@ -91,12 +91,12 @@
   min-width: 100%;
   font-size: 1rem;
   line-height: 1.5;
-  scrollamount: 4;
-  animation: public-scroll-left 16s linear infinite;
+  scrollamount: 2;
+  animation: public-scroll-left 22s linear infinite;
 }
 
 .ritual-scroll span {
-  animation-duration: 18s;
+  animation-duration: 26s;
 }
 
 marquee {
@@ -184,11 +184,11 @@ marquee:hover {
 
   .welcome-scroll span,
   .ritual-scroll span {
-    animation: public-scroll-left 14s linear infinite;
+    animation: public-scroll-left 20s linear infinite;
   }
 
   .ritual-scroll span {
-    animation-duration: 18s;
+    animation-duration: 24s;
   }
 
   .welcome-scroll,
