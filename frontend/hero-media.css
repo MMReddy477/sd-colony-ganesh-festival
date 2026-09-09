@@ -93,11 +93,12 @@
   display: inline-block;
   width: max-content;
   min-width: 100%;
+  padding-right: 2rem;
   font-size: 1rem;
   line-height: 1.5;
   scrollamount: 2;
   will-change: transform;
-  transform: translateX(0);
+  transform: translateX(-120%);
   animation: public-scroll-left 22s linear infinite;
   animation-delay: 0s;
 }
@@ -108,10 +109,10 @@
 
 @keyframes public-scroll-left {
   0% {
-    transform: translateX(0%);
+    transform: translateX(-120%);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(120%);
   }
 }
 
@@ -164,9 +165,9 @@ marquee:hover {
   .hero.hero-redesign h1 {
     max-width: 100% !important;
     margin-bottom: 14px;
-    font-size: clamp(1.8rem, 9vw, 2.7rem) !important;
-    line-height: 1.1 !important;
-    white-space: normal !important;
+    font-size: clamp(1.4rem, 4.8vw, 2.1rem) !important;
+    line-height: 1.08 !important;
+    white-space: nowrap !important;
     overflow: visible !important;
     text-overflow: clip !important;
   }
