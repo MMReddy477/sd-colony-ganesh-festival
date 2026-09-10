@@ -195,6 +195,30 @@ const initializePublicScrolls = () => {
 initializePublicScrolls();
 document.addEventListener("DOMContentLoaded", initializePublicScrolls, { once: true });
 
+function renderDonationModal(contact) {
+  const details = document.getElementById("donationModalDetails");
+  const qr = document.getElementById("donationModalQr");
+  if (!details || !qr) return;
+  const rows = [
+    ["UPI ID", contact.upiId],
+    ["Bank Name", contact.bankName],
+    ["Account Name", contact.accountName],
+    ["Account Number", contact.accountNumber],
+    ["IFSC Code", contact.ifscCode],
+  ].filter(([, value]) => value);
+  details.innerHTML = rows.length
+    ? rows.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`).join("")
+    : "<p>Donation details are not available right now.</p>";
+  qr.src = contact.qrImagePath || contact.qrData || "/phonepe-qr.jpeg";
+  qr.hidden = false;
+}
+function closeDonationModal() {
+  const modal = document.getElementById("donationModal");
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("donation-modal-open");
+}
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
   if (!response?.ok) {
@@ -207,6 +231,7 @@ async function loadPortal() {
   }
   const data = await response.json();
   const contact = data.contact || {};
+  renderDonationModal(contact);
   renderPublicScrolls(contact, data.events);
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
@@ -543,8 +568,15 @@ document.addEventListener("click", (event) => {
   const donateButton = event.target.closest(".donate-now-btn");
   if (donateButton) {
     event.preventDefault();
-    const donations = document.getElementById("donations");
-    donations?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const modal = document.getElementById("donationModal");
+    modal?.classList.add("is-open");
+    modal?.setAttribute("aria-hidden", "false");
+    document.body.classList.add("donation-modal-open");
+    document.getElementById("donationModalBack")?.focus();
+    return;
+  }
+  if (event.target.closest("#donationModalBack, #donationModalClose") || event.target === document.getElementById("donationModal")) {
+    closeDonationModal();
     return;
   }
   const heroImage = event.target.closest("[data-hero-image]");
@@ -573,6 +605,10 @@ document.addEventListener("click", (event) => {
 document.querySelector("[data-hero-image]")?.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); } });
 document.addEventListener("keydown", (event) => { const tile = event.target.closest?.("[data-gallery-index]"); if (tile && !event.target.closest("video, audio, .gallery-select") && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openGallery(Number(tile.dataset.galleryIndex)); } });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && document.getElementById("donationModal")?.classList.contains("is-open")) {
+    closeDonationModal();
+    return;
+  }
   const viewer = document.getElementById("galleryViewer");
   if (!viewer.classList.contains("is-open")) return;
   if (event.key === "Escape") closeGallery();

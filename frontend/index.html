@@ -177,6 +177,15 @@
         </div>
       </section>
     </main>
+    <div id="donationModal" class="donation-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="donationModalTitle">
+      <div class="donation-modal-content">
+        <button id="donationModalBack" class="donation-modal-back" type="button">&larr; Back</button>
+        <button id="donationModalClose" class="donation-modal-close" type="button" aria-label="Close donation details">&times;</button>
+        <h2 id="donationModalTitle">Contribute to Ganesh Utsav</h2>
+        <div id="donationModalDetails" class="donation-modal-details"></div>
+        <img id="donationModalQr" class="donation-modal-qr" alt="Donation QR code" hidden />
+      </div>
+    </div>
     <div id="galleryViewer" class="gallery-viewer" aria-hidden="true">
       <button class="gallery-viewer-close" type="button" aria-label="Close viewer">✕</button>
       <button class="gallery-viewer-prev" type="button" aria-label="Previous image">◀</button>
@@ -197,6 +206,6 @@
       </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/app.js?v=20260911-4"></script>
+    <script src="/app.js?v=20260911-6"></script>
   </body>
 </html>
