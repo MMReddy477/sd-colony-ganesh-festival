@@ -207,7 +207,7 @@ function renderDonationModal(contact) {
     ["IFSC Code", contact.ifscCode],
   ].filter(([, value]) => value);
   details.innerHTML = rows.length
-    ? rows.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`).join("")
+    ? rows.map(([label, value]) => `<div class="donation-detail-row"><strong>${label}:</strong><span>${escapeHtml(value)}</span><button class="donation-copy-btn" type="button" data-copy-donation="${escapeHtml(value)}" aria-label="Copy ${label}">📋</button></div>`).join("")
     : "<p>Donation details are not available right now.</p>";
   qr.src = contact.qrImagePath || contact.qrData || "/phonepe-qr.jpeg";
   qr.hidden = false;
@@ -577,6 +577,25 @@ document.addEventListener("click", (event) => {
   }
   if (event.target.closest("#donationModalBack, #donationModalClose") || event.target === document.getElementById("donationModal")) {
     closeDonationModal();
+    return;
+  }
+  const copyButton = event.target.closest("[data-copy-donation]");
+  if (copyButton) {
+    const value = copyButton.dataset.copyDonation || "";
+    const fallbackCopy = () => {
+      const input = document.createElement("textarea");
+      input.value = value;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(value).catch(fallbackCopy);
+    else fallbackCopy();
+    copyButton.textContent = "✓";
+    window.setTimeout(() => { copyButton.textContent = "📋"; }, 1200);
     return;
   }
   const heroImage = event.target.closest("[data-hero-image]");
