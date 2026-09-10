@@ -935,7 +935,10 @@ function renderGalleryAdmin(items) {
         : `<img src="${mediaPath(item)}" alt="${item.originalName || "Gallery image"}">`;
     return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : isAudio ? "Audio" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`;
   }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
-  list.querySelectorAll(".gallery-admin-media > img").forEach((image) => image.addEventListener("error", () => { image.onerror = null; image.src = fallbackPath; }));
+  list.querySelectorAll(".gallery-admin-media > img, .gallery-admin-media > video, .gallery-admin-media > audio").forEach((media) => media.addEventListener("error", () => {
+    media.hidden = true;
+    media.closest(".gallery-admin-media")?.classList.add("gallery-media-missing");
+  }));
   const pagination = document.getElementById("galleryAdminPagination");
   if (!pagination) return;
   pagination.innerHTML = items.length > galleryAdminPageSize

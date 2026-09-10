@@ -56,6 +56,13 @@
   text-align: center;
 }
 
+.gallery-admin-media.gallery-media-missing {
+  display: grid;
+  place-items: center;
+  min-width: 64px;
+  min-height: 64px;
+}
+
 @media (max-width: 600px) {
   .gallery-viewer-video {
     width: 92vw;
