@@ -58,7 +58,7 @@
   height: 100% !important;
   border: 8px solid #fff8ed !important;
   border-radius: 50% !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
   box-shadow: inset 0 0 20px rgba(141, 45, 36, .25);
 }
 
@@ -87,11 +87,17 @@
 .ganesh-ring-top { top: -1px; }
 .ganesh-ring-bottom { bottom: -1px; }
 .ganesh-ring-leaf,
-.ganesh-ring-diya { position: absolute; font-size: clamp(1rem, 2vw, 1.7rem); filter: drop-shadow(0 0 6px rgba(255, 215, 0, .8)); }
+.ganesh-ring-diya,
+.ganesh-ring-idol { position: absolute; font-size: clamp(1rem, 2vw, 1.7rem); filter: drop-shadow(0 0 6px rgba(255, 215, 0, .8)); }
 .ganesh-ring-leaf-one { top: 18%; left: -3%; }
 .ganesh-ring-leaf-two { right: -3%; bottom: 18%; transform: rotate(180deg); }
 .ganesh-ring-diya-one { top: 42%; left: -7%; }
 .ganesh-ring-diya-two { top: 42%; right: -7%; }
+.ganesh-ring-idol { font-size: clamp(.85rem, 1.7vw, 1.35rem); }
+.ganesh-ring-idol-one { top: 7%; left: 19%; }
+.ganesh-ring-idol-two { top: 7%; right: 19%; }
+.ganesh-ring-idol-three { bottom: 7%; left: 19%; }
+.ganesh-ring-idol-four { right: 19%; bottom: 7%; }
 
 @keyframes rotateGaneshRing { to { transform: rotate(360deg); } }
 @keyframes pulseGaneshAura { 0%, 100% { box-shadow: 0 0 18px rgba(255, 215, 0, .65), inset 0 0 14px rgba(255, 215, 0, .4); } 50% { box-shadow: 0 0 34px rgba(255, 215, 0, .95), inset 0 0 22px rgba(255, 215, 0, .7); } }
