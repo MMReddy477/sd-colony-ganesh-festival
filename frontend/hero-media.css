@@ -64,7 +64,7 @@
 
 .ganesh-circle-ring {
   position: absolute;
-  inset: -34px;
+  inset: -18px;
   z-index: 3;
   border-radius: 50%;
   pointer-events: none;
@@ -99,6 +99,10 @@
 .ganesh-ring-idol-two { top: 7%; right: 19%; }
 .ganesh-ring-idol-three { bottom: 7%; left: 19%; }
 .ganesh-ring-idol-four { right: 19%; bottom: 7%; }
+.ganesh-ring-leaf-three { top: 7%; left: 49%; transform: rotate(90deg); }
+.ganesh-ring-leaf-four { right: 49%; bottom: 7%; transform: rotate(270deg); }
+.ganesh-ring-diya-three { top: 18%; right: 4%; transform: rotate(45deg); }
+.ganesh-ring-diya-four { bottom: 18%; left: 4%; transform: rotate(225deg); }
 
 @keyframes rotateGaneshRing { to { transform: rotate(360deg); } }
 @keyframes pulseGaneshAura { 0%, 100% { box-shadow: 0 0 18px rgba(255, 215, 0, .65), inset 0 0 14px rgba(255, 215, 0, .4); } 50% { box-shadow: 0 0 34px rgba(255, 215, 0, .95), inset 0 0 22px rgba(255, 215, 0, .7); } }
