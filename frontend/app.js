@@ -245,15 +245,16 @@ async function loadPortal() {
   document.getElementById("eventsList").innerHTML = data.events.length
     ? `<div class="member-table-wrap public-events-table-wrap"><table class="member-table event-table public-events-table"><thead><tr><th>Devotee Name</th><th>Contact Number</th><th>Pooja Type</th><th>Preferred Date</th><th>Preferred Time</th><th>Venue / Location</th><th>Request Status</th><th>Actions</th></tr></thead><tbody>${data.events.map(e => { const status = e.status || "Pending"; return `<tr><td><strong>${e.name || "--"}</strong></td><td>${e.mobile || "--"}</td><td>Ganesh Pooja</td><td>${e.date ? date(e.date) : "--"}</td><td>${e.time || "--"}</td><td>${e.venue || "Between Sirius & Samyukta"}</td><td><span class="ritual-status ritual-status-${status.toLowerCase()}">${status}</span></td><td><span class="ritual-public-action" aria-label="Pooja request details">👁</span></td></tr>`; }).join("")}</tbody></table></div>`
     : "<p>No events announced yet.</p>";
-  const membersList = document.getElementById("membersList");
-  if (membersList) {
-    membersList.innerHTML =
-      data.members
-        .map(
-          (m) =>
-            `<div class="col-sm-6 col-lg-3"><article class="member-card"><p class="eyebrow">${m.designation || "Committee member"}</p><h3>${m.name}</h3><p>${m.mobile || "Available through the committee desk"}</p></article></div>`,
-        )
-        .join("") || "<p>Committee details coming soon.</p>";
+  const publicExpenditureSummary = document.getElementById("publicExpenditureSummary");
+  if (publicExpenditureSummary) {
+    const totalExpenses = Number(data.stats.totalExpenses || 0);
+    publicExpenditureSummary.innerHTML = `
+      <article class="summary-card stat-card balance-stat" role="button" tabindex="0" aria-label="View expenditure details">
+        <h4>Outgoings</h4>
+        <strong class="amount">${money(totalExpenses)}</strong>
+        <p class="summary-subtext">Festival expenditure and community support costs</p>
+      </article>
+    `;
   }
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
   renderPublicDonors(data.donations);
@@ -409,15 +410,6 @@ if (contactDetails) {
     contactLines[1].textContent =
       "Community Hall, Main Street · Open daily 9AM–11PM";
 }
-document.addEventListener("DOMContentLoaded", () => {
-  fetch("/api/public")
-    .then((response) => response.ok ? response.json() : null)
-    .then((data) => {
-      const list = document.getElementById("membersList");
-      if (!list || !data?.members) return;
-      list.innerHTML = `<div class="member-table-wrap"><table class="member-table"><thead><tr><th>Name</th><th>Designation</th><th>Mobile number</th></tr></thead><tbody>${data.members.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.designation || "--"}</td><td>${item.mobile || "--"}</td></tr>`).join("") || '<tr><td colspan="3">Committee details coming soon.</td></tr>'}</tbody></table></div>`;
-    });
-});
 document.addEventListener("click", async (event) => {
   const card = event.target.closest(".stat-card");
   if (!card) return;

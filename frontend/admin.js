@@ -51,7 +51,7 @@ function renderExpenseTable(items, path) {
   const query = document.getElementById("expenseSearch")?.value.toLowerCase() || "";
   const filtered = items.filter(item => `${item.name} ${item.paymentMode}`.toLowerCase().includes(query));
   const pageSize = getPageSize("expense"); const page = pageState.expense; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
-  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}" title="View bill" aria-label="View bill">📄</button> <button data-bill-replace="${item._id}" title="Replace bill" aria-label="Replace bill">✎</button>` : "--"}</td><td><button class="admin-icon-btn" data-edit-record="expense:${item._id}" title="Edit expense" aria-label="Edit expense">✎</button> <button class="admin-icon-btn delete-btn" data-delete="${path}/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></td></tr>`).join("") || '<tr><td colspan="7" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td></tr>`).join("") || '<tr><td colspan="5" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
   renderPagination("expensePagination", filtered.length, pageSize, page, next => { pageState.expense = next; renderExpenseTable(items, path); });
 }
 const defaultExpenseList = renderList;
@@ -164,7 +164,7 @@ document.addEventListener("click", async (event) => {
       }
   if (label === "Expenses")
     content = adminExpenses.length
-      ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th><th>Bill</th><th>Action</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}" title="View bill" aria-label="View bill">📄</button>` : "--"}</td><td><button class="admin-icon-btn" data-edit-record="expense:${item._id}" title="Edit expense" aria-label="Edit expense">✎</button> <button class="admin-icon-btn delete-btn" data-delete="/expenses/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></td></tr>`).join("")}</tbody></table></div>`
+      ? `<div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${adminExpenses.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenses recorded yet.</p>';
   if (label === "Balance")
     content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(adminTotalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(adminTotalExpenses)}</strong></div><div class="balance-result"><span>Current balance</span><strong>${money(adminTotalDonations - adminTotalExpenses)}</strong></div></div>`;
@@ -192,7 +192,7 @@ document.addEventListener("click", async (event) => {
       const pages = Math.max(1, Math.ceil(adminExpenses.length / pageSize));
       expensePage = Math.min(expensePage, pages - 1);
       const visible = adminExpenses.slice(expensePage * pageSize, (expensePage + 1) * pageSize);
-      modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${adminExpenses.length ? expensePage * pageSize + 1 : 0}-${Math.min((expensePage + 1) * pageSize, adminExpenses.length)} of ${adminExpenses.length} expenses</div><div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th><th>Bill</th><th>Action</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td>${item.billFilename ? `<button data-bill-view="${item._id}" title="View bill" aria-label="View bill">📄</button>` : "--"}</td><td><button class="admin-icon-btn" data-edit-record="expense:${item._id}" title="Edit expense" aria-label="Edit expense">✎</button> <button class="admin-icon-btn delete-btn" data-delete="/expenses/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></td></tr>`).join("") || '<tr><td colspan="7">No expenses recorded yet.</td></tr>'}</tbody></table></div><div class="admin-finance-pagination expense-pagination"><button type="button" data-admin-expense-page="prev" aria-label="Previous page" title="Previous page" ${expensePage === 0 ? "disabled" : ""}>‹</button><span>Page ${expensePage + 1} of ${pages}</span><button type="button" data-admin-expense-page="next" aria-label="Next page" title="Next page" ${expensePage >= pages - 1 ? "disabled" : ""}>›</button></div>`;
+      modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${adminExpenses.length ? expensePage * pageSize + 1 : 0}-${Math.min((expensePage + 1) * pageSize, adminExpenses.length)} of ${adminExpenses.length} expenses</div><div class="expense-popup-table-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td></tr>`).join("") || '<tr><td colspan="5">No expenses recorded yet.</td></tr>'}</tbody></table></div><div class="admin-finance-pagination expense-pagination"><button type="button" data-admin-expense-page="prev" aria-label="Previous page" title="Previous page" ${expensePage === 0 ? "disabled" : ""}>‹</button><span>Page ${expensePage + 1} of ${pages}</span><button type="button" data-admin-expense-page="next" aria-label="Next page" title="Next page" ${expensePage >= pages - 1 ? "disabled" : ""}>›</button></div>`;
       modal.querySelectorAll("[data-admin-expense-page]").forEach(button => button.addEventListener("click", () => { expensePage += button.dataset.adminExpensePage === "next" ? 1 : -1; renderExpenseDetails(); }));
     };
     renderExpenseDetails();
@@ -242,15 +242,6 @@ renderList = (id, items, label, path) =>
   id === "donationAdminList"
     ? renderDonationTable(items, path)
     : defaultRenderList(id, items, label, path);
-const memberRenderList = renderList;
-renderList = (id, items, label, path) =>
-  id === "memberAdminList"
-    ? renderMemberTable(items, path)
-    : memberRenderList(id, items, label, path);
-function renderMemberTable(items, path) {
-  const container = document.getElementById("memberAdminList");
-  container.innerHTML = `<div class="member-table-wrap"><table class="member-table"><thead><tr><th>Name</th><th>Designation</th><th>Mobile number</th><th>Action</th></tr></thead><tbody>${items.map((item) => `<tr><td>${item.name || "--"}</td><td>${item.designation || "--"}</td><td>${item.mobile || "--"}</td><td><button class="admin-icon-btn" data-edit-record="member:${item._id}" title="Edit member" aria-label="Edit member">✎</button> <button class="admin-icon-btn delete-btn" data-delete="${path}/${item._id}" title="Delete member" aria-label="Delete member">🗑</button></td></tr>`).join("") || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
-}
 const eventRenderList = renderList;
 renderList = (id, items, label, path) =>
   id === "eventAdminList"
@@ -631,12 +622,6 @@ async function loadAdmin() {
     "/expenses",
   );
   renderList(
-    "memberAdminList",
-    d.members,
-    (x) => `${x.name} · ${x.designation || ""}`,
-    "/members",
-  );
-  renderList(
     "eventAdminList",
     d.events,
     (x) => `${x.name} · ${x.venue || ""}`,
@@ -712,11 +697,13 @@ function renderGalleryAdmin(items) {
   list.querySelectorAll(".gallery-admin-media > img").forEach((image) => image.addEventListener("error", () => { image.onerror = null; image.src = fallbackPath; }));
 }
 function renderList(id, items, label, path) {
+  const container = document.getElementById(id);
+  if (!container) return;
   const header =
     id === "donationAdminList"
       ? '<div class="donation-columns"><span>Plot No.</span><span>Donor name</span><span>Mobile number</span><span>Amount</span><span>Payment mode</span><span>Time</span><span>Actions</span></div>'
       : "";
-  document.getElementById(id).innerHTML =
+  container.innerHTML =
     header +
     (items
       .map(
@@ -751,10 +738,6 @@ document.getElementById("expenseForm").addEventListener("submit", (e) => {
   const formData = new FormData(e.target);
   formData.set("date", `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`);
   api("/expenses", { method: "POST", body: formData }).then(async response => { if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save expense"); return; } e.target.reset(); loadAdmin(); });
-});
-document.getElementById("memberForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  submitAdmin(e.target, "/members");
 });
 document.getElementById("eventForm").addEventListener("submit", (e) => {
   e.preventDefault();
