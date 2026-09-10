@@ -262,7 +262,7 @@ async function loadPortal() {
       return sum + (status === "Full Paid" ? 0 : remaining);
     }, 0);
     const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
-    const finalRemaining = collectedAmount - totalExpenses;
+    const remainingBalance = collectedAmount - paid;
     const rows = expenseRows.map(item => `
       <tr>
         <td>${escapeHtml(item.name || "--")}</td>
@@ -285,7 +285,7 @@ async function loadPortal() {
             <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="paidSum">${money(paid)}</span></p>
             <p class="public-expense-metric public-expense-metric-due">Total Due: <span id="dueSum">${money(due)}</span></p>
             <p class="public-expense-metric public-expense-metric-collected">Collected Amount (General + Laddu Auction): <span id="collectedAmount">${money(collectedAmount)}</span></p>
-            <p class="public-expense-metric public-expense-metric-final">Estimated Remaining Balance: <span id="finalRemaining">${money(finalRemaining)}</span></p>
+            <p class="public-expense-metric public-expense-metric-final">Remaining Balance: <span id="remainingBalance">${money(remainingBalance)}</span></p>
           </div>
         </div>
         <div class="public-expense-table-wrap">
@@ -304,11 +304,11 @@ async function loadPortal() {
             </thead>
             <tbody id="publicExpenseTable">${rows}</tbody>
             <tfoot>
-              <tr style="font-weight:bold; text-align:center;">
-                <td colspan="1">Grand Total</td>
-                <td id="totalSumFooter" style="background-color:#d4edda;">${money(total)}</td>
-                <td id="paidSumFooter" style="background-color:#cce5ff;">${money(paid)}</td>
-                <td id="dueSumFooter" style="background-color:#fff3cd;">${money(due)}</td>
+              <tr id="totalsRow" style="font-weight:bold; text-align:center;">
+                <td style="text-align:right;">Grand Total</td>
+                <td id="totalSumFooter">${money(total)}</td>
+                <td id="paidSumFooter">${money(paid)}</td>
+                <td id="dueSumFooter">${money(due)}</td>
                 <td colspan="4"></td>
               </tr>
             </tfoot>
@@ -337,7 +337,7 @@ async function loadPortal() {
       const paidFooterEl = document.getElementById("paidSumFooter");
       const dueFooterEl = document.getElementById("dueSumFooter");
       const collectedEl = document.getElementById("collectedAmount");
-      const finalRemainingEl = document.getElementById("finalRemaining");
+      const remainingBalanceEl = document.getElementById("remainingBalance");
       if (totalEl) totalEl.textContent = money(totalValue);
       if (paidEl) paidEl.textContent = money(paidValue);
       if (dueEl) dueEl.textContent = money(dueValue);
@@ -345,7 +345,7 @@ async function loadPortal() {
       if (paidFooterEl) paidFooterEl.textContent = money(paidValue);
       if (dueFooterEl) dueFooterEl.textContent = money(dueValue);
       if (collectedEl) collectedEl.textContent = money(collectedAmount);
-      if (finalRemainingEl) finalRemainingEl.textContent = money(finalRemaining);
+      if (remainingBalanceEl) remainingBalanceEl.textContent = money(collectedAmount - paidValue);
     };
     requestAnimationFrame(publicExpenseSummaryTotals);
   }
