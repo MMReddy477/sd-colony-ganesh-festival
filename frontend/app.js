@@ -250,8 +250,17 @@ async function loadPortal() {
     const totalExpenses = Number(data.stats.totalExpenses || 0);
     const expenseRows = data.expenses || [];
     const total = expenseRows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const advance = expenseRows.reduce((sum, item) => sum + Number(item.advanceAmount || 0), 0);
-    const remaining = expenseRows.reduce((sum, item) => sum + Number(item.remainingAmount || 0), 0);
+    const paid = expenseRows.reduce((sum, item) => {
+      const status = item.status || "Due";
+      const amount = Number(item.amount || 0);
+      const advance = Number(item.advanceAmount || 0);
+      return sum + (status === "Full Paid" ? amount : advance);
+    }, 0);
+    const due = expenseRows.reduce((sum, item) => {
+      const status = item.status || "Due";
+      const remaining = Number(item.remainingAmount || 0);
+      return sum + (status === "Full Paid" ? 0 : remaining);
+    }, 0);
     const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
     const finalRemaining = collectedAmount - totalExpenses;
     const rows = expenseRows.map(item => `
@@ -273,8 +282,8 @@ async function loadPortal() {
           <h2>Total expenditure overview</h2>
           <div class="public-expense-summary-metrics">
             <p class="public-expense-metric public-expense-metric-total">Total Expenditure: <span id="totalSum">${money(totalExpenses)}</span></p>
-            <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="advanceSum">${money(advance)}</span></p>
-            <p class="public-expense-metric public-expense-metric-due">Total Due: <span id="remainingSum">${money(remaining)}</span></p>
+            <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="paidSum">${money(paid)}</span></p>
+            <p class="public-expense-metric public-expense-metric-due">Total Due: <span id="dueSum">${money(due)}</span></p>
             <p class="public-expense-metric public-expense-metric-collected">Collected Amount (General + Laddu Auction): <span id="collectedAmount">${money(collectedAmount)}</span></p>
             <p class="public-expense-metric public-expense-metric-final">Estimated Remaining Balance: <span id="finalRemaining">${money(finalRemaining)}</span></p>
           </div>
@@ -294,6 +303,15 @@ async function loadPortal() {
               </tr>
             </thead>
             <tbody id="publicExpenseTable">${rows}</tbody>
+            <tfoot>
+              <tr style="font-weight:bold; text-align:center;">
+                <td colspan="1">Grand Total</td>
+                <td id="totalSumFooter" style="background-color:#d4edda;">${money(total)}</td>
+                <td id="paidSumFooter" style="background-color:#cce5ff;">${money(paid)}</td>
+                <td id="dueSumFooter" style="background-color:#fff3cd;">${money(due)}</td>
+                <td colspan="4"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
@@ -301,21 +319,31 @@ async function loadPortal() {
     const publicExpenseSummaryTotals = () => {
       const rowsList = document.querySelectorAll("#publicExpenseTable tr");
       let totalValue = 0;
-      let advanceValue = 0;
-      let remainingValue = 0;
+      let paidValue = 0;
+      let dueValue = 0;
       rowsList.forEach(row => {
-        totalValue += Number(row.querySelector("td[data-total]")?.dataset.total || 0);
-        advanceValue += Number(row.querySelector("td[data-advance]")?.dataset.advance || 0);
-        remainingValue += Number(row.querySelector("td[data-remaining]")?.dataset.remaining || 0);
+        const totalCell = row.querySelector("td[data-total]")?.dataset.total;
+        const advanceCell = row.querySelector("td[data-advance]")?.dataset.advance;
+        const remainingCell = row.querySelector("td[data-remaining]")?.dataset.remaining;
+        const status = row.querySelector(".public-expense-status")?.textContent?.trim() || "Due";
+        totalValue += Number(totalCell || 0);
+        paidValue += status === "Full Paid" ? Number(totalCell || 0) : Number(advanceCell || 0);
+        dueValue += status === "Full Paid" ? 0 : Number(remainingCell || 0);
       });
       const totalEl = document.getElementById("totalSum");
-      const advanceEl = document.getElementById("advanceSum");
-      const remainingEl = document.getElementById("remainingSum");
+      const paidEl = document.getElementById("paidSum");
+      const dueEl = document.getElementById("dueSum");
+      const totalFooterEl = document.getElementById("totalSumFooter");
+      const paidFooterEl = document.getElementById("paidSumFooter");
+      const dueFooterEl = document.getElementById("dueSumFooter");
       const collectedEl = document.getElementById("collectedAmount");
       const finalRemainingEl = document.getElementById("finalRemaining");
       if (totalEl) totalEl.textContent = money(totalValue);
-      if (advanceEl) advanceEl.textContent = money(advanceValue);
-      if (remainingEl) remainingEl.textContent = money(remainingValue);
+      if (paidEl) paidEl.textContent = money(paidValue);
+      if (dueEl) dueEl.textContent = money(dueValue);
+      if (totalFooterEl) totalFooterEl.textContent = money(totalValue);
+      if (paidFooterEl) paidFooterEl.textContent = money(paidValue);
+      if (dueFooterEl) dueFooterEl.textContent = money(dueValue);
       if (collectedEl) collectedEl.textContent = money(collectedAmount);
       if (finalRemainingEl) finalRemainingEl.textContent = money(finalRemaining);
     };
