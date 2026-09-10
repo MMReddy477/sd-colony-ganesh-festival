@@ -22,5 +22,5 @@ const Expense = mongoose.model('Expense', new mongoose.Schema({
   billMimeType: String
 }, opts));
 const Receipt = mongoose.model('Receipt', new mongoose.Schema({ receiptNumber: { type: String, unique: true }, donation: { type: mongoose.Schema.Types.ObjectId, ref: 'Donation' }, qrData: String }, opts));
-const SiteSettings = mongoose.model('SiteSettings', new mongoose.Schema({ key: { type: String, unique: true }, contactEmail: String, phone1: String, phone2: String, upiId: String, welcomeMessage: String }, opts));
+const SiteSettings = mongoose.model('SiteSettings', new mongoose.Schema({ key: { type: String, unique: true }, contactEmail: String, phone1: String, phone2: String, upiId: String, bankName: String, accountName: String, accountNumber: String, ifscCode: String, qrImagePath: String, welcomeMessage: String }, opts));
 module.exports = { User, CommitteeMember, Event, Gallery, Donation, Expense, Receipt, SiteSettings };

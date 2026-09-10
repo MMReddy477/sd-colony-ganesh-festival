@@ -813,6 +813,8 @@ async function loadAdmin() {
   adminEvents = d.events;
   const contactForm = document.getElementById("contactForm");
   if (contactForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = contactForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
+  const donationSettingsForm = document.getElementById("donationSettingsForm");
+  if (donationSettingsForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = donationSettingsForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
   const welcomeMessage = document.getElementById("welcomeMessage");
   if (welcomeMessage && d.contact?.welcomeMessage != null) welcomeMessage.value = d.contact.welcomeMessage;
   const expenseResponse = await api("/expenses");
@@ -1088,6 +1090,20 @@ document.getElementById("contactForm")?.addEventListener("submit", async (event)
   message.textContent = response.ok ? "Contact numbers updated successfully." : ((await response.json().catch(() => ({}))).message || "Could not update contact numbers.");
   message.className = response.ok ? "text-success" : "text-danger";
 });
+document.getElementById("donationSettingsForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const contactForm = document.getElementById("contactForm");
+  const response = await api("/settings/contact", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...formData(contactForm), ...formData(event.target) }) });
+  const message = document.getElementById("donationSettingsMessage");
+  if (message) { message.textContent = response.ok ? "Donation details saved." : "Could not save donation details."; message.className = response.ok ? "text-success" : "text-danger"; }
+});
+document.getElementById("donationQrForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = document.getElementById("donationSettingsMessage");
+  const response = await api("/settings/donation-qr", { method: "POST", body: new FormData(event.target) });
+  if (message) { message.textContent = response.ok ? "QR code uploaded." : "Could not upload QR code."; message.className = response.ok ? "text-success" : "text-danger"; }
+  if (response.ok) event.target.reset();
+});
 document.getElementById("saveWelcomeMessage")?.addEventListener("click", async () => {
   const field = document.getElementById("welcomeMessage");
   const message = document.getElementById("scrollSettingsMessage");
@@ -1106,6 +1122,12 @@ document.getElementById("deleteUpi")?.addEventListener("click", async () => {
   const response = await api("/settings/upi", { method: "DELETE" });
   const message = document.getElementById("contactMessage");
   if (response.ok) { document.querySelector('#contactForm [name="upiId"]').value = ""; message.textContent = "UPI ID and QR code deleted."; message.className = "text-success"; } else { message.textContent = "Could not delete UPI details."; message.className = "text-danger"; }
+});
+document.getElementById("deleteDonation")?.addEventListener("click", async () => {
+  if (!window.confirm("Delete all public donation details?")) return;
+  const response = await api("/settings/donation", { method: "DELETE" });
+  const message = document.getElementById("donationSettingsMessage");
+  if (response.ok) { document.querySelectorAll("#donationSettingsForm input").forEach(field => { field.value = ""; }); if (message) { message.textContent = "Donation details deleted."; message.className = "text-success"; } } else if (message) { message.textContent = "Could not delete donation details."; message.className = "text-danger"; }
 });
 document.querySelectorAll("[data-toggle-password]").forEach((button) => {
   button.addEventListener("click", () => {

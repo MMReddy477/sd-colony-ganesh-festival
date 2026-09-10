@@ -211,7 +211,7 @@ async function loadPortal() {
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
   const upiPanel = document.getElementById("upiPaymentPanel");
-  if (upiPanel) { upiPanel.hidden = false; upiPanel.innerHTML = `<div><p class="eyebrow">Digital offering</p><h3>Pay by PhonePe</h3><p>Scan this QR code to make a contribution${contact.upiId ? ` or use <strong>UPI ID: ${contact.upiId}</strong>` : ""}.</p></div><img class="upi-qr-image" src="${contact.qrData || "/phonepe-qr.jpeg"}" alt="PhonePe payment QR code${contact.upiId ? ` for ${escapeHtml(contact.upiId)}` : ""}" decoding="async">`; }
+  if (upiPanel) { upiPanel.hidden = false; upiPanel.innerHTML = `<div><p class="eyebrow">Digital offering</p><h3>Pay by PhonePe</h3><p>Scan this QR code to make a contribution${contact.upiId ? ` or use <strong>UPI ID: ${escapeHtml(contact.upiId)}</strong>` : ""}.</p>${contact.bankName || contact.accountName || contact.accountNumber || contact.ifscCode ? `<div class="public-bank-details"><strong>Bank transfer details</strong>${contact.bankName ? `<span>Bank: ${escapeHtml(contact.bankName)}</span>` : ""}${contact.accountName ? `<span>Account name: ${escapeHtml(contact.accountName)}</span>` : ""}${contact.accountNumber ? `<span>Account number: ${escapeHtml(contact.accountNumber)}</span>` : ""}${contact.ifscCode ? `<span>IFSC: ${escapeHtml(contact.ifscCode)}</span>` : ""}</div>` : ""}</div><img class="upi-qr-image" src="${contact.qrImagePath || contact.qrData || "/phonepe-qr.jpeg"}" alt="PhonePe payment QR code${contact.upiId ? ` for ${escapeHtml(contact.upiId)}` : ""}" decoding="async">`; }
   document.title = data.committeeName;
   document.getElementById("heroDonations").textContent = money(
     data.stats.totalDonations,
@@ -542,6 +542,14 @@ function closeGallery() {
 }
 function setSlideshow(playing) { slideshowPlaying = playing; clearInterval(slideshowTimer); const button = document.getElementById("galleryViewerPause"); if (button) button.textContent = playing ? "⏸ Pause" : "▶ Play"; if (playing) slideshowTimer = setInterval(() => openGallery(galleryIndex + 1), 4000); }
 document.addEventListener("click", (event) => {
+  const donateButton = event.target.closest(".donate-now-btn");
+  if (donateButton) {
+    event.preventDefault();
+    const donations = document.getElementById("donations");
+    donations?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => document.getElementById("upiPaymentPanel")?.focus?.(), 500);
+    return;
+  }
   const heroImage = event.target.closest("[data-hero-image]");
   if (heroImage) {
     const viewer = document.getElementById("galleryViewer");
