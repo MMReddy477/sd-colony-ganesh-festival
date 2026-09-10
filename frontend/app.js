@@ -271,7 +271,7 @@ async function loadPortal() {
       return sum + (status === "Full Paid" ? 0 : remaining);
     }, 0);
     const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
-    const estimatedRemainingBalance = collectedAmount - paid;
+    const estimatedRemainingBalance = collectedAmount - totalExpenses;
     const rows = expenseRows.map(item => `
       <tr>
         <td>${escapeHtml(item.name || "--")}</td>
@@ -354,7 +354,7 @@ async function loadPortal() {
       if (paidFooterEl) paidFooterEl.textContent = money(paidValue);
       if (dueFooterEl) dueFooterEl.textContent = money(dueValue);
       if (collectedEl) collectedEl.textContent = money(collectedAmount);
-      if (remainingBalanceEl) remainingBalanceEl.textContent = money(collectedAmount - paidValue);
+      if (remainingBalanceEl) remainingBalanceEl.textContent = money(collectedAmount - totalValue);
     };
     requestAnimationFrame(publicExpenseSummaryTotals);
   }
