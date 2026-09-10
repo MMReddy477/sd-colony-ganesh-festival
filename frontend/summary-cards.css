@@ -162,21 +162,21 @@
   white-space: nowrap;
 }
 
-#publicExpenseSummary .public-expense-table tfoot tr#totalsRow {
+#publicExpenditureSummary .public-expense-table tfoot tr#totalsRow {
   background-color: #f7fbff;
   font-weight: bold;
   border-top: 2px solid #007bff;
 }
 
-#publicExpenseSummary .public-expense-table tfoot tr#totalsRow td:nth-child(2) {
+#publicExpenditureSummary .public-expense-table tfoot tr#totalsRow td:nth-child(2) {
   background-color: #d4edda;
 }
 
-#publicExpenseSummary .public-expense-table tfoot tr#totalsRow td:nth-child(3) {
+#publicExpenditureSummary .public-expense-table tfoot tr#totalsRow td:nth-child(3) {
   background-color: #cce5ff;
 }
 
-#publicExpenseSummary .public-expense-table tfoot tr#totalsRow td:nth-child(4) {
+#publicExpenditureSummary .public-expense-table tfoot tr#totalsRow td:nth-child(4) {
   background-color: #fff3cd;
 }
 
