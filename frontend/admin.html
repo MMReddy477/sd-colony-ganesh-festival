@@ -58,7 +58,7 @@
           </button>
         </div>
         <div id="adminNavLinks" class="admin-nav-links container-fluid" aria-label="Admin navigation">
-          <a href="#dashboard">🏠 Dashboard</a><a href="#donations">💰 Devotee Contributions</a><a href="#expenses">📤 Expenditure</a><a href="#live-finance">📊 Live Finance</a><a href="#gallery">🖼️ Gallery</a><a href="#events">🎉 Events</a><a href="#account">🔐 Account</a>
+          <a href="#dashboard">🏠 Dashboard</a><a href="#donations">💰 Devotee Contributions</a><a href="#expenses">📤 Expenditure</a><a href="#live-finance">📊 Live Finance</a><a href="#gallery">🖼️ Gallery</a><a href="#events">🎉 Events</a><a href="#donationSettings">💳 Donation</a><a href="#account">🔐 Account</a>
         </div>
       </nav>
       <main class="container py-5">
@@ -210,8 +210,9 @@
         <section id="account" class="admin-card admin-settings-card">
           <div class="card-head"><div><p class="eyebrow">Account</p><h2>Account Settings</h2></div></div>
           <form id="contactForm" class="settings-grid"><label>Contact Email<input name="contactEmail" type="email" required></label><label>Phone Number 1<input name="phone1" type="tel" required></label><label>Phone Number 2<input name="phone2" type="tel"></label><label>UPI ID<input name="upiId" type="text" placeholder="muni@upi"></label><div class="settings-wide settings-actions"><button class="btn btn-saffron" type="submit">Update Contact &amp; UPI</button><button class="admin-icon-btn delete-btn" id="deleteUpi" type="button" title="Delete UPI ID and QR code" aria-label="Delete UPI ID and QR code">🗑</button><span id="contactMessage" role="status"></span></div></form>
-            <h3 class="donation-settings-title">Donation Settings</h3>
+            <h3 id="donationSettings" class="donation-settings-title">Donation Settings</h3>
             <form id="donationSettingsForm" class="settings-grid">
+              <label>UPI ID<input name="upiId" type="text" placeholder="ganeshutsav@upi"></label>
               <label>Bank Name<input name="bankName" type="text" placeholder="State Bank of India"></label>
               <label>Account Name<input name="accountName" type="text" placeholder="Ganesh Utsav Committee"></label>
               <label>Account Number<input name="accountNumber" type="text" inputmode="numeric"></label>
@@ -234,7 +235,7 @@
     </div>
     <div id="donorModal" class="finance-modal" aria-hidden="true"><div class="finance-modal-panel donor-modal-panel" role="dialog" aria-modal="true" aria-labelledby="donorModalTitle"><button class="finance-close" id="closeDonorModal" type="button" aria-label="Close">×</button><p class="eyebrow">Community contribution</p><h3 id="donorModalTitle">Add Donor</h3><p id="donorEditContext" class="donor-edit-context" aria-live="polite"></p><form id="donorModalForm" class="donor-modal-form"><input name="flatNumber" placeholder="PlotNo-37, Samyukta-101 or Sirius-101 *" required><input name="donorName" placeholder="Donor Name *" required><input name="mobile" placeholder="Mobile Number"><select name="contributionType"><option value="Regular Donation">Regular Donation</option><option value="Laddu Auction 2025">Laddu Auction 2025</option><option value="Ganesh Idol Sponsor">Ganesh Idol Sponsor</option></select><input name="itemName" class="contribution-extra contribution-auction" placeholder="Item name" hidden><input name="winningBidAmount" class="contribution-extra contribution-auction" type="number" min="0" placeholder="Winning bid amount" hidden><input name="sponsorshipAmount" class="contribution-extra contribution-sponsor" type="number" min="0" placeholder="Sponsorship amount" hidden><input name="sponsorType" class="contribution-extra contribution-sponsor" placeholder="Sponsor type (optional)" hidden><input name="amount" type="number" min="0" placeholder="Amount *" required><select name="status" required><option value="Received">Received</option><option value="Yet to receive">Yet to receive</option></select><select name="paymentMode" required><option value="">Payment Mode *</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select><input name="date" type="date" aria-label="Donation date" required><div class="donor-modal-actions"><button type="submit" class="btn btn-saffron">Save Donor</button><button type="button" id="saveAddMore" class="btn btn-outline-dark">Save &amp; Add More</button><button type="button" id="cancelDonor" class="btn btn-link">Cancel</button></div></form></div></div>
     <div id="deleteSuccessModal" class="delete-success-modal" aria-hidden="true" role="status"><div class="delete-success-panel"><span class="delete-success-icon" aria-hidden="true">✓</span><strong id="deleteSuccessMessage">Record deleted successfully.</strong></div></div>
-    <script src="/admin.js?v=20260911-3"></script>
+    <script src="/admin.js?v=20260911-4"></script>
     <script>
       (() => {
         const hour = new Date().getHours();
