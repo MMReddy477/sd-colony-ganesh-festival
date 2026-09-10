@@ -18,7 +18,47 @@ const formatExpenseDate = item => {
   const parsedDate = new Date(date);
   return Number.isNaN(parsedDate.getTime()) ? formatDate(date) : formatDate(parsedDate);
 };
-const formatExpenseTime = item => item.createdAt ? new Date(item.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--";
+const formatExpenseTime = item => {
+  if (item.time) return item.time;
+  return item.createdAt ? new Date(item.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "--";
+};
+const calculateExpenseBalance = (amount, advanceAmount, status) => {
+  const total = Number(amount || 0);
+  const advance = Number(advanceAmount || 0);
+  if (status === "Full Paid") return { advanceAmount: 0, remainingAmount: 0 };
+  return { advanceAmount: advance, remainingAmount: Math.max(total - advance, 0) };
+};
+const syncExpenseBalanceFields = () => {
+  const form = document.getElementById("expenseForm");
+  if (!form || !form.elements.amount || !form.elements.advanceAmount || !form.elements.remainingAmount) return;
+
+  const total = Number(form.elements.amount.value || 0);
+  const status = form.elements.status?.value || "Due";
+  const advanceValue = Number(form.elements.advanceAmount.value || 0);
+
+  if (status === "Full Paid") {
+    form.elements.advanceAmount.value = "0";
+    form.elements.remainingAmount.value = "0";
+    form.elements.advanceAmount.disabled = true;
+    form.elements.remainingAmount.disabled = true;
+    return;
+  }
+
+  form.elements.advanceAmount.disabled = false;
+  form.elements.remainingAmount.disabled = true;
+
+  const values = calculateExpenseBalance(total, advanceValue, status);
+  form.elements.advanceAmount.value = String(values.advanceAmount);
+  form.elements.remainingAmount.value = String(values.remainingAmount);
+
+  if (Number(form.elements.advanceAmount.value || 0) >= total && total > 0) {
+    form.elements.status.value = "Full Paid";
+    form.elements.advanceAmount.value = "0";
+    form.elements.remainingAmount.value = "0";
+    form.elements.advanceAmount.disabled = true;
+    form.elements.remainingAmount.disabled = true;
+  }
+};
 const normalizePlotNumber = value => { const raw = String(value ?? "").trim().replace(/\s+/g, "-").replace(/-+/g, "-"); const plotMatch = raw.match(/^plot(?:-?no\.?)?-?(\d+)$/i); if (plotMatch) return `PlotNo-${plotMatch[1]}`; const siriusMatch = raw.match(/^(sirius|sirus)[_-]?(\d+)$/i); if (siriusMatch) return `Sirius_${siriusMatch[2]}`; const samyuktaMatch = raw.match(/^(samyukta)-?(\d+)$/i); return samyuktaMatch ? `Samyukta-${samyuktaMatch[2]}` : raw; };
 const alphanumericSort = (a, b) => { const aparts = String(a).split(/(\d+)/); const bparts = String(b).split(/(\d+)/); for (let i = 0; i < Math.min(aparts.length, bparts.length); i++) { const isNum = /^\d+$/.test(aparts[i]); if (isNum) { const diff = Number(aparts[i]) - Number(bparts[i]); if (diff) return diff; } else { if (aparts[i] !== bparts[i]) return aparts[i].localeCompare(bparts[i]); } } return aparts.length - bparts.length; };
 const sortByPlotNumber = (left, right) => { const parse = value => { const normalized = normalizePlotNumber(value); const cleanMatch = normalized.match(/^PlotNo-(\d+)$/); if (cleanMatch) return [0, Number(cleanMatch[1]), '']; const samyuktaMatch = normalized.match(/^Samyukta-(\d+)$/); if (samyuktaMatch) return [3, Number(samyuktaMatch[1]), '']; const siriusMatch = normalized.match(/^Sirius_(\d+)$/); if (siriusMatch) return [4, Number(siriusMatch[1]), '']; const rawValue = String(value || '').trim().toLowerCase(); if (rawValue.includes('plot') || rawValue.match(/^plotno/i)) return [1, 0, normalized]; return [2, 0, normalized]; }; const a = parse(left.flatNumber); const b = parse(right.flatNumber); if (a[0] !== b[0]) return a[0] - b[0]; if (a[0] === 0 || a[0] === 3 || a[0] === 4) return a[1] - b[1]; if (a[0] === 1) return alphanumericSort(a[2], b[2]); return a[2].localeCompare(b[2]); };
@@ -27,7 +67,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document
       .querySelectorAll('select[name="paymentMode"]')
       .forEach((select) => {
-        select.value = "Cash";
+        if (!select.value) select.value = "Cash";
       });
     const form = document.getElementById("donationForm");
     if (form) {
@@ -43,15 +83,119 @@ window.addEventListener("DOMContentLoaded", () => {
       const button = form.querySelector("button");
       fields.forEach((field) => form.insertBefore(field, button));
     }
+    const expenseForm = document.getElementById("expenseForm");
+    if (expenseForm) {
+      expenseForm.elements.status?.addEventListener("change", () => {
+        if (expenseForm.elements.status.value === "Full Paid") {
+          expenseForm.elements.advanceAmount.value = "0";
+          expenseForm.elements.remainingAmount.value = "0";
+          expenseForm.elements.advanceAmount.disabled = true;
+          expenseForm.elements.remainingAmount.disabled = true;
+          return;
+        }
+        expenseForm.elements.advanceAmount.disabled = false;
+        expenseForm.elements.remainingAmount.disabled = true;
+        syncExpenseBalanceFields();
+      });
+      expenseForm.elements.amount?.addEventListener("input", syncExpenseBalanceFields);
+      expenseForm.elements.advanceAmount?.addEventListener("input", () => {
+        const total = Number(expenseForm.elements.amount.value || 0);
+        const advance = Number(expenseForm.elements.advanceAmount.value || 0);
+
+        if (advance >= total && total > 0) {
+          expenseForm.elements.advanceAmount.value = "0";
+          expenseForm.elements.remainingAmount.value = "0";
+          expenseForm.elements.status.value = "Full Paid";
+          expenseForm.elements.advanceAmount.disabled = true;
+          expenseForm.elements.remainingAmount.disabled = true;
+          return;
+        }
+
+        expenseForm.elements.status.value = "Due";
+        expenseForm.elements.advanceAmount.disabled = false;
+        expenseForm.elements.remainingAmount.disabled = true;
+        syncExpenseBalanceFields();
+      });
+      syncExpenseBalanceFields();
+    }
+    const addExpenseButton = document.getElementById("addExpenseButton");
+    const expenseModal = document.getElementById("expenseModal");
+    const closeExpenseModalBtn = document.getElementById("closeExpenseModal");
+    const cancelExpenseModalBtn = document.getElementById("cancelExpenseModal");
+    addExpenseButton?.addEventListener("click", () => {
+      if (expenseModal) {
+        expenseModal.style.display = "block";
+        expenseModal.setAttribute("aria-hidden", "false");
+      }
+    });
+    closeExpenseModalBtn?.addEventListener("click", () => {
+      if (expenseModal) {
+        expenseModal.style.display = "none";
+        expenseModal.setAttribute("aria-hidden", "true");
+      }
+    });
+    cancelExpenseModalBtn?.addEventListener("click", () => {
+      if (expenseModal) {
+        expenseModal.style.display = "none";
+        expenseModal.setAttribute("aria-hidden", "true");
+      }
+    });
+    expenseModal?.addEventListener("click", (event) => {
+      if (event.target === expenseModal) {
+        expenseModal.style.display = "none";
+        expenseModal.setAttribute("aria-hidden", "true");
+      }
+    });
   }, 0);
 });
+
+function calculateExpenseTotals() {
+  const totalAmount = adminExpenses.reduce((sum, item) => sum + Number(item.amount || item.total || 0), 0);
+  const advanceAmount = adminExpenses.reduce((sum, item) => sum + Number(item.advanceAmount || 0), 0);
+  const remainingAmount = adminExpenses.reduce((sum, item) => sum + Number(item.remainingAmount || 0), 0);
+  const collectedAmount = adminDonations
+    .filter(item => item.status !== "Yet to receive" && item.contributionType !== "Ganesh Idol Sponsor")
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const estimatedBalance = collectedAmount - totalAmount;
+
+  const table = document.querySelector("#expenseAdminList .expense-table");
+  if (table) {
+    let tfoot = table.querySelector("tfoot");
+    if (!tfoot) {
+      tfoot = document.createElement("tfoot");
+      table.appendChild(tfoot);
+    }
+    tfoot.innerHTML = `
+      <tr id="totalsRow" style="font-weight:bold;">
+        <td style="text-align:right;">Grand Total</td>
+        <td style="background-color:#d4edda;">${money(totalAmount)}</td>
+        <td style="background-color:#cce5ff;">${money(advanceAmount)}</td>
+        <td style="background-color:#fff3cd;">${money(remainingAmount)}</td>
+        <td colspan="5"></td>
+      </tr>
+    `;
+  }
+
+  const totalExpenditureEl = document.getElementById("totalExpenditure");
+  const totalPaidEl = document.getElementById("totalPaid");
+  const totalDueEl = document.getElementById("totalDue");
+  const collectedAmountEl = document.getElementById("collectedAmount");
+  const estimatedBalanceEl = document.getElementById("estimatedBalance");
+
+  if (totalExpenditureEl) totalExpenditureEl.textContent = money(totalAmount);
+  if (totalPaidEl) totalPaidEl.textContent = money(advanceAmount);
+  if (totalDueEl) totalDueEl.textContent = money(remainingAmount);
+  if (collectedAmountEl) collectedAmountEl.textContent = money(collectedAmount);
+  if (estimatedBalanceEl) estimatedBalanceEl.textContent = money(estimatedBalance);
+}
 
 function renderExpenseTable(items, path) {
   const container = document.getElementById("expenseAdminList");
   const query = document.getElementById("expenseSearch")?.value.toLowerCase() || "";
-  const filtered = items.filter(item => `${item.name} ${item.paymentMode}`.toLowerCase().includes(query));
+  const filtered = items.filter(item => `${item.name} ${item.paymentMode} ${item.status || ""} ${item.advanceAmount || ""} ${item.remainingAmount || ""}`.toLowerCase().includes(query));
   const pageSize = getPageSize("expense"); const page = pageState.expense; const visible = pageSize === "all" ? filtered : filtered.slice(page * pageSize, (page + 1) * pageSize);
-  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td></tr>`).join("") || '<tr><td colspan="5" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  container.innerHTML = `<div class="expense-table-wrap"><table class="expense-table"><thead><tr><th>Expense name</th><th>Total</th><th>Advance</th><th>Remaining</th><th>Status</th><th>Payment mode</th><th>Date</th><th>Time</th><th>Actions</th></tr></thead><tbody>${visible.map((item) => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${money(item.advanceAmount || 0)}</td><td>${money(item.remainingAmount || 0)}</td><td>${item.status || "Due"}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item)}</td><td>${formatExpenseTime(item)}</td><td class="actions-cell"><div class="admin-actions donation-actions"><button class="admin-icon-btn edit-action" type="button" data-edit-expense="${item._id}" title="Edit expense" aria-label="Edit expense">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="${path}/${item._id}" title="Delete expense" aria-label="Delete expense">🗑</button></div></td></tr>`).join("") || '<tr><td colspan="9" class="muted">Nothing here yet.</td></tr>'}</tbody></table></div>`;
+  calculateExpenseTotals();
   renderPagination("expensePagination", filtered.length, pageSize, page, next => { pageState.expense = next; renderExpenseTable(items, path); });
 }
 const defaultExpenseList = renderList;
@@ -370,6 +514,32 @@ async function downloadReceiptImage(receiptNumber) {
   }
 }
 document.addEventListener("click", async (event) => {
+  const editExpenseButton = event.target.closest("[data-edit-expense]");
+  if (editExpenseButton) {
+    const expense = adminExpenses.find((item) => String(item._id) === String(editExpenseButton.dataset.editExpense));
+    if (!expense) return;
+    editingExpenseId = expense._id;
+    const form = document.getElementById("expenseForm");
+    const modal = document.getElementById("expenseModal");
+    if (!form || !modal) return;
+    const hiddenId = document.getElementById("expenseId");
+    if (hiddenId) hiddenId.value = String(expense._id);
+    form.elements.name.value = expense.name || "";
+    form.elements.paymentMode.value = expense.paymentMode || "Cash";
+    form.elements.amount.value = expense.amount || 0;
+    form.elements.status.value = expense.status || "Due";
+    form.elements.advanceAmount.value = expense.advanceAmount || 0;
+    form.elements.remainingAmount.value = expense.remainingAmount || 0;
+    form.elements.date.value = toLocalDateInput(expense.date || expense.createdAt || new Date());
+    form.elements.time.value = expense.time || "";
+    form.dataset.mode = "update";
+    setExpenseFormMode(true);
+    syncExpenseBalanceFields();
+    modal.style.display = "block";
+    modal.setAttribute("aria-hidden", "false");
+    return;
+  }
+
   if (event.target.closest("[data-view-receipt]")) {
     const viewButton = event.target.closest("[data-view-receipt]");
     event.preventDefault();
@@ -508,7 +678,50 @@ const money = (v) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(v || 0);
+const toLocalDateInput = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offsetMinutes = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offsetMinutes * 60000);
+  return localDate.toISOString().slice(0, 10);
+};
+const showPopup = (message, color = "#d9f2d9") => {
+  const popup = document.createElement("div");
+  popup.textContent = message;
+  popup.style.position = "fixed";
+  popup.style.bottom = "20px";
+  popup.style.right = "20px";
+  popup.style.backgroundColor = color;
+  popup.style.color = "#000";
+  popup.style.padding = "10px 20px";
+  popup.style.borderRadius = "8px";
+  popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
+  popup.style.zIndex = "9999";
+  popup.style.fontWeight = "600";
+  document.body.appendChild(popup);
+  window.setTimeout(() => popup.remove(), 2500);
+};
 const formData = (form) => Object.fromEntries(new FormData(form));
+const setExpenseFormMode = (isEdit) => {
+  const saveBtn = document.getElementById("saveBtn");
+  const updateBtn = document.getElementById("updateBtn");
+  if (saveBtn) saveBtn.style.display = isEdit ? "none" : "inline-block";
+  if (updateBtn) updateBtn.style.display = isEdit ? "inline-block" : "none";
+};
+const resetExpenseForm = () => {
+  const form = document.getElementById("expenseForm");
+  if (!form) return;
+  form.reset();
+  form.dataset.mode = "save";
+  const hiddenId = document.getElementById("expenseId");
+  if (hiddenId) hiddenId.value = "";
+  const dateInput = form.elements.date;
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+  const statusSelect = form.elements.status;
+  if (statusSelect && !statusSelect.value) statusSelect.value = "Due";
+  setExpenseFormMode(false);
+};
 function showDashboard() {
   document.getElementById("loginView").classList.add("d-none");
   document.getElementById("dashboardView").classList.remove("d-none");
@@ -599,6 +812,7 @@ async function loadAdmin() {
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && item.contributionType !== "Ganesh Idol Sponsor").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  calculateExpenseTotals();
   document.getElementById("adminStats").innerHTML = [
     ["Donations", adminTotalDonations],
     ["Expenses", adminTotalExpenses],
@@ -636,6 +850,7 @@ let adminLiveDonations = [];
 let adminExpenses = [];
 let adminMembers = [];
 let adminEvents = [];
+let editingExpenseId = null;
 const editRecordFields = { expense: ["name", "amount", "paymentMode", "date"], member: ["name", "designation", "mobile"], event: ["name", "mobile", "date", "time", "venue", "status"] };
 document.addEventListener("click", event => {
   const button = event.target.closest("[data-edit-record]");
@@ -691,7 +906,12 @@ document.getElementById("saveAddMore")?.addEventListener("click", () => { if (do
 document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => String(item._id) === String(button.dataset.editDonation)) || adminLiveDonations.find(item => String(item._id) === String(button.dataset.editDonation)); if (!donation || !donorModalForm) return; document.getElementById("adminFinanceModal")?.classList.remove("is-open"); editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, contributionType: donation.contributionType || "Regular Donation", itemName: donation.itemName, winningBidAmount: donation.winningBidAmount, sponsorshipAmount: donation.sponsorshipAmount, sponsorType: donation.sponsorType, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); updateContributionFields(donorModalForm); document.getElementById("donorModalTitle").textContent = "Edit Donor"; document.getElementById("donorEditContext").textContent = `Editing ${donation.donorName || "Unnamed donor"} · ${donation.flatNumber || "No plot number"}`; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
 function renderGalleryAdmin(items) {
   const fallbackPath = "/GaneshIdol_detail.jpeg";
-  const mediaPath = item => { const value = String(item.path || item.filename || "").trim().replace(/\\/g, "/"); return value ? (value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`) : fallbackPath; };
+  const mediaPath = item => {
+    const value = String(item.path || item.filename || "").trim().replace(/\\/g, "/");
+    if (!value) return fallbackPath;
+    const normalized = value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`;
+    return normalized.includes("?") ? normalized : `${normalized}?v=${Date.now()}`;
+  };
   const list = document.getElementById("galleryAdminList");
   list.innerHTML = items.map((item) => { const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || ""); const media = isVideo ? `<video src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery video"}"></video>` : `<img src="${mediaPath(item)}" alt="${item.originalName || "Gallery image"}">`; return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`; }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
   list.querySelectorAll(".gallery-admin-media > img").forEach((image) => image.addEventListener("error", () => { image.onerror = null; image.src = fallbackPath; }));
@@ -725,20 +945,79 @@ async function submitAdmin(form, endpoint) {
   form.reset();
   loadAdmin();
 }
-document.getElementById("expenseForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const date = e.target.elements.date.value.trim();
-  const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const displayMatch = date.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  const dateMatch = isoMatch ? [date, isoMatch[3], isoMatch[2], isoMatch[1]] : displayMatch;
-  if (!dateMatch) { e.target.elements.date.setCustomValidity("Enter the date as dd-mm-yyyy"); e.target.elements.date.reportValidity(); return; }
-  const parsedDate = new Date(Number(dateMatch[3]), Number(dateMatch[2]) - 1, Number(dateMatch[1]));
-  if (parsedDate.getFullYear() !== Number(dateMatch[3]) || parsedDate.getMonth() !== Number(dateMatch[2]) - 1 || parsedDate.getDate() !== Number(dateMatch[1])) { e.target.elements.date.setCustomValidity("Enter a valid date"); e.target.elements.date.reportValidity(); return; }
-  e.target.elements.date.setCustomValidity("");
-  const formData = new FormData(e.target);
-  formData.set("date", `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`);
-  api("/expenses", { method: "POST", body: formData }).then(async response => { if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save expense"); return; } e.target.reset(); loadAdmin(); });
-});
+const expenseForm = document.getElementById("expenseForm");
+if (expenseForm) {
+  const saveBtn = document.getElementById("saveBtn");
+  const updateBtn = document.getElementById("updateBtn");
+  saveBtn?.addEventListener("click", () => {
+    expenseForm.dataset.mode = "save";
+    expenseForm.requestSubmit();
+  });
+  updateBtn?.addEventListener("click", () => {
+    expenseForm.dataset.mode = "update";
+    expenseForm.requestSubmit();
+  });
+
+  expenseForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const mode = e.target.dataset.mode || "save";
+    const hiddenId = document.getElementById("expenseId");
+    const dateValue = e.target.elements.date.value.trim();
+    if (!dateValue) {
+      e.target.elements.date.setCustomValidity("Please select an expense date.");
+      e.target.elements.date.reportValidity();
+      return;
+    }
+    e.target.elements.date.setCustomValidity("");
+
+    const totalAmount = Number(e.target.elements.amount.value || 0);
+    const status = e.target.elements.status.value || "Due";
+    const advanceAmount = Number(e.target.elements.advanceAmount.value || 0);
+    const values = calculateExpenseBalance(totalAmount, advanceAmount, status);
+    const payload = new FormData(e.target);
+    payload.set("date", toLocalDateInput(dateValue));
+    payload.set("status", status);
+    payload.set("advanceAmount", String(values.advanceAmount));
+    payload.set("remainingAmount", String(values.remainingAmount));
+    if (hiddenId && hiddenId.value) payload.set("expenseId", hiddenId.value);
+
+    const isUpdate = mode === "update" && hiddenId && hiddenId.value;
+    const endpoint = isUpdate ? `/expenses/${hiddenId.value}` : "/expenses";
+    const method = isUpdate ? "PUT" : "POST";
+    if (!isUpdate && mode === "update") {
+      showPopup("Select an expense to update ⚠️", "#ffe5cc");
+      return;
+    }
+
+    const response = await api(endpoint, {
+      method,
+      body: payload,
+      headers: method === "PUT" ? {} : undefined,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      alert(data.message || "Could not save expense");
+      return;
+    }
+
+    showPopup(mode === "update" ? "Updated successfully ✅" : "Saved successfully ✅", "#d9f2d9");
+    e.target.reset();
+    editingExpenseId = null;
+    if (hiddenId) hiddenId.value = "";
+    e.target.dataset.mode = "save";
+    setExpenseFormMode(false);
+    const modal = document.getElementById("expenseModal");
+    if (modal) {
+      modal.style.display = "none";
+      modal.setAttribute("aria-hidden", "true");
+    }
+    const select = document.getElementById("paymentStatus");
+    if (select) select.value = "Due";
+    const remaining = e.target.elements.remainingAmount;
+    if (remaining) remaining.value = "0";
+    loadAdmin();
+  });
+}
 document.getElementById("eventForm").addEventListener("submit", (e) => {
   e.preventDefault();
   submitAdmin(e.target, "/events");

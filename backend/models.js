@@ -5,7 +5,22 @@ const CommitteeMember = mongoose.model('CommitteeMember', new mongoose.Schema({ 
 const Event = mongoose.model('Event', new mongoose.Schema({ name: { type: String, required: true, trim: true }, mobile: String, date: Date, time: String, description: String, venue: { type: String, default: 'Between Sirius & Samyukta', trim: true }, status: { type: String, enum: ['Pending', 'Approved', 'Completed'], default: 'Approved' } }, opts));
 const Gallery = mongoose.model('Gallery', new mongoose.Schema({ title: { type: String, required: true, trim: true }, caption: { type: String, default: '', trim: true }, filename: String, originalName: String, path: String, mediaType: String, displayOrder: { type: Number, default: 0 } }, opts));
 const Donation = mongoose.model('Donation', new mongoose.Schema({ flatNumber: { type: String, trim: true }, donorName: { type: String, required: true, trim: true }, mobile: String, amount: { type: Number, required: true, min: 0 }, status: { type: String, enum: ['Received', 'Yet to receive'], default: 'Received' }, date: { type: Date, default: Date.now }, paymentMode: String, contributionType: { type: String, enum: ['Regular Donation', 'Laddu Auction 2025', 'Ganesh Idol Sponsor'], default: 'Regular Donation' }, itemName: { type: String, trim: true }, winningBidAmount: { type: Number, min: 0 }, sponsorshipAmount: { type: Number, min: 0 }, sponsorType: { type: String, trim: true }, receiptNumber: { type: String, unique: true } }, opts));
-const Expense = mongoose.model('Expense', new mongoose.Schema({ name: { type: String, required: true }, amount: { type: Number, required: true, min: 0 }, date: { type: Date, default: Date.now }, description: String, category: String, paymentMode: { type: String, required: true }, billFilename: String, billOriginalName: String, billPath: String, billMimeType: String }, opts));
+const Expense = mongoose.model('Expense', new mongoose.Schema({
+  name: { type: String, required: true },
+  amount: { type: Number, required: true, min: 0 },
+  date: { type: Date, default: Date.now },
+  time: { type: String, default: '' },
+  status: { type: String, enum: ['Due', 'Full Paid'], default: 'Due' },
+  advanceAmount: { type: Number, default: 0, min: 0 },
+  remainingAmount: { type: Number, default: 0, min: 0 },
+  description: String,
+  category: String,
+  paymentMode: { type: String, required: true },
+  billFilename: String,
+  billOriginalName: String,
+  billPath: String,
+  billMimeType: String
+}, opts));
 const Receipt = mongoose.model('Receipt', new mongoose.Schema({ receiptNumber: { type: String, unique: true }, donation: { type: mongoose.Schema.Types.ObjectId, ref: 'Donation' }, qrData: String }, opts));
 const SiteSettings = mongoose.model('SiteSettings', new mongoose.Schema({ key: { type: String, unique: true }, contactEmail: String, phone1: String, phone2: String, upiId: String, welcomeMessage: String }, opts));
 module.exports = { User, CommitteeMember, Event, Gallery, Donation, Expense, Receipt, SiteSettings };

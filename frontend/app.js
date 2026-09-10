@@ -53,7 +53,7 @@ const publicExpenseTableObserver = new MutationObserver(async () => {
     const pages = Math.max(1, Math.ceil(expenses.length / pageSize));
     page = Math.min(page, pages - 1);
     const visible = expenses.slice(page * pageSize, (page + 1) * pageSize);
-    modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${expenses.length ? page * pageSize + 1 : 0}-${Math.min((page + 1) * pageSize, expenses.length)} of ${expenses.length} expenses</div><div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("") || '<tr><td colspan="5">No expenditure recorded yet.</td></tr>'}</tbody></table></div><div class="public-donation-pagination expense-pagination"><button type="button" data-expense-page="prev" aria-label="Previous page" title="Previous page" ${page === 0 ? "disabled" : ""}>‹</button><span>Page ${page + 1} of ${pages}</span><button type="button" data-expense-page="next" aria-label="Next page" title="Next page" ${page >= pages - 1 ? "disabled" : ""}>›</button></div>`;
+    modal.querySelector(".finance-content").innerHTML = `<div class="finance-record-count">Showing ${expenses.length ? page * pageSize + 1 : 0}-${Math.min((page + 1) * pageSize, expenses.length)} of ${expenses.length} expenses</div><div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Total</th><th>Advance</th><th>Remaining</th><th>Status</th><th>Payment mode</th><th>Date</th><th>Time</th></tr></thead><tbody>${visible.map(item => `<tr><td>${item.name || "--"}</td><td><strong>${money(item.amount)}</strong></td><td>${money(item.advanceAmount ?? 0)}</td><td>${money(item.remainingAmount ?? 0)}</td><td>${item.status || "Due"}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date || item.createdAt)}</td><td>${formatExpenseTime(item.createdAt || item.time || item.date)}</td></tr>`).join("") || '<tr><td colspan="8">No expenditure recorded yet.</td></tr>'}</tbody></table></div><div class="public-donation-pagination expense-pagination"><button type="button" data-expense-page="prev" aria-label="Previous page" title="Previous page" ${page === 0 ? "disabled" : ""}>‹</button><span>Page ${page + 1} of ${pages}</span><button type="button" data-expense-page="next" aria-label="Next page" title="Next page" ${page >= pages - 1 ? "disabled" : ""}>›</button></div>`;
     modal.querySelectorAll("[data-expense-page]").forEach(button => button.addEventListener("click", () => { page += button.dataset.expensePage === "next" ? 1 : -1; renderExpenses(); }));
   };
   renderExpenses();
@@ -248,13 +248,78 @@ async function loadPortal() {
   const publicExpenditureSummary = document.getElementById("publicExpenditureSummary");
   if (publicExpenditureSummary) {
     const totalExpenses = Number(data.stats.totalExpenses || 0);
+    const expenseRows = data.expenses || [];
+    const total = expenseRows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const advance = expenseRows.reduce((sum, item) => sum + Number(item.advanceAmount || 0), 0);
+    const remaining = expenseRows.reduce((sum, item) => sum + Number(item.remainingAmount || 0), 0);
+    const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
+    const finalRemaining = collectedAmount - totalExpenses;
+    const rows = expenseRows.map(item => `
+      <tr>
+        <td>${escapeHtml(item.name || "--")}</td>
+        <td data-total="${Number(item.amount || 0)}">${money(item.amount)}</td>
+        <td data-advance="${Number(item.advanceAmount || 0)}">${money(item.advanceAmount ?? 0)}</td>
+        <td data-remaining="${Number(item.remainingAmount || 0)}">${money(item.remainingAmount ?? 0)}</td>
+        <td><span class="public-expense-status ${((item.status || "Due")).toLowerCase().replace(/\s+/g, "-")}">${escapeHtml(item.status || "Due")}</span></td>
+        <td>${escapeHtml(item.paymentMode || "--")}</td>
+        <td>${escapeHtml(formatExpenseDate(item.date || item.createdAt))}</td>
+        <td>${escapeHtml(formatExpenseTime(item.createdAt || item.time || item.date))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="8" class="donor-empty">No expenditure recorded yet.</td></tr>';
     publicExpenditureSummary.innerHTML = `
-      <article class="summary-card stat-card balance-stat" role="button" tabindex="0" aria-label="View expenditure details">
-        <h4>Outgoings</h4>
-        <strong class="amount">${money(totalExpenses)}</strong>
-        <p class="summary-subtext">Festival expenditure and community support costs</p>
-      </article>
+      <div class="public-expense-summary-shell">
+        <div class="public-expense-summary-box">
+          <h3>Where the Money Is Going</h3>
+          <h2>Total expenditure overview</h2>
+          <div class="public-expense-summary-metrics">
+            <p class="public-expense-metric public-expense-metric-total">Total Expenditure: <span id="totalSum">${money(totalExpenses)}</span></p>
+            <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="advanceSum">${money(advance)}</span></p>
+            <p class="public-expense-metric public-expense-metric-due">Total Due: <span id="remainingSum">${money(remaining)}</span></p>
+            <p class="public-expense-metric public-expense-metric-collected">Collected Amount (General + Laddu Auction): <span id="collectedAmount">${money(collectedAmount)}</span></p>
+            <p class="public-expense-metric public-expense-metric-final">Estimated Remaining Balance: <span id="finalRemaining">${money(finalRemaining)}</span></p>
+          </div>
+        </div>
+        <div class="public-expense-table-wrap">
+          <table class="public-expense-table">
+            <thead>
+              <tr>
+                <th>Expense Name</th>
+                <th>Total Amount</th>
+                <th>Advance Amount</th>
+                <th>Remaining Amount</th>
+                <th>Payment Status</th>
+                <th>Payment Mode</th>
+                <th>Date</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="publicExpenseTable">${rows}</tbody>
+          </table>
+        </div>
+      </div>
     `;
+    const publicExpenseSummaryTotals = () => {
+      const rowsList = document.querySelectorAll("#publicExpenseTable tr");
+      let totalValue = 0;
+      let advanceValue = 0;
+      let remainingValue = 0;
+      rowsList.forEach(row => {
+        totalValue += Number(row.querySelector("td[data-total]")?.dataset.total || 0);
+        advanceValue += Number(row.querySelector("td[data-advance]")?.dataset.advance || 0);
+        remainingValue += Number(row.querySelector("td[data-remaining]")?.dataset.remaining || 0);
+      });
+      const totalEl = document.getElementById("totalSum");
+      const advanceEl = document.getElementById("advanceSum");
+      const remainingEl = document.getElementById("remainingSum");
+      const collectedEl = document.getElementById("collectedAmount");
+      const finalRemainingEl = document.getElementById("finalRemaining");
+      if (totalEl) totalEl.textContent = money(totalValue);
+      if (advanceEl) advanceEl.textContent = money(advanceValue);
+      if (remainingEl) remainingEl.textContent = money(remainingValue);
+      if (collectedEl) collectedEl.textContent = money(collectedAmount);
+      if (finalRemainingEl) finalRemainingEl.textContent = money(finalRemaining);
+    };
+    requestAnimationFrame(publicExpenseSummaryTotals);
   }
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
   renderPublicDonors(data.donations);
@@ -294,7 +359,8 @@ function galleryMediaPath(image) {
   const value = String(image?.path || image?.filename || "").trim().replace(/\\/g, "/");
   if (!value) return galleryFallbackPath;
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
-  return value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`;
+  const normalized = value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`;
+  return normalized.includes("?") ? normalized : `${normalized}?v=${Date.now()}`;
 }
 function setGalleryImageFallback(event) {
   const image = event.currentTarget;

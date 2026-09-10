@@ -5,6 +5,225 @@
   align-items: stretch;
 }
 
+#publicExpenditureSummary {
+  display: block;
+}
+
+#publicExpenditureSummary > .public-expense-summary-shell {
+  width: 100%;
+  max-width: none;
+}
+
+.public-expense-summary-shell {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  max-width: none;
+  padding: 1.25rem;
+  border: 1px solid rgba(122, 31, 31, 0.18);
+  border-radius: 10px;
+  background: #fdf7f2;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.public-expense-summary-box {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.public-expense-summary-box h3 {
+  margin: 0;
+  color: #8b0000;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.public-expense-summary-box h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  line-height: 1.2;
+}
+
+.public-expense-summary-metrics {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.public-expense-metric {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.public-expense-metric span {
+  display: inline;
+  margin-left: 0.15rem;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.public-expense-metric-total {
+  color: #2e8b57;
+}
+
+.public-expense-metric-paid {
+  color: #007bff;
+}
+
+.public-expense-metric-due {
+  color: #e67e22;
+}
+
+.public-expense-metric-collected {
+  color: #6a5acd;
+}
+
+.public-expense-metric-final {
+  color: #dc143c;
+}
+
+.public-expense-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(122, 31, 31, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.public-expense-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: .82rem;
+}
+
+@media (max-width: 1100px) {
+  .public-expense-table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 700px) {
+  .public-expense-table {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 480px) {
+  .public-expense-table {
+    min-width: 520px;
+    font-size: .72rem;
+  }
+}
+
+.public-expense-table th,
+.public-expense-table td {
+  padding: .8rem .7rem;
+  border-bottom: 1px solid rgba(122, 31, 31, 0.12);
+  text-align: left;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.public-expense-table thead th {
+  background: rgba(255, 248, 237, 0.9);
+  color: var(--red);
+  font-size: .67rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.public-expense-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.public-expense-table tbody tr:hover {
+  background: rgba(255, 244, 220, 0.8);
+}
+
+.public-expense-table td:nth-child(2),
+.public-expense-table td:nth-child(3),
+.public-expense-table td:nth-child(4),
+.public-expense-table td:nth-child(8) {
+  white-space: nowrap;
+}
+
+.public-expense-table td:nth-child(2) {
+  background-color: #d9f2d9;
+}
+
+.public-expense-table td:nth-child(3) {
+  background-color: #d9e9ff;
+}
+
+.public-expense-table td:nth-child(4) {
+  background-color: #ffe5cc;
+}
+
+@media (max-width: 700px) {
+  .public-expense-summary-shell {
+    padding: .9rem;
+  }
+  .public-expense-summary-metrics {
+    grid-template-columns: 1fr;
+  }
+  .public-expense-table {
+    min-width: 680px;
+    font-size: .75rem;
+  }
+  .public-expense-table th,
+  .public-expense-table td {
+    padding: .6rem .5rem;
+  }
+}
+
+.public-expense-status {
+  display: inline-block;
+  padding: .3rem .55rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.public-expense-status.due {
+  background: #fff0c7;
+  color: #a55300;
+}
+
+.public-expense-status.full-paid {
+  background: #dff3e5;
+  color: #176b34;
+}
+
+@media (max-width: 700px) {
+  .public-expense-summary-shell {
+    padding: .9rem;
+  }
+  .public-expense-summary-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .public-expense-table {
+    min-width: 760px;
+    font-size: .76rem;
+  }
+}
+
 .summary-container .balance-card,
 .summary-container .summary-card {
   display: flex;

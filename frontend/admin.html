@@ -103,28 +103,42 @@
                 <p class="eyebrow">Outgoings</p>
                 <h2>Expenditure</h2>
               </div>
-              <button
-                class="btn btn-sm btn-outline-dark"
-                data-report="expenses/xlsx"
-              >
-                Export Excel
-              </button>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" id="addExpenseButton" class="btn btn-sm btn-outline-dark">Add Expense</button>
+                <button
+                  class="btn btn-sm btn-outline-dark"
+                  data-report="expenses/xlsx"
+                >
+                  Export Excel
+                </button>
+              </div>
             </div>
-            <form id="expenseForm" class="row g-2" enctype="multipart/form-data">
-              <input
-                name="name"
-                class="form-control"
-                placeholder="Expense name *"
-                required
-              /><select name="paymentMode" class="form-select" required><option value="">Payment mode *</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select><input
-                name="amount"
-                type="number"
-                min="0"
-                class="form-control"
-                placeholder="Amount *"
-                required
-              /><label class="expense-date-field">Expense date (dd-mm-yyyy)<input name="date" type="date" class="form-control" aria-label="Expense date" required /></label><input name="bill" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="form-control" /><button class="btn btn-dark-red col-auto">Add expense</button>
-            </form>
+
+            <div id="expenseModal" class="finance-modal" aria-hidden="true" style="display:none;">
+              <div class="finance-modal-panel donor-modal-panel" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+                <button type="button" class="finance-close" id="closeExpenseModal" aria-label="Close">×</button>
+                <p class="eyebrow">Outgoings</p>
+                <h3 id="expenseModalTitle">Add Expense</h3>
+                <form id="expenseForm" class="donor-modal-form" enctype="multipart/form-data">
+                  <input type="hidden" id="expenseId" name="expenseId" />
+                  <label>Expense Name<input id="expenseName" name="name" class="form-control" placeholder="Expense name *" required /></label>
+                  <label>Payment Mode<select id="paymentMode" name="paymentMode" class="form-select" required><option value="">Select payment mode</option><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label>
+                  <label>Total Amount<input id="totalAmount" name="amount" type="number" min="0" class="form-control" placeholder="Total amount *" required /></label>
+                  <label>Advance Amount<input id="advanceAmount" name="advanceAmount" type="number" min="0" step="0.01" class="form-control" placeholder="Advance amount" value="0" /></label>
+                  <label>Remaining Amount<input id="remainingAmount" name="remainingAmount" type="number" min="0" step="0.01" class="form-control" placeholder="Remaining amount" value="0" readonly /></label>
+                  <label>Payment Status<select id="paymentStatus" name="status" class="form-select"><option value="Due">Due</option><option value="Full Paid">Full Paid</option></select></label>
+                  <label>Date<input id="expenseDate" name="date" type="date" class="form-control" aria-label="Expense date" required /></label>
+                  <label>Time<input id="expenseTime" name="time" type="time" class="form-control" placeholder="Expense time" /></label>
+                  <label>Bill Copy<input name="bill" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="form-control" /></label>
+                  <div class="donor-modal-actions">
+                    <button id="saveBtn" type="submit" class="btn btn-dark-red">Save Expense</button>
+                    <button id="updateBtn" type="button" class="btn btn-primary" style="display:none;">Update Expense</button>
+                    <button type="button" id="cancelExpenseModal" class="btn btn-secondary">Close</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
             <div class="table-tools"><label>Search expenses <input id="expenseSearch" type="search" placeholder="Search expenses"></label></div>
             <div id="expenseAdminList" class="admin-list"></div>
             <div id="expensePagination" class="pagination-panel"></div>

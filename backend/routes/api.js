@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 let QRCode;
 try { QRCode = require('qrcode'); } catch { QRCode = { toDataURL: async value => value }; }
 const PDFDocument = require('pdfkit');
@@ -13,9 +14,43 @@ const { auth } = require('../middleware');
 const { User, CommitteeMember, Event, Gallery, Donation, Expense, Receipt, SiteSettings } = require('../models');
 const router = express.Router();
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
-const upload = multer({ dest: uploadDir, limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(image|video)\//.test(file.mimetype)) });
-const billUpload = multer({ dest: uploadDir, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(application\/pdf|image\/(jpeg|png))$/.test(file.mimetype)) });
+fs.mkdirSync(uploadDir, { recursive: true });
+const extensionForMime = mimeType => {
+  const map = {
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/bmp': '.bmp',
+    'video/mp4': '.mp4',
+    'video/webm': '.webm',
+    'video/ogg': '.ogg',
+    'application/pdf': '.pdf'
+  };
+  return map[mimeType] || '';
+};
+const storageFor = mimeFamily => multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const originalExt = path.extname(file.originalname || '').toLowerCase();
+    const mimeExt = extensionForMime(file.mimetype);
+    const safeBase = (path.basename(file.originalname || 'upload', originalExt) || 'upload')
+      .replace(/[^a-zA-Z0-9-_]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'upload';
+    const ext = originalExt || mimeExt || (mimeFamily === 'video' ? '.mp4' : '.jpg');
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeBase}${ext}`);
+  }
+});
+const upload = multer({ storage: storageFor('image'), limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(image|video)\//.test(file.mimetype)) });
+const billUpload = multer({ storage: storageFor('application'), limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(application\/pdf|image\/(jpeg|png))$/.test(file.mimetype)) });
 const clean = (req, res, next) => { const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg }); next(); };
+const cacheBustUrl = (value) => {
+  if (!value) return value;
+  const raw = String(value).trim();
+  if (!raw || /^(https?:|data:|blob:)/i.test(raw)) return raw;
+  return raw.includes('?') ? raw : `${raw}?v=${Date.now()}`;
+};
 const displayDate = value => { if (!value) return '--'; const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/); if (match) return `${match[3]}-${new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).toLocaleString('en-IN', { month: 'short' })}-${String(match[1]).slice(-2)}`; const parsed = new Date(value); if (Number.isNaN(parsed.getTime())) return '--'; return `${String(parsed.getDate()).padStart(2, '0')}-${parsed.toLocaleString('en-IN', { month: 'short' })}-${String(parsed.getFullYear()).slice(-2)}`; };
 const displayDonationDate = value => { if (!value) return '--'; const parsed = new Date(value); if (Number.isNaN(parsed.getTime())) return '--'; return `${String(parsed.getDate()).padStart(2, '0')}-${parsed.toLocaleString('en-IN', { month: 'short' })}-${String(parsed.getFullYear()).slice(-2)}`; };
 const receiptDownloadName = (donation, receiptNumber, extension) => { const safe = (value, fallback) => String(value || fallback).trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || fallback; return `${safe(donation.flatNumber, 'Receipt')}_${safe(donation.donorName, receiptNumber)}.${extension}`; };
@@ -96,19 +131,40 @@ router.get('/receipts/:number/image-legacy.svg', async (req, res) => {
 });
 
 router.post('/auth/login', [body('username').trim().notEmpty().withMessage('Username is required'), body('password').notEmpty().withMessage('Password is required'), clean], async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ message: 'Database unavailable. Start MongoDB to enable login.' });
+  }
   const user = await User.findOne({ username: req.body.username });
   if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).json({ message: 'Invalid username or password' });
   res.json({ token: jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '4h' }) });
 });
 router.get('/public', async (_req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  if (mongoose.connection.readyState !== 1) {
+    return res.json({
+      committeeName: process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee',
+      contact: {
+        contactEmail: 'hello@ganeshutsav.org',
+        phone1: '8555958559',
+        phone2: '9676344244',
+        upiId: '',
+        welcomeMessage: '🙏 Sri Ganesh Chaturthi Celebration - Suryodaya Colony 🙏'
+      },
+      members: [],
+      events: [],
+      gallery: [],
+      donations: [],
+      expenses: [],
+      stats: { totalDonations: 0, ladduAuctionTotal: 0, totalExpenses: 0, balance: 0, billsUploaded: 0 }
+    });
+  }
   const [members, events, gallery, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name'), Event.find().sort('date'), Gallery.find().sort({ displayOrder: 1, createdAt: -1 }), Donation.find({ $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date'), Expense.find().sort('-date'), SiteSettings.findOne({ key: 'contact' }).lean()]);
   donations.sort(comparePlotNumbers);
   const receivedDonations = donations.filter(donation => donation.status !== 'Yet to receive');
   const regularDonations = receivedDonations.filter(donation => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(donation.contributionType));
   const ladduAuctionTotal = receivedDonations.filter(donation => donation.contributionType === 'Laddu Auction 2025').reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
   const totalDonations = regularDonations.reduce((sum, donation) => sum + Number(donation.amount || 0), 0); const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  const publicExpenses = expenses.map(expense => ({ _id: expense._id, name: expense.name, amount: expense.amount, date: expense.date, createdAt: expense.createdAt, description: expense.description, category: expense.category, paymentMode: expense.paymentMode }));
+  const publicExpenses = expenses.map(expense => ({ _id: expense._id, name: expense.name, amount: expense.amount, date: expense.date, createdAt: expense.createdAt, description: expense.description, category: expense.category, paymentMode: expense.paymentMode, time: expense.time, status: expense.status, advanceAmount: expense.advanceAmount, remainingAmount: expense.remainingAmount }));
   const defaultWelcomeMessage = '🙏 శ్రీ గణేశ చతుర్థి మహోత్సవములకు మీకు హృదయపూర్వక స్వాగతం-సూర్యోదయ కాలనీ 🙏\n🙏 Heartfelt Welcome to Sri Ganesh Chaturthi Celebrations 2026 - Suryodaya Colony 🙏';
   const publicContact = contact ? { ...contact, welcomeMessage: contact.welcomeMessage === undefined ? defaultWelcomeMessage : contact.welcomeMessage } : { contactEmail: 'hello@ganeshutsav.org', phone1: '8555958559', phone2: '9676344244', upiId: '', welcomeMessage: defaultWelcomeMessage };
   if (publicContact.upiId) publicContact.qrData = await QRCode.toDataURL(`upi://pay?pa=${encodeURIComponent(publicContact.upiId)}&pn=${encodeURIComponent(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee')}`);
@@ -175,8 +231,48 @@ router.post('/donations', async (req, res) => { const year = new Date().getFullY
 router.put('/donations/:id', async (req, res) => res.json(await Donation.findByIdAndUpdate(req.params.id, { ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber) }, { new: true, runValidators: true })));
 router.delete('/donations/:id', async (req, res) => { const donation = await Donation.findByIdAndDelete(req.params.id); if (!donation) return res.sendStatus(404); await Receipt.deleteOne({ donation: donation._id }); res.sendStatus(204); });
 router.get('/expenses', async (_req, res) => res.json(await Expense.find().sort('-date')));
-router.post('/expenses', billUpload.single('bill'), async (req, res) => { const expense = await Expense.create({ name: req.body.name, amount: req.body.amount, date: req.body.date, paymentMode: req.body.paymentMode, ...(req.file ? { billFilename: req.file.filename, billOriginalName: req.file.originalname, billPath: `/api/expenses/${req.file.filename}/bill`, billMimeType: req.file.mimetype } : {}) }); res.status(201).json(expense); });
-router.put('/expenses/:id', async (req, res) => res.json(await Expense.findByIdAndUpdate(req.params.id, { name: req.body.name, amount: req.body.amount, date: req.body.date, paymentMode: req.body.paymentMode }, { new: true, runValidators: true })));
+router.post('/expenses', billUpload.single('bill'), async (req, res) => {
+  const expense = await Expense.create({
+    name: req.body.name,
+    amount: req.body.amount,
+    date: req.body.date,
+    time: req.body.time || undefined,
+    paymentMode: req.body.paymentMode,
+    status: req.body.status || 'Due',
+    advanceAmount: req.body.advanceAmount || 0,
+    remainingAmount: req.body.remainingAmount || 0,
+    ...(req.file ? { billFilename: req.file.filename, billOriginalName: req.file.originalname, billPath: `/api/expenses/${req.file.filename}/bill`, billMimeType: req.file.mimetype } : {})
+  });
+  res.status(201).json(expense);
+});
+router.put('/expenses/:id', billUpload.single('bill'), async (req, res) => {
+  const payload = {
+    name: req.body.name,
+    amount: req.body.amount,
+    date: req.body.date,
+    time: req.body.time || undefined,
+    paymentMode: req.body.paymentMode,
+    status: req.body.status || 'Due',
+    advanceAmount: req.body.advanceAmount || 0,
+    remainingAmount: req.body.remainingAmount || 0
+  };
+
+  if (req.file) {
+    const expense = await Expense.findById(req.params.id);
+    if (expense?.billFilename) {
+      const oldPath = path.join(uploadDir, expense.billFilename);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    payload.billFilename = req.file.filename;
+    payload.billOriginalName = req.file.originalname;
+    payload.billPath = `/api/expenses/${req.params.id}/bill`;
+    payload.billMimeType = req.file.mimetype;
+  }
+
+  const updated = await Expense.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+  if (!updated) return res.status(404).json({ message: 'Expense not found' });
+  res.json(updated);
+});
 router.delete('/expenses/:id', async (req, res) => { const expense = await Expense.findByIdAndDelete(req.params.id); if (!expense) return res.sendStatus(404); if (expense.billFilename) { const billPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(billPath)) fs.unlinkSync(billPath); } res.sendStatus(204); });
 router.get('/expenses/:id/bill', async (req, res) => { const expense = await Expense.findById(req.params.id); if (!expense?.billFilename) return res.sendStatus(404); res.sendFile(path.join(uploadDir, expense.billFilename)); });
 router.post('/expenses/:id/bill', billUpload.single('bill'), async (req, res) => { const expense = await Expense.findById(req.params.id); if (!expense || !req.file) return res.sendStatus(404); if (expense.billFilename) { const oldPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } expense.billFilename = req.file.filename; expense.billOriginalName = req.file.originalname; expense.billPath = `/api/expenses/${expense._id}/bill`; expense.billMimeType = req.file.mimetype; await expense.save(); res.json(expense); });
