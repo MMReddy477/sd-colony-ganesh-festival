@@ -16,7 +16,7 @@ mongoose.set('bufferCommands', false);
 if (process.env.NODE_ENV === 'production' && (!process.env.MONGODB_URI || !process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD || !process.env.JWT_SECRET)) {
   throw new Error('Missing production environment configuration');
 }
-const uploadDir = path.join(__dirname, '..', 'uploads');
+const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 
 app.use(helmet({

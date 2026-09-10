@@ -403,7 +403,8 @@ function setGalleryImageFallback(event) {
   const image = event.currentTarget;
   if (image.dataset.fallbackApplied) return;
   image.dataset.fallbackApplied = "true";
-  image.src = galleryFallbackPath;
+  image.hidden = true;
+  image.closest(".gallery-item")?.classList.add("gallery-media-missing");
 }
 function renderGallery(images) {
   galleryImages = images;
@@ -422,6 +423,10 @@ function renderGallery(images) {
     return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`;
   }).join("");
   list.querySelectorAll(".gallery-item > img").forEach((image) => image.addEventListener("error", setGalleryImageFallback));
+  list.querySelectorAll(".gallery-item > video, .gallery-item > audio").forEach((media) => media.addEventListener("error", () => {
+    media.hidden = true;
+    media.closest(".gallery-item")?.classList.add("gallery-media-missing");
+  }));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
   updateGallerySelection();

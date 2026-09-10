@@ -1,3 +1,7 @@
+
+### Uploaded gallery media
+
+Gallery images, audio, and video are stored in `UPLOAD_DIR` (defaults to `./uploads`). On Render, configure `UPLOAD_DIR` to the mount path of a persistent disk or use object storage; the default service filesystem is temporary and uploaded files will disappear after a restart or redeploy. Gallery database records do not contain the media bytes, so media lost from a temporary filesystem must be uploaded again after durable storage is configured.
 # Ganesh Utsav Committee Website
 
 Full-stack responsive committee portal using HTML5, CSS3, vanilla JavaScript, Bootstrap 5, Node.js, Express, MongoDB, JWT, bcrypt, PDFKit, ExcelJS, Multer, and Archiver.

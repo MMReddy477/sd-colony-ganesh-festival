@@ -13,7 +13,7 @@ const { body, validationResult } = require('express-validator');
 const { auth } = require('../middleware');
 const { User, CommitteeMember, Event, Gallery, Donation, Expense, Receipt, SiteSettings } = require('../models');
 const router = express.Router();
-const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 const extensionForMime = mimeType => {
   const map = {

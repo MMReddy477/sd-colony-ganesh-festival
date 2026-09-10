@@ -44,6 +44,18 @@
   width: min(88vw, 700px);
 }
 
+.gallery-media-missing::after {
+  content: "Media unavailable. Re-upload after persistent storage is configured.";
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 1rem;
+  color: #806a60;
+  font-size: .78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 600px) {
   .gallery-viewer-video {
     width: 92vw;
