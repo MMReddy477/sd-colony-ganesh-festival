@@ -251,9 +251,15 @@ async function loadPortal() {
       <table class="mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${summaryRows("Ganesh Idol Sponsor", "No sponsorship records yet.")}</tbody></table>
       <span class="view-btn">View all</span>
     </article>`;
-  document.getElementById("eventsList").innerHTML = data.events.length
-    ? `<div class="member-table-wrap public-events-table-wrap"><table class="member-table event-table public-events-table"><thead><tr><th>Devotee Name</th><th>Contact Number</th><th>Pooja Type</th><th>Preferred Date</th><th>Preferred Time</th><th>Venue / Location</th><th>Request Status</th><th>Actions</th></tr></thead><tbody>${data.events.map(e => { const status = e.status || "Pending"; return `<tr><td><strong>${e.name || "--"}</strong></td><td>${e.mobile || "--"}</td><td>Ganesh Pooja</td><td>${e.date ? date(e.date) : "--"}</td><td>${e.time || "--"}</td><td>${e.venue || "Between Sirius & Samyukta"}</td><td><span class="ritual-status ritual-status-${status.toLowerCase()}">${status}</span></td><td><span class="ritual-public-action" aria-label="Pooja request details">👁</span></td></tr>`; }).join("")}</tbody></table></div>`
+  const publicEvents = data.events || [];
+  const eventPageSize = 10;
+  const eventPages = Math.max(1, Math.ceil(publicEvents.length / eventPageSize));
+  publicEventsPage = Math.min(publicEventsPage, eventPages - 1);
+  const visibleEvents = publicEvents.slice(publicEventsPage * eventPageSize, (publicEventsPage + 1) * eventPageSize);
+  document.getElementById("eventsList").innerHTML = publicEvents.length
+    ? `<div class="member-table-wrap public-events-table-wrap"><table class="member-table event-table public-events-table"><thead><tr><th>Devotee Name</th><th>Contact Number</th><th>Pooja Type</th><th>Preferred Date</th><th>Preferred Time</th><th>Venue / Location</th><th>Request Status</th><th>Actions</th></tr></thead><tbody>${visibleEvents.map(e => { const status = e.status || "Pending"; return `<tr><td><strong>${e.name || "--"}</strong></td><td>${e.mobile || "--"}</td><td>Ganesh Pooja</td><td>${e.date ? date(e.date) : "--"}</td><td>${e.time || "--"}</td><td>${e.venue || "Between Sirius & Samyukta"}</td><td><span class="ritual-status ritual-status-${status.toLowerCase()}">${status}</span></td><td><span class="ritual-public-action" aria-label="Pooja request details">👁</span></td></tr>`; }).join("")}</tbody></table></div>`
     : "<p>No events announced yet.</p>";
+  renderPublicPager("publicEventsPagination", publicEvents.length, publicEventsPage, eventPageSize, page => { publicEventsPage = page; loadPortal(); });
   const publicExpenditureSummary = document.getElementById("publicExpenditureSummary");
   if (publicExpenditureSummary) {
     const totalExpenses = Number(data.stats.totalExpenses || 0);
@@ -272,7 +278,10 @@ async function loadPortal() {
     }, 0);
     const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
     const estimatedRemainingBalance = collectedAmount - totalExpenses;
-    const rows = expenseRows.map(item => `
+    const expensePageSize = 10;
+    publicExpensesPage = Math.min(publicExpensesPage, Math.max(0, Math.ceil(expenseRows.length / expensePageSize) - 1));
+    const visibleExpenses = expenseRows.slice(publicExpensesPage * expensePageSize, (publicExpensesPage + 1) * expensePageSize);
+    const rows = visibleExpenses.map(item => `
       <tr>
         <td>${escapeHtml(item.name || "--")}</td>
         <td data-total="${Number(item.amount || 0)}">${money(item.amount)}</td>
@@ -326,19 +335,9 @@ async function loadPortal() {
       </div>
     `;
     const publicExpenseSummaryTotals = () => {
-      const rowsList = document.querySelectorAll("#publicExpenseTable tr");
-      let totalValue = 0;
-      let paidValue = 0;
-      let dueValue = 0;
-      rowsList.forEach(row => {
-        const totalCell = row.querySelector("td[data-total]")?.dataset.total;
-        const advanceCell = row.querySelector("td[data-advance]")?.dataset.advance;
-        const remainingCell = row.querySelector("td[data-remaining]")?.dataset.remaining;
-        const status = row.querySelector(".public-expense-status")?.textContent?.trim() || "Due";
-        totalValue += Number(totalCell || 0);
-        paidValue += status === "Full Paid" ? Number(totalCell || 0) : Number(advanceCell || 0);
-        dueValue += status === "Full Paid" ? 0 : Number(remainingCell || 0);
-      });
+      const totalValue = total;
+      const paidValue = paid;
+      const dueValue = due;
       const totalEl = document.getElementById("totalSum");
       const paidEl = document.getElementById("paidSum");
       const dueEl = document.getElementById("dueSum");
@@ -357,6 +356,7 @@ async function loadPortal() {
       if (remainingBalanceEl) remainingBalanceEl.textContent = money(collectedAmount - totalValue);
     };
     requestAnimationFrame(publicExpenseSummaryTotals);
+    renderPublicPager("publicExpensePagination", expenseRows.length, publicExpensesPage, expensePageSize, page => { publicExpensesPage = page; loadPortal(); });
   }
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
   renderPublicDonors(data.donations);
@@ -387,6 +387,19 @@ document.addEventListener("input", event => { if (event.target.id === "publicDon
 document.addEventListener("change", event => { if (event.target.id === "publicRowsPerPage") { publicDonorPageSize = event.target.value === "all" ? "all" : Number(event.target.value); publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("change", event => { if (event.target.id === "publicPaymentFilter") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("click", event => { const button = event.target.closest("[data-public-page]"); if (!button) return; const value = button.dataset.publicPage; publicDonorPage += value === "prev" ? -1 : value === "next" ? 1 : Number(value) - publicDonorPage; renderPublicDonors(publicDonorRows); });
+let publicEventsPage = 0;
+let publicExpensesPage = 0;
+let publicGalleryPage = 0;
+function renderPublicPager(id, total, page, size, onPage) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  const pages = Math.max(1, Math.ceil(total / size));
+  panel.innerHTML = total > size
+    ? `<span>Showing ${page * size + 1}-${Math.min((page + 1) * size, total)} of ${total}</span><button type="button" data-public-pager="prev" aria-label="Previous page" ${page === 0 ? "disabled" : ""}>&lt;</button><strong>${page + 1}</strong><button type="button" data-public-pager="next" aria-label="Next page" ${page >= pages - 1 ? "disabled" : ""}>&gt;</button>`
+    : "";
+  panel.querySelector('[data-public-pager="prev"]')?.addEventListener("click", () => onPage(page - 1));
+  panel.querySelector('[data-public-pager="next"]')?.addEventListener("click", () => onPage(page + 1));
+}
 let galleryImages = [];
 let galleryIndex = 0;
 let slideshowTimer;
@@ -413,14 +426,19 @@ function renderGallery(images) {
   const isVideo = image => image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
   const isAudio = image => image.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image.originalName || image.path || "");
   document.getElementById("galleryTotal").textContent = `Total media: ${images.length}`;
-  list.innerHTML = images.map((image, index) => {
+  const galleryPageSize = 10;
+  const galleryPages = Math.max(1, Math.ceil(images.length / galleryPageSize));
+  publicGalleryPage = Math.min(publicGalleryPage, galleryPages - 1);
+  const visibleImages = images.slice(publicGalleryPage * galleryPageSize, (publicGalleryPage + 1) * galleryPageSize);
+  list.innerHTML = visibleImages.map((image, index) => {
+    const galleryIndex = publicGalleryPage * galleryPageSize + index;
     const mediaPath = galleryMediaPath(image);
     const media = isVideo(image)
       ? `<video src="${mediaPath}" controls playsinline preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>`
       : isAudio(image)
         ? `<audio src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav audio"}"></audio>`
         : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`;
-    return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`;
+    return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${galleryIndex}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${galleryIndex}" aria-label="Select media ${galleryIndex + 1}"></span></div></figure>`;
   }).join("");
   list.querySelectorAll(".gallery-item > img").forEach((image) => image.addEventListener("error", setGalleryImageFallback));
   list.querySelectorAll(".gallery-item > video, .gallery-item > audio").forEach((media) => media.addEventListener("error", () => {
@@ -430,6 +448,7 @@ function renderGallery(images) {
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
   updateGallerySelection();
+  renderPublicPager("publicGalleryPagination", images.length, publicGalleryPage, galleryPageSize, page => { publicGalleryPage = page; renderGallery(images); });
 }
 function getSelectedGallery() { return [...document.querySelectorAll(".gallery-select:checked")].map((input) => galleryImages[Number(input.dataset.gallerySelect)]); }
 function updateGallerySelection() { const selected = getSelectedGallery().length; document.getElementById("gallerySelectedCount").textContent = `Selected: ${selected}`; const all = document.getElementById("gallerySelectAll"); if (all) all.checked = selected > 0 && selected === galleryImages.length; }

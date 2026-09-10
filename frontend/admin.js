@@ -414,8 +414,8 @@ function renderDonationTable(items, path) {
   renderPagination("adminDonorPagination", filtered.length, pageSize, page, next => { pageState.donors = next; renderDonationTable(items, path); });
 }
 
-const pageState = { donors: 0, expense: 0 };
-const pageSizeState = { donors: 10, expense: 10 };
+const pageState = { donors: 0, expense: 0, events: 0 };
+const pageSizeState = { donors: 10, expense: 10, events: 10 };
 document.getElementById("adminDonorRows")?.addEventListener("change", event => { pageSizeState.donors = event.target.value === "all" ? "all" : Number(event.target.value); pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); });
 document.getElementById("adminStatusFilter")?.addEventListener("change", () => { pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); });
 document.getElementById("adminContributionFilter")?.addEventListener("change", () => { pageState.donors = 0; renderDonationTable(adminDonations, "/donations"); });
@@ -947,18 +947,24 @@ function renderGalleryAdmin(items) {
 function renderList(id, items, label, path) {
   const container = document.getElementById(id);
   if (!container) return;
+  const isEventList = id === "eventAdminList";
+  const eventPageSize = 10;
+  const eventPages = Math.max(1, Math.ceil(items.length / eventPageSize));
+  if (isEventList) pageState.events = Math.min(pageState.events, eventPages - 1);
+  const renderedItems = isEventList ? items.slice(pageState.events * eventPageSize, (pageState.events + 1) * eventPageSize) : items;
   const header =
     id === "donationAdminList"
       ? '<div class="donation-columns"><span>Plot No.</span><span>Donor name</span><span>Mobile number</span><span>Amount</span><span>Payment mode</span><span>Time</span><span>Actions</span></div>'
       : "";
   container.innerHTML =
     header +
-    (items
+    (renderedItems
       .map(
         (x) =>
           `<div class="admin-row ${id === "donationAdminList" ? "donation-row" : ""}"><span>${id === "donationAdminList" ? x.flatNumber || "--" : label(x)}</span>${id === "donationAdminList" ? `<span>${x.donorName || "--"}</span><span>${x.mobile || "--"}</span><strong>${money(x.amount)}</strong><span>${x.paymentMode || "--"}</span><span>${new Date(x.createdAt || x.date).toLocaleString("en-IN")}</span>` : ""}<span class="admin-actions">${id === "donationAdminList" && x.receiptNumber ? `<button data-receipt-image="${x.receiptNumber}">Receipt image</button>` : ""}<button data-delete="${path}/${x._id}">Delete</button></span></div>`,
       )
       .join("") || '<div class="admin-row muted">Nothing here yet.</div>');
+  if (isEventList) renderPagination("eventAdminPagination", items.length, eventPageSize, pageState.events, next => { pageState.events = next; renderList(id, items, label, path); });
 }
 async function submitAdmin(form, endpoint) {
   const r = await api(endpoint, {
