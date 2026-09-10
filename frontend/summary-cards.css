@@ -197,6 +197,25 @@
 }
 
 @media (max-width: 700px) {
+  #publicExpenditureSummary,
+  #publicExpenditureSummary .public-expense-summary-shell,
+  #publicExpenditureSummary .public-expense-table-wrap {
+    width: 100%;
+    min-width: 0;
+    max-height: none !important;
+  }
+
+  #publicExpenditureSummary .public-expense-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #publicExpenditureSummary .public-expense-table {
+    width: 760px !important;
+    min-width: 760px !important;
+  }
+
   .public-expense-summary-shell {
     padding: .9rem;
   }
