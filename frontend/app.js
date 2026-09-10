@@ -219,6 +219,25 @@ function closeDonationModal() {
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("donation-modal-open");
 }
+function playSlogan() {
+  const slogans = [
+    "Ganapathi Bappa Morya!",
+    "Best Festival Blessings!",
+    "Celebrate with Joy and Light!",
+    "Harathi Glow of Lord Ganesha!",
+  ];
+  const slogan = slogans[Math.floor(Math.random() * slogans.length)];
+  const element = document.getElementById("festivalSlogan");
+  if (element) {
+    element.textContent = slogan;
+    element.classList.remove("is-visible");
+    requestAnimationFrame(() => element.classList.add("is-visible"));
+  }
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(slogan));
+  }
+}
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
   if (!response?.ok) {
@@ -600,6 +619,7 @@ document.addEventListener("click", (event) => {
   }
   const heroImage = event.target.closest("[data-hero-image]");
   if (heroImage) {
+    playSlogan();
     const viewer = document.getElementById("galleryViewer");
     document.getElementById("galleryViewerImage").src = heroImage.dataset.heroImage;
     document.getElementById("galleryViewerImage").alt = "Ganesh Utsav festival schedule";

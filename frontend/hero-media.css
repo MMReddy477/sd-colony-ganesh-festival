@@ -27,6 +27,7 @@
   background: radial-gradient(circle, #fff8ed 0 68%, #f4b942 69% 72%, #0f7b4d 73% 75%, #8d2d24 76% 100%) !important;
   box-shadow: 0 0 24px rgba(255, 215, 0, .72), 0 0 55px rgba(255, 180, 40, .38);
   isolation: isolate;
+  cursor: pointer;
 }
 
 .hero.hero-redesign .ganesh-circle::before {
@@ -117,6 +118,19 @@
   .ganesh-circle::before,
   .ganesh-circle-ring { animation: none; }
 }
+
+.slogan-text {
+  min-height: 1.5rem;
+  margin: -.7rem auto 0;
+  color: #f4d477;
+  font: 700 clamp(.8rem, 2vw, 1.05rem)/1.3 'DM Sans', sans-serif;
+  text-align: center;
+  text-shadow: 0 1px 4px #241d1b;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
+.slogan-text.is-visible { opacity: 1; }
 
 .hero.hero-redesign {
   --public-nav-offset: 140px;
