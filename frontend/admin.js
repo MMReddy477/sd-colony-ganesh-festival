@@ -911,6 +911,8 @@ async function saveDonor(keepOpen) { const endpoint = editingDonationId ? `/dona
 donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
 document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
 document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => String(item._id) === String(button.dataset.editDonation)) || adminLiveDonations.find(item => String(item._id) === String(button.dataset.editDonation)); if (!donation || !donorModalForm) return; document.getElementById("adminFinanceModal")?.classList.remove("is-open"); editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, contributionType: donation.contributionType || "Regular Donation", itemName: donation.itemName, winningBidAmount: donation.winningBidAmount, sponsorshipAmount: donation.sponsorshipAmount, sponsorType: donation.sponsorType, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); updateContributionFields(donorModalForm); document.getElementById("donorModalTitle").textContent = "Edit Donor"; document.getElementById("donorEditContext").textContent = `Editing ${donation.donorName || "Unnamed donor"} · ${donation.flatNumber || "No plot number"}`; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
+let galleryAdminPage = 0;
+const galleryAdminPageSize = 4;
 function renderGalleryAdmin(items) {
   const fallbackPath = "/GaneshIdol_detail.jpeg";
   const mediaPath = item => {
@@ -920,7 +922,10 @@ function renderGalleryAdmin(items) {
     return normalized.includes("?") ? normalized : `${normalized}?v=${Date.now()}`;
   };
   const list = document.getElementById("galleryAdminList");
-  list.innerHTML = items.map((item) => {
+  const pages = Math.max(1, Math.ceil(items.length / galleryAdminPageSize));
+  galleryAdminPage = Math.min(galleryAdminPage, pages - 1);
+  const visibleItems = items.slice(galleryAdminPage * galleryAdminPageSize, (galleryAdminPage + 1) * galleryAdminPageSize);
+  list.innerHTML = visibleItems.map((item) => {
     const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || "");
     const isAudio = item.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(item.originalName || item.path || "");
     const media = isVideo
@@ -931,6 +936,13 @@ function renderGalleryAdmin(items) {
     return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : isAudio ? "Audio" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`;
   }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
   list.querySelectorAll(".gallery-admin-media > img").forEach((image) => image.addEventListener("error", () => { image.onerror = null; image.src = fallbackPath; }));
+  const pagination = document.getElementById("galleryAdminPagination");
+  if (!pagination) return;
+  pagination.innerHTML = items.length > galleryAdminPageSize
+    ? `<span>Showing ${galleryAdminPage * galleryAdminPageSize + 1}-${Math.min((galleryAdminPage + 1) * galleryAdminPageSize, items.length)} of ${items.length} media</span><button type="button" data-gallery-page="prev" aria-label="Previous gallery page" ${galleryAdminPage === 0 ? "disabled" : ""}>‹</button><strong>${galleryAdminPage + 1}</strong><button type="button" data-gallery-page="next" aria-label="Next gallery page" ${galleryAdminPage >= pages - 1 ? "disabled" : ""}>›</button>`
+    : "";
+  pagination.querySelector('[data-gallery-page="prev"]')?.addEventListener("click", () => { galleryAdminPage -= 1; renderGalleryAdmin(items); });
+  pagination.querySelector('[data-gallery-page="next"]')?.addEventListener("click", () => { galleryAdminPage += 1; renderGalleryAdmin(items); });
 }
 function renderList(id, items, label, path) {
   const container = document.getElementById(id);
