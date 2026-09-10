@@ -163,9 +163,13 @@
 }
 
 #publicExpenditureSummary .public-expense-table tfoot tr#totalsRow {
-  background-color: #f7fbff;
   font-weight: bold;
-  border-top: 2px solid #007bff;
+  border-top: 3px solid #007bff;
+}
+
+#publicExpenditureSummary .public-expense-table tfoot tr#totalsRow td:nth-child(1),
+#publicExpenditureSummary .public-expense-table tfoot tr#totalsRow td[colspan] {
+  background-color: #f7fbff;
 }
 
 #publicExpenditureSummary .public-expense-table tfoot tr#totalsRow td:nth-child(2) {
