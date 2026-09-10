@@ -219,6 +219,15 @@ async function loadPortal() {
   const contributionTotal = type => type === "Laddu Auction 2025" && data.stats.ladduAuctionTotal != null ? data.stats.ladduAuctionTotal : data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
   const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => { const plot = normalizePlotNumber(item.flatNumber); const donor = item.donorName || "--"; return `<tr><td>${escapeHtml(plot ? `${donor} (${plot})` : donor)}</td><td>${money(item.amount)}</td></tr>`; }).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
+  const generalDonationTotal = Number(data.stats.totalDonations || 0);
+  const ladduAuctionTotal = Number(data.stats.ladduAuctionTotal || 0);
+  const paidTotal = (data.expenses || []).reduce((sum, item) => {
+    const amount = Number(item.amount || 0);
+    const advance = Number(item.advanceAmount || 0);
+    const status = item.status || "Due";
+    return sum + (status === "Full Paid" ? amount : advance);
+  }, 0);
+  const remainingBookBalance = generalDonationTotal + ladduAuctionTotal - paidTotal;
   document.getElementById("stats").innerHTML = `
     <article class="summary-card stat-card general-donations-card" role="button" tabindex="0" aria-label="View general donation details">
       <h4>General Donations</h4>
@@ -226,8 +235,8 @@ async function loadPortal() {
     </article>
     <article class="balance-card stat-card balance-stat" role="button" tabindex="0" aria-label="View balance details">
       <h3>Remaining Balance</h3>
-      <p class="formula">General Donations + Laddu Auction (Ganesh Utsav 2025) - Event Expenditure</p>
-      <strong class="amount">${money(data.stats.balance)}</strong>
+      <p class="formula">General Donations + Laddu Auction (Ganesh Utsav 2025) - Total Paid</p>
+      <strong class="amount">${money(remainingBookBalance)}</strong>
       <span class="view-btn">View all</span>
     </article>
     <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Laddu Auction 2025" role="button" tabindex="0" aria-label="View Laddu Auction 2025 contributions">
@@ -262,7 +271,7 @@ async function loadPortal() {
       return sum + (status === "Full Paid" ? 0 : remaining);
     }, 0);
     const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
-    const remainingBalance = collectedAmount - paid;
+    const estimatedRemainingBalance = collectedAmount - paid;
     const rows = expenseRows.map(item => `
       <tr>
         <td>${escapeHtml(item.name || "--")}</td>
@@ -285,7 +294,7 @@ async function loadPortal() {
             <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="paidSum">${money(paid)}</span></p>
             <p class="public-expense-metric public-expense-metric-due">Total Due: <span id="dueSum">${money(due)}</span></p>
             <p class="public-expense-metric public-expense-metric-collected">Collected Amount (General + Laddu Auction): <span id="collectedAmount">${money(collectedAmount)}</span></p>
-            <p class="public-expense-metric public-expense-metric-final">Remaining Balance: <span id="remainingBalance">${money(remainingBalance)}</span></p>
+            <p class="public-expense-metric public-expense-metric-final">Estimated Remaining Balance: <span id="remainingBalance">${money(estimatedRemainingBalance)}</span></p>
           </div>
         </div>
         <div class="public-expense-table-wrap">
