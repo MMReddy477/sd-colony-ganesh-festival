@@ -920,7 +920,16 @@ function renderGalleryAdmin(items) {
     return normalized.includes("?") ? normalized : `${normalized}?v=${Date.now()}`;
   };
   const list = document.getElementById("galleryAdminList");
-  list.innerHTML = items.map((item) => { const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || ""); const media = isVideo ? `<video src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery video"}"></video>` : `<img src="${mediaPath(item)}" alt="${item.originalName || "Gallery image"}">`; return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`; }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
+  list.innerHTML = items.map((item) => {
+    const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || "");
+    const isAudio = item.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(item.originalName || item.path || "");
+    const media = isVideo
+      ? `<video src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery video"}"></video>`
+      : isAudio
+        ? `<audio src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery audio"}"></audio>`
+        : `<img src="${mediaPath(item)}" alt="${item.originalName || "Gallery image"}">`;
+    return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : isAudio ? "Audio" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`;
+  }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
   list.querySelectorAll(".gallery-admin-media > img").forEach((image) => image.addEventListener("error", () => { image.onerror = null; image.src = fallbackPath; }));
 }
 function renderList(id, items, label, path) {
@@ -1093,7 +1102,7 @@ document.addEventListener("click", async (event) => {
   if (replace) {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*,video/*";
+    input.accept = "image/*,video/*,audio/*,.mp3,.mp4,.mov,.wav,.ogg";
     input.onchange = async () => { if (!input.files[0]) return; const form = new FormData(); form.append("image", input.files[0]); await api(`/gallery/${replace.dataset.galleryReplace}/replace`, { method: "POST", body: form }); loadAdmin(); };
     input.click();
   }

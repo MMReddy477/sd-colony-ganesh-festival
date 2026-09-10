@@ -23,9 +23,15 @@ const extensionForMime = mimeType => {
     'image/gif': '.gif',
     'image/webp': '.webp',
     'image/bmp': '.bmp',
+    'audio/mpeg': '.mp3',
+    'audio/mp3': '.mp3',
+    'audio/ogg': '.ogg',
+    'audio/wav': '.wav',
+    'audio/mp4': '.m4a',
     'video/mp4': '.mp4',
     'video/webm': '.webm',
     'video/ogg': '.ogg',
+    'video/quicktime': '.mov',
     'application/pdf': '.pdf'
   };
   return map[mimeType] || '';
@@ -42,7 +48,14 @@ const storageFor = mimeFamily => multer.diskStorage({
     cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeBase}${ext}`);
   }
 });
-const upload = multer({ storage: storageFor('image'), limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(image|video)\//.test(file.mimetype)) });
+const upload = multer({
+  storage: storageFor('media'),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (_r, file, cb) => {
+    const allowed = /^(image|video|audio)\//.test(file.mimetype) || /\.(mp3|mp4|mov|webm|ogg|wav)$/i.test(file.originalname || '');
+    cb(null, allowed);
+  }
+});
 const billUpload = multer({ storage: storageFor('application'), limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (_r, file, cb) => cb(null, /^(application\/pdf|image\/(jpeg|png))$/.test(file.mimetype)) });
 const clean = (req, res, next) => { const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg }); next(); };
 const cacheBustUrl = (value) => {

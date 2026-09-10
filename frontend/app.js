@@ -410,8 +410,17 @@ function renderGallery(images) {
   const list = document.getElementById("galleryList");
   if (!list) return;
   const isVideo = image => image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
+  const isAudio = image => image.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image.originalName || image.path || "");
   document.getElementById("galleryTotal").textContent = `Total media: ${images.length}`;
-  list.innerHTML = images.map((image, index) => { const mediaPath = galleryMediaPath(image); const media = isVideo(image) ? `<video src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>` : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`; return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`; }).join("");
+  list.innerHTML = images.map((image, index) => {
+    const mediaPath = galleryMediaPath(image);
+    const media = isVideo(image)
+      ? `<video src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>`
+      : isAudio(image)
+        ? `<audio src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav audio"}"></audio>`
+        : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`;
+    return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${index}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${index}" aria-label="Select media ${index + 1}"></span></div></figure>`;
+  }).join("");
   list.querySelectorAll(".gallery-item > img").forEach((image) => image.addEventListener("error", setGalleryImageFallback));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
@@ -419,15 +428,18 @@ function renderGallery(images) {
 }
 function getSelectedGallery() { return [...document.querySelectorAll(".gallery-select:checked")].map((input) => galleryImages[Number(input.dataset.gallerySelect)]); }
 function updateGallerySelection() { const selected = getSelectedGallery().length; document.getElementById("gallerySelectedCount").textContent = `Selected: ${selected}`; const all = document.getElementById("gallerySelectAll"); if (all) all.checked = selected > 0 && selected === galleryImages.length; }
-function downloadGallery(images) { images.forEach((image, index) => setTimeout(() => { const link = document.createElement("a"); link.href = image.path; link.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`; link.click(); }, index * 300)); }
+function downloadGallery(images) { images.forEach((image, index) => setTimeout(() => { const link = document.createElement("a"); link.href = galleryMediaPath(image); link.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`; link.click(); }, index * 300)); }
 function openGallery(index) {
   galleryIndex = (index + galleryImages.length) % galleryImages.length;
   const image = galleryImages[galleryIndex];
   const viewer = document.getElementById("galleryViewer");
   const viewerImage = document.getElementById("galleryViewerImage");
   const existingVideo = document.getElementById("galleryViewerVideo");
+  const existingAudio = document.getElementById("galleryViewerAudio");
   const isVideo = image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
+  const isAudio = image.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image.originalName || image.path || "");
   if (isVideo) {
+    existingAudio?.remove();
     viewerImage.hidden = true;
     const viewerVideo = existingVideo || document.createElement("video");
     viewerVideo.id = "galleryViewerVideo";
@@ -435,19 +447,31 @@ function openGallery(index) {
     viewerVideo.autoplay = false;
     viewerVideo.preload = "metadata";
     viewerVideo.className = "gallery-viewer-video";
-    viewerVideo.src = image.path;
+    viewerVideo.src = galleryMediaPath(image);
     if (!existingVideo) viewerImage.parentElement.insertBefore(viewerVideo, viewerImage);
+  } else if (isAudio) {
+    existingVideo?.remove();
+    viewerImage.hidden = true;
+    const viewerAudio = existingAudio || document.createElement("audio");
+    viewerAudio.id = "galleryViewerAudio";
+    viewerAudio.controls = true;
+    viewerAudio.autoplay = false;
+    viewerAudio.preload = "metadata";
+    viewerAudio.className = "gallery-viewer-video";
+    viewerAudio.src = galleryMediaPath(image);
+    if (!existingAudio) viewerImage.parentElement.insertBefore(viewerAudio, viewerImage);
   } else {
     existingVideo?.remove();
+    existingAudio?.remove();
     viewerImage.hidden = false;
-    viewerImage.src = image.path;
+    viewerImage.src = galleryMediaPath(image);
     viewerImage.alt = image.title || "Ganesh Utsav memory";
   }
-  document.getElementById("galleryViewerCounter").textContent = `Image ${galleryIndex + 1} of ${galleryImages.length}`;
+  document.getElementById("galleryViewerCounter").textContent = `Media ${galleryIndex + 1} of ${galleryImages.length}`;
   document.getElementById("galleryViewerTitle").textContent = image.title || "Ganesh Utsav memory";
   document.getElementById("galleryViewerCaption").textContent = image.caption || "";
   const download = document.getElementById("galleryViewerDownload");
-  download.href = image.path;
+  download.href = galleryMediaPath(image);
   download.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
   viewer.classList.add("is-open");
   viewer.setAttribute("aria-hidden", "false");
@@ -456,6 +480,7 @@ function closeGallery() {
   setSlideshow(false);
   const viewer = document.getElementById("galleryViewer");
   document.getElementById("galleryViewerVideo")?.remove();
+  document.getElementById("galleryViewerAudio")?.remove();
   document.getElementById("galleryViewerImage").hidden = false;
   viewer.classList.remove("is-open");
   viewer.classList.remove("hero-image-viewer");
