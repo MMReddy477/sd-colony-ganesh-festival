@@ -415,7 +415,7 @@ function renderGallery(images) {
   list.innerHTML = images.map((image, index) => {
     const mediaPath = galleryMediaPath(image);
     const media = isVideo(image)
-      ? `<video src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>`
+      ? `<video src="${mediaPath}" controls playsinline preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>`
       : isAudio(image)
         ? `<audio src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav audio"}"></audio>`
         : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`;
@@ -428,30 +428,33 @@ function renderGallery(images) {
 }
 function getSelectedGallery() { return [...document.querySelectorAll(".gallery-select:checked")].map((input) => galleryImages[Number(input.dataset.gallerySelect)]); }
 function updateGallerySelection() { const selected = getSelectedGallery().length; document.getElementById("gallerySelectedCount").textContent = `Selected: ${selected}`; const all = document.getElementById("gallerySelectAll"); if (all) all.checked = selected > 0 && selected === galleryImages.length; }
+async function downloadMedia(image) {
+  const url = galleryMediaPath(image);
+  const filename = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+    const objectUrl = URL.createObjectURL(await response.blob());
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.click();
+  }
+}
 async function downloadGallery(images) {
   for (const [index, image] of images.entries()) {
     if (index) await new Promise((resolve) => setTimeout(resolve, 300));
-    const url = galleryMediaPath(image);
-    const filename = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
-    try {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-      const objectUrl = URL.createObjectURL(await response.blob());
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-    } catch {
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.click();
-    }
+    await downloadMedia(image);
   }
 }
 function openGallery(index) {
@@ -469,6 +472,7 @@ function openGallery(index) {
     const viewerVideo = existingVideo || document.createElement("video");
     viewerVideo.id = "galleryViewerVideo";
     viewerVideo.controls = true;
+    viewerVideo.playsInline = true;
     viewerVideo.autoplay = false;
     viewerVideo.preload = "metadata";
     viewerVideo.className = "gallery-viewer-video";
@@ -482,7 +486,7 @@ function openGallery(index) {
     viewerAudio.controls = true;
     viewerAudio.autoplay = false;
     viewerAudio.preload = "metadata";
-    viewerAudio.className = "gallery-viewer-video";
+    viewerAudio.className = "gallery-viewer-audio";
     viewerAudio.src = galleryMediaPath(image);
     if (!existingAudio) viewerImage.parentElement.insertBefore(viewerAudio, viewerImage);
   } else {
@@ -498,6 +502,7 @@ function openGallery(index) {
   const download = document.getElementById("galleryViewerDownload");
   download.href = galleryMediaPath(image);
   download.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
+  download.onclick = (event) => { event.preventDefault(); void downloadMedia(image); };
   viewer.classList.add("is-open");
   viewer.setAttribute("aria-hidden", "false");
 }
@@ -537,7 +542,7 @@ document.addEventListener("click", (event) => {
   if (event.target === document.getElementById("galleryViewer")) closeGallery();
 });
 document.querySelector("[data-hero-image]")?.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); } });
-document.addEventListener("keydown", (event) => { const tile = event.target.closest?.("[data-gallery-index]"); if (tile && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openGallery(Number(tile.dataset.galleryIndex)); } });
+document.addEventListener("keydown", (event) => { const tile = event.target.closest?.("[data-gallery-index]"); if (tile && !event.target.closest("video, audio, .gallery-select") && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openGallery(Number(tile.dataset.galleryIndex)); } });
 document.addEventListener("keydown", (event) => {
   const viewer = document.getElementById("galleryViewer");
   if (!viewer.classList.contains("is-open")) return;
