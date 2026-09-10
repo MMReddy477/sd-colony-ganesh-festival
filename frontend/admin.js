@@ -151,8 +151,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function calculateExpenseTotals() {
   const totalAmount = adminExpenses.reduce((sum, item) => sum + Number(item.amount || item.total || 0), 0);
-  const advanceAmount = adminExpenses.reduce((sum, item) => sum + Number(item.advanceAmount || 0), 0);
-  const remainingAmount = adminExpenses.reduce((sum, item) => sum + Number(item.remainingAmount || 0), 0);
+  const paidAmount = adminExpenses.reduce((sum, item) => {
+    const amount = Number(item.amount || item.total || 0);
+    const status = item.status || "Due";
+    return sum + (status === "Full Paid" ? amount : Number(item.advanceAmount || 0));
+  }, 0);
+  const dueAmount = adminExpenses.reduce((sum, item) => {
+    const status = item.status || "Due";
+    return sum + (status === "Full Paid" ? 0 : Number(item.remainingAmount || 0));
+  }, 0);
   const collectedAmount = adminDonations
     .filter(item => item.status !== "Yet to receive" && item.contributionType !== "Ganesh Idol Sponsor")
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -169,8 +176,8 @@ function calculateExpenseTotals() {
       <tr id="totalsRow" style="font-weight:bold;">
         <td style="text-align:right;">Grand Total</td>
         <td style="background-color:#d4edda;">${money(totalAmount)}</td>
-        <td style="background-color:#cce5ff;">${money(advanceAmount)}</td>
-        <td style="background-color:#fff3cd;">${money(remainingAmount)}</td>
+        <td style="background-color:#cce5ff;">${money(paidAmount)}</td>
+        <td style="background-color:#fff3cd;">${money(dueAmount)}</td>
         <td colspan="5"></td>
       </tr>
     `;
@@ -183,8 +190,8 @@ function calculateExpenseTotals() {
   const estimatedBalanceEl = document.getElementById("estimatedBalance");
 
   if (totalExpenditureEl) totalExpenditureEl.textContent = money(totalAmount);
-  if (totalPaidEl) totalPaidEl.textContent = money(advanceAmount);
-  if (totalDueEl) totalDueEl.textContent = money(remainingAmount);
+  if (totalPaidEl) totalPaidEl.textContent = money(paidAmount);
+  if (totalDueEl) totalDueEl.textContent = money(dueAmount);
   if (collectedAmountEl) collectedAmountEl.textContent = money(collectedAmount);
   if (estimatedBalanceEl) estimatedBalanceEl.textContent = money(estimatedBalance);
 }
