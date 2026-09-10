@@ -428,7 +428,32 @@ function renderGallery(images) {
 }
 function getSelectedGallery() { return [...document.querySelectorAll(".gallery-select:checked")].map((input) => galleryImages[Number(input.dataset.gallerySelect)]); }
 function updateGallerySelection() { const selected = getSelectedGallery().length; document.getElementById("gallerySelectedCount").textContent = `Selected: ${selected}`; const all = document.getElementById("gallerySelectAll"); if (all) all.checked = selected > 0 && selected === galleryImages.length; }
-function downloadGallery(images) { images.forEach((image, index) => setTimeout(() => { const link = document.createElement("a"); link.href = galleryMediaPath(image); link.download = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`; link.click(); }, index * 300)); }
+async function downloadGallery(images) {
+  for (const [index, image] of images.entries()) {
+    if (index) await new Promise((resolve) => setTimeout(resolve, 300));
+    const url = galleryMediaPath(image);
+    const filename = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+      const objectUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.click();
+    }
+  }
+}
 function openGallery(index) {
   galleryIndex = (index + galleryImages.length) % galleryImages.length;
   const image = galleryImages[galleryIndex];
@@ -505,7 +530,7 @@ document.addEventListener("click", (event) => {
     return;
   }
   const tile = event.target.closest("[data-gallery-index]");
-  if (tile && !event.target.closest("video") && !event.target.closest(".gallery-select")) openGallery(Number(tile.dataset.galleryIndex));
+  if (tile && !event.target.closest("video, audio") && !event.target.closest(".gallery-select")) openGallery(Number(tile.dataset.galleryIndex));
   if (event.target.closest(".gallery-viewer-close")) closeGallery();
   if (event.target.closest(".gallery-viewer-prev")) openGallery(galleryIndex - 1);
   if (event.target.closest(".gallery-viewer-next")) openGallery(galleryIndex + 1);
