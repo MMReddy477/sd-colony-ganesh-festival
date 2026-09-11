@@ -96,7 +96,7 @@
 .ganesh-ring-leaf-two { right: -3%; bottom: 18%; transform: rotate(180deg); }
 .ganesh-ring-diya-one { top: 42%; left: -7%; }
 .ganesh-ring-diya-two { top: 42%; right: -7%; }
-.ganesh-ring-idol { width: clamp(2.4rem, 5vw, 4.5rem) !important; height: clamp(2.4rem, 5vw, 4.5rem) !important; border: 0 !important; border-radius: 50% !important; object-fit: contain !important; background: transparent !important; }
+.hero.hero-redesign .ganesh-circle .ganesh-circle-ring .ganesh-ring-idol { display: block !important; width: clamp(42px, 10%, 72px) !important; height: clamp(42px, 10%, 72px) !important; max-width: none !important; max-height: none !important; border: 0 !important; border-radius: 50% !important; object-fit: contain !important; background: transparent !important; }
 .ganesh-ring-idol-one { top: 7%; left: 19%; }
 .ganesh-ring-idol-two { top: 7%; right: 19%; }
 .ganesh-ring-idol-three { bottom: 7%; left: 19%; }
