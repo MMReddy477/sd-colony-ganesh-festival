@@ -236,7 +236,6 @@ function stopFestivalSong() {
   audio.currentTime = 0;
 }
 function toggleFestivalSongMute(event) {
-  event.stopPropagation();
   const audio = document.getElementById("ganeshSong");
   const toggle = event.currentTarget;
   if (!audio) return;
