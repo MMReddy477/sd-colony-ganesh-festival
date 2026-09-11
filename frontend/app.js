@@ -313,7 +313,6 @@ async function loadPortal() {
   renderPublicPager("publicEventsPagination", publicEvents.length, publicEventsPage, eventPageSize, page => { publicEventsPage = page; loadPortal(); });
   const publicExpenditureSummary = document.getElementById("publicExpenditureSummary");
   if (publicExpenditureSummary) {
-    const totalExpenses = Number(data.stats.totalExpenses || 0);
     const expenseRows = data.expenses || [];
     const total = expenseRows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const paid = expenseRows.reduce((sum, item) => {
@@ -327,8 +326,6 @@ async function loadPortal() {
       const remaining = Number(item.remainingAmount || 0);
       return sum + (status === "Full Paid" ? 0 : remaining);
     }, 0);
-    const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
-    const estimatedRemainingBalance = collectedAmount - totalExpenses;
     const expensePageSize = 10;
     const expenseQuery = document.getElementById("publicExpenseSearch")?.value.trim().toLowerCase() || "";
     const filteredExpenseRows = expenseRows.filter(item => String(item.name || "").toLowerCase().includes(expenseQuery));
@@ -350,15 +347,7 @@ async function loadPortal() {
       <div class="public-expense-summary-shell">
         <div class="public-expense-summary-box">
           <h3>Where the Money Is Going</h3>
-          <h2>Total expenditure overview</h2>
           <button class="estimated-results-button" type="button" data-estimated-results>Estimated Results</button>
-          <div class="public-expense-summary-metrics">
-            <p class="public-expense-metric public-expense-metric-total">Total Expenditure: <span id="totalSum">${money(totalExpenses)}</span></p>
-            <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="paidSum">${money(paid)}</span></p>
-            <p class="public-expense-metric public-expense-metric-due">Total Due: <span id="dueSum">${money(due)}</span></p>
-            <p class="public-expense-metric public-expense-metric-collected">Collected Amount (General + Laddu Auction): <span id="collectedAmount">${money(collectedAmount)}</span></p>
-            <p class="public-expense-metric public-expense-metric-final">Estimated Remaining Balance: <span id="remainingBalance">${money(estimatedRemainingBalance)}</span></p>
-          </div>
         </div>
         <div class="public-expense-table-wrap">
           <table class="public-expense-table">
@@ -392,22 +381,12 @@ async function loadPortal() {
       const totalValue = total;
       const paidValue = paid;
       const dueValue = due;
-      const totalEl = document.getElementById("totalSum");
-      const paidEl = document.getElementById("paidSum");
-      const dueEl = document.getElementById("dueSum");
       const totalFooterEl = document.getElementById("totalSumFooter");
       const paidFooterEl = document.getElementById("paidSumFooter");
       const dueFooterEl = document.getElementById("dueSumFooter");
-      const collectedEl = document.getElementById("collectedAmount");
-      const remainingBalanceEl = document.getElementById("remainingBalance");
-      if (totalEl) totalEl.textContent = money(totalValue);
-      if (paidEl) paidEl.textContent = money(paidValue);
-      if (dueEl) dueEl.textContent = money(dueValue);
       if (totalFooterEl) totalFooterEl.textContent = money(totalValue);
       if (paidFooterEl) paidFooterEl.textContent = money(paidValue);
       if (dueFooterEl) dueFooterEl.textContent = money(dueValue);
-      if (collectedEl) collectedEl.textContent = money(collectedAmount);
-      if (remainingBalanceEl) remainingBalanceEl.textContent = money(collectedAmount - totalValue);
     };
     requestAnimationFrame(publicExpenseSummaryTotals);
     renderPublicPager("publicExpensePagination", filteredExpenseRows.length, publicExpensesPage, expensePageSize, page => { publicExpensesPage = page; loadPortal(); });
