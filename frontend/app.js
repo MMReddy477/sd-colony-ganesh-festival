@@ -490,7 +490,7 @@ function renderGallery(images) {
       : isAudio(image)
         ? `<audio src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav audio"}"></audio>`
         : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`;
-    return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${galleryIndex}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${galleryIndex}" aria-label="Select media ${galleryIndex + 1}"></span></div></figure>`;
+    return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${galleryIndex}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${galleryIndex}" aria-label="Select media ${galleryIndex + 1}"></span><button class="gallery-card-download" type="button" data-gallery-download="${galleryIndex}" aria-label="Download ${image.title || "gallery media"}" title="Download media">↓</button></div></figure>`;
   }).join("");
   list.querySelectorAll(".gallery-item > img").forEach((image) => image.addEventListener("error", setGalleryImageFallback));
   list.querySelectorAll(".gallery-item > video, .gallery-item > audio").forEach((media) => media.addEventListener("error", () => {
@@ -499,6 +499,7 @@ function renderGallery(images) {
   }));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("click", (event) => event.stopPropagation()));
   list.querySelectorAll(".gallery-select").forEach((input) => input.addEventListener("change", updateGallerySelection));
+  list.querySelectorAll("[data-gallery-download]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); void downloadMedia(galleryImages[Number(button.dataset.galleryDownload)]); }));
   updateGallerySelection();
   renderPublicPager("publicGalleryPagination", images.length, publicGalleryPage, galleryPageSize, page => { publicGalleryPage = page; renderGallery(images); });
 }

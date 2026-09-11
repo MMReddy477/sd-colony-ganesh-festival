@@ -56,6 +56,28 @@
   text-align: center;
 }
 
+.gallery-card-download {
+  position: absolute;
+  right: .55rem;
+  bottom: .55rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 248, 237, .85);
+  border-radius: 50%;
+  background: rgba(36, 29, 27, .82);
+  color: #fff8ed;
+  cursor: pointer;
+}
+
+.gallery-card-download:hover,
+.gallery-card-download:focus-visible {
+  background: #f4b942;
+  color: #241d1b;
+}
+
 .gallery-admin-media.gallery-media-missing {
   display: grid;
   place-items: center;
@@ -64,6 +86,21 @@
 }
 
 @media (max-width: 600px) {
+  .gallery-check {
+    top: .35rem;
+    left: auto;
+    right: .35rem;
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+
+  .gallery-card-download {
+    right: .35rem;
+    bottom: .35rem;
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
   .gallery-viewer-video {
     width: 92vw;
     max-height: 65vh;
