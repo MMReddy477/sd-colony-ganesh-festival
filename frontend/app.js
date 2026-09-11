@@ -330,8 +330,10 @@ async function loadPortal() {
     const collectedAmount = Number(data.stats.totalDonations || 0) + Number(data.stats.ladduAuctionTotal || 0);
     const estimatedRemainingBalance = collectedAmount - totalExpenses;
     const expensePageSize = 10;
-    publicExpensesPage = Math.min(publicExpensesPage, Math.max(0, Math.ceil(expenseRows.length / expensePageSize) - 1));
-    const visibleExpenses = expenseRows.slice(publicExpensesPage * expensePageSize, (publicExpensesPage + 1) * expensePageSize);
+    const expenseQuery = document.getElementById("publicExpenseSearch")?.value.trim().toLowerCase() || "";
+    const filteredExpenseRows = expenseRows.filter(item => String(item.name || "").toLowerCase().includes(expenseQuery));
+    publicExpensesPage = Math.min(publicExpensesPage, Math.max(0, Math.ceil(filteredExpenseRows.length / expensePageSize) - 1));
+    const visibleExpenses = filteredExpenseRows.slice(publicExpensesPage * expensePageSize, (publicExpensesPage + 1) * expensePageSize);
     const rows = visibleExpenses.map(item => `
       <tr>
         <td>${escapeHtml(item.name || "--")}</td>
@@ -407,7 +409,7 @@ async function loadPortal() {
       if (remainingBalanceEl) remainingBalanceEl.textContent = money(collectedAmount - totalValue);
     };
     requestAnimationFrame(publicExpenseSummaryTotals);
-    renderPublicPager("publicExpensePagination", expenseRows.length, publicExpensesPage, expensePageSize, page => { publicExpensesPage = page; loadPortal(); });
+    renderPublicPager("publicExpensePagination", filteredExpenseRows.length, publicExpensesPage, expensePageSize, page => { publicExpensesPage = page; loadPortal(); });
   }
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
   renderPublicDonors(data.donations);
@@ -434,7 +436,7 @@ function renderPublicDonors(items) {
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" aria-label="Previous page" title="Previous page" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>‹</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" aria-label="Next page" title="Next page" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>›</button>`;
 }
 function formatDonorDate(value) { return value ? `${formatDate(value)} ${new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "--"; }
-document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
+document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } if (event.target.id === "publicExpenseSearch") { publicExpensesPage = 0; loadPortal(); } });
 document.addEventListener("change", event => { if (event.target.id === "publicRowsPerPage") { publicDonorPageSize = event.target.value === "all" ? "all" : Number(event.target.value); publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("change", event => { if (event.target.id === "publicPaymentFilter") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } });
 document.addEventListener("click", event => { const button = event.target.closest("[data-public-page]"); if (!button) return; const value = button.dataset.publicPage; publicDonorPage += value === "prev" ? -1 : value === "next" ? 1 : Number(value) - publicDonorPage; renderPublicDonors(publicDonorRows); });
