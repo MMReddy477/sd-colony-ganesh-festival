@@ -74,7 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("galleryViewerPause")?.addEventListener("click", () => setSlideshow(!slideshowPlaying));
   const heroImage = document.querySelector("[data-hero-image]");
   heroImage?.addEventListener("mouseenter", playFestivalSong);
-  heroImage?.addEventListener("mouseleave", stopFestivalSong);
+  heroImage?.addEventListener("touchstart", playFestivalSong, { passive: true });
+  heroImage?.addEventListener("mouseleave", () => {
+    if (!document.getElementById("galleryViewer")?.classList.contains("is-open")) stopFestivalSong();
+  });
   document.getElementById("songMuteToggle")?.addEventListener("click", toggleFestivalSongMute);
 });
 const money = (value) =>
@@ -583,12 +586,14 @@ function openGallery(index) {
 function closeGallery() {
   setSlideshow(false);
   const viewer = document.getElementById("galleryViewer");
+  const wasHeroViewer = viewer.classList.contains("hero-image-viewer");
   document.getElementById("galleryViewerVideo")?.remove();
   document.getElementById("galleryViewerAudio")?.remove();
   document.getElementById("galleryViewerImage").hidden = false;
   viewer.classList.remove("is-open");
   viewer.classList.remove("hero-image-viewer");
   viewer.setAttribute("aria-hidden", "true");
+  if (wasHeroViewer) stopFestivalSong();
 }
 function setSlideshow(playing) { slideshowPlaying = playing; clearInterval(slideshowTimer); const button = document.getElementById("galleryViewerPause"); if (button) button.textContent = playing ? "⏸ Pause" : "▶ Play"; if (playing) slideshowTimer = setInterval(() => openGallery(galleryIndex + 1), 4000); }
 document.addEventListener("click", (event) => {
