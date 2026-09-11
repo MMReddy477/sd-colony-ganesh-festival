@@ -113,6 +113,13 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+.estimated-results-button { margin: 0 0 1rem; padding: .65rem 1rem; border: 0; border-radius: 6px; background: var(--gold); color: var(--ink); font-weight: 700; cursor: pointer; }
+.estimated-results-button:hover, .estimated-results-button:focus-visible { background: #ffd269; }
+.estimated-results-list { display: grid; gap: .6rem; margin: 1rem 0; }
+.estimated-results-list p { display: flex; justify-content: space-between; gap: 1rem; margin: 0; padding: .65rem 0; border-bottom: 1px solid var(--line); }
+.estimated-results-back { width: 100%; min-height: 44px; border: 0; border-radius: 6px; background: #1565c0; color: #fff; cursor: pointer; }
+@media (max-width: 600px) { .estimated-results-list p { display: grid; gap: .2rem; } }
+
 .public-expense-summary-box {
   background: transparent;
   border: none;

@@ -351,6 +351,7 @@ async function loadPortal() {
         <div class="public-expense-summary-box">
           <h3>Where the Money Is Going</h3>
           <h2>Total expenditure overview</h2>
+          <button class="estimated-results-button" type="button" data-estimated-results>Estimated Results</button>
           <div class="public-expense-summary-metrics">
             <p class="public-expense-metric public-expense-metric-total">Total Expenditure: <span id="totalSum">${money(totalExpenses)}</span></p>
             <p class="public-expense-metric public-expense-metric-paid">Total Paid: <span id="paidSum">${money(paid)}</span></p>
@@ -689,6 +690,25 @@ if (contactDetails) {
       "Community Hall, Main Street · Open daily 9AM–11PM";
 }
 document.addEventListener("click", async (event) => {
+  const estimatedButton = event.target.closest("[data-estimated-results]");
+  if (estimatedButton) {
+    const response = await fetch("/api/public", { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json();
+    const expenses = data.expenses || [];
+    const total = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const paid = expenses.reduce((sum, item) => sum + ((item.status || "Due") === "Full Paid" ? Number(item.amount || 0) : Number(item.advanceAmount || 0)), 0);
+    const collected = Number(data.stats?.totalDonations || 0) + Number(data.stats?.ladduAuctionTotal || 0);
+    const popup = document.createElement("div");
+    popup.className = "finance-modal is-open estimated-results-popup";
+    popup.innerHTML = `<div class="finance-modal-panel" role="dialog" aria-modal="true"><button class="finance-close" type="button" aria-label="Close">×</button><p class="eyebrow">Estimated results</p><h3>Ganesh Utsav Financial Summary</h3><div class="estimated-results-list"><p><strong>Total Expenditure:</strong> ${money(total)}</p><p><strong>Total Paid:</strong> ${money(paid)}</p><p><strong>Total Due:</strong> ${money(total - paid)}</p><p><strong>Collected Amount:</strong> ${money(collected)}</p><p><strong>Estimated Remaining Balance:</strong> ${money(collected - total)}</p></div><button class="estimated-results-back" type="button">Back</button></div>`;
+    document.body.appendChild(popup);
+    const close = () => popup.remove();
+    popup.querySelector(".finance-close").onclick = close;
+    popup.querySelector(".estimated-results-back").onclick = close;
+    popup.onclick = closeEvent => { if (closeEvent.target === popup) close(); };
+    return;
+  }
   const card = event.target.closest(".stat-card");
   if (!card) return;
   const response = await fetch("/api/public");
