@@ -249,6 +249,12 @@ router.get('/gallery/:id/media', async (req, res) => {
     if (fs.existsSync(filePath)) media = fs.readFileSync(filePath);
   }
   if (!media) return res.sendStatus(404);
+  if (!item.mediaData?.length) {
+    item.mediaData = media;
+    item.filename = '';
+    item.path = '';
+    await item.save();
+  }
   const type = item.mediaType || 'application/octet-stream';
   const name = encodeURIComponent(item.originalName || `gallery-${item._id}`);
   const range = req.headers.range;
