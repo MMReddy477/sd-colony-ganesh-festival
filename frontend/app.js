@@ -72,7 +72,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("startSlideshow")?.addEventListener("click", () => { openGallery(0); setSlideshow(true); });
   document.getElementById("galleryViewerPause")?.addEventListener("click", () => setSlideshow(!slideshowPlaying));
-  document.querySelector("[data-hero-image]")?.addEventListener("mouseenter", playFestivalSong);
+  const heroImage = document.querySelector("[data-hero-image]");
+  heroImage?.addEventListener("mouseenter", playFestivalSong);
+  heroImage?.addEventListener("mouseleave", stopFestivalSong);
+  document.getElementById("songMuteToggle")?.addEventListener("click", toggleFestivalSongMute);
 });
 const money = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -222,9 +225,25 @@ function closeDonationModal() {
 }
 function playFestivalSong() {
   const audio = document.getElementById("ganeshSong");
-  if (!audio) return;
+  if (!audio || audio.muted) return;
   audio.currentTime = 0;
   audio.play().catch(() => {});
+}
+function stopFestivalSong() {
+  const audio = document.getElementById("ganeshSong");
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+}
+function toggleFestivalSongMute(event) {
+  event.stopPropagation();
+  const audio = document.getElementById("ganeshSong");
+  const toggle = event.currentTarget;
+  if (!audio) return;
+  audio.muted = !audio.muted;
+  toggle.setAttribute("aria-pressed", String(audio.muted));
+  toggle.setAttribute("aria-label", audio.muted ? "Unmute festival song" : "Mute festival song");
+  toggle.textContent = audio.muted ? "🔇" : "🔊";
 }
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);

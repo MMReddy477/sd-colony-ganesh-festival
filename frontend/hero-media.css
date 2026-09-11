@@ -98,6 +98,8 @@
 .ganesh-ring-diya-one { top: 42%; left: -7%; }
 .ganesh-ring-diya-two { top: 42%; right: -7%; }
 .hero.hero-redesign .ganesh-circle .ganesh-circle-ring .ganesh-ring-idol { display: block !important; width: clamp(42px, 10%, 72px) !important; height: clamp(42px, 10%, 72px) !important; max-width: none !important; max-height: none !important; border: 0 !important; border-radius: 50% !important; object-fit: contain !important; background: transparent !important; }
+.song-mute-toggle { position: absolute; right: 1rem; bottom: 1rem; z-index: 5; width: 2.5rem; height: 2.5rem; border: 1px solid rgba(255, 248, 237, .8); border-radius: 50%; background: rgba(36, 29, 27, .78); color: #fff8ed; cursor: pointer; box-shadow: 0 4px 12px rgba(36, 29, 27, .3); }
+.song-mute-toggle:hover, .song-mute-toggle:focus-visible { background: #f4b942; color: #241d1b; }
 .ganesh-ring-idol-one { top: 7%; left: 19%; }
 .ganesh-ring-idol-two { top: 7%; right: 19%; }
 .ganesh-ring-idol-three { bottom: 7%; left: 19%; }
