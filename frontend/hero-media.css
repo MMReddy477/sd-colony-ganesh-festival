@@ -89,11 +89,11 @@
 
 .ganesh-ring-top { top: -1px; }
 .ganesh-ring-bottom { bottom: -1px; }
-.ganesh-ring-leaf,
+.ganesh-ring-flower,
 .ganesh-ring-diya,
 .ganesh-ring-idol { position: absolute; font-size: clamp(1rem, 2vw, 1.7rem); filter: drop-shadow(0 0 6px rgba(255, 215, 0, .8)); }
-.ganesh-ring-leaf-one { top: 18%; left: -3%; }
-.ganesh-ring-leaf-two { right: -3%; bottom: 18%; transform: rotate(180deg); }
+.ganesh-ring-flower-one { top: 18%; left: -3%; }
+.ganesh-ring-flower-two { right: -3%; bottom: 18%; transform: rotate(180deg); }
 .ganesh-ring-diya-one { top: 42%; left: -7%; }
 .ganesh-ring-diya-two { top: 42%; right: -7%; }
 .hero.hero-redesign .ganesh-circle .ganesh-circle-ring .ganesh-ring-idol { display: block !important; width: clamp(42px, 10%, 72px) !important; height: clamp(42px, 10%, 72px) !important; max-width: none !important; max-height: none !important; border: 0 !important; border-radius: 50% !important; object-fit: contain !important; background: transparent !important; }
@@ -101,8 +101,8 @@
 .ganesh-ring-idol-two { top: 7%; right: 19%; }
 .ganesh-ring-idol-three { bottom: 7%; left: 19%; }
 .ganesh-ring-idol-four { right: 19%; bottom: 7%; }
-.ganesh-ring-leaf-three { top: 7%; left: 49%; transform: rotate(90deg); }
-.ganesh-ring-leaf-four { right: 49%; bottom: 7%; transform: rotate(270deg); }
+.ganesh-ring-flower-three { top: 7%; left: 49%; transform: rotate(90deg); }
+.ganesh-ring-flower-four { right: 49%; bottom: 7%; transform: rotate(270deg); }
 .ganesh-ring-diya-three { top: 18%; right: 4%; transform: rotate(45deg); }
 .ganesh-ring-diya-four { bottom: 18%; left: 4%; transform: rotate(225deg); }
 
