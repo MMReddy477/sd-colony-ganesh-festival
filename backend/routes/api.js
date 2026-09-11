@@ -243,13 +243,23 @@ router.get('/receipts/:number/public-pdf', async (req, res) => { const receipt =
 router.get('/gallery/:id/media', async (req, res) => {
   const item = await Gallery.findById(req.params.id).select('+mediaData');
   if (!item) return res.sendStatus(404);
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  if (item.mediaData?.length) return res.type(item.mediaType || 'application/octet-stream').send(item.mediaData);
-  if (item.filename) {
+  let media = item.mediaData?.length ? Buffer.from(item.mediaData) : null;
+  if (!media && item.filename) {
     const filePath = path.join(uploadDir, path.basename(item.filename));
-    if (fs.existsSync(filePath)) return res.sendFile(filePath);
+    if (fs.existsSync(filePath)) media = fs.readFileSync(filePath);
   }
-  res.sendStatus(404);
+  if (!media) return res.sendStatus(404);
+  const type = item.mediaType || 'application/octet-stream';
+  const name = encodeURIComponent(item.originalName || `gallery-${item._id}`);
+  const range = req.headers.range;
+  res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Accept-Ranges': 'bytes', 'Content-Type': type, 'Content-Disposition': `${req.query.download === '1' ? 'attachment' : 'inline'}; filename*=UTF-8''${name}` });
+  if (!range) return res.set('Content-Length', media.length).send(media);
+  const match = range.match(/bytes=(\d*)-(\d*)/);
+  if (!match) return res.status(416).set('Content-Range', `bytes */${media.length}`).end();
+  const start = match[1] ? Number(match[1]) : Math.max(media.length - Number(match[2] || 0), 0);
+  const end = match[2] ? Math.min(Number(match[2]), media.length - 1) : media.length - 1;
+  if (start > end || start >= media.length) return res.status(416).set('Content-Range', `bytes */${media.length}`).end();
+  res.status(206).set({ 'Content-Range': `bytes ${start}-${end}/${media.length}`, 'Content-Length': end - start + 1 }).send(media.subarray(start, end + 1));
 });
 router.use(auth);
 router.put('/settings/contact', async (req, res) => res.json(await SiteSettings.findOneAndUpdate({ key: 'contact' }, { key: 'contact', contactEmail: req.body.contactEmail, phone1: req.body.phone1, phone2: req.body.phone2, upiId: req.body.upiId, bankName: req.body.bankName, accountName: req.body.accountName, accountNumber: req.body.accountNumber, ifscCode: req.body.ifscCode }, { upsert: true, new: true, runValidators: true })));

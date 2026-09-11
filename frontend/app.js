@@ -484,7 +484,8 @@ function renderGallery(images) {
 function getSelectedGallery() { return [...document.querySelectorAll(".gallery-select:checked")].map((input) => galleryImages[Number(input.dataset.gallerySelect)]); }
 function updateGallerySelection() { const selected = getSelectedGallery().length; document.getElementById("gallerySelectedCount").textContent = `Selected: ${selected}`; const all = document.getElementById("gallerySelectAll"); if (all) all.checked = selected > 0 && selected === galleryImages.length; }
 async function downloadMedia(image) {
-  const url = galleryMediaPath(image);
+  const mediaUrl = galleryMediaPath(image);
+  const url = `${mediaUrl}${mediaUrl.includes("?") ? "&" : "?"}download=1`;
   const filename = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
   try {
     const response = await fetch(url, { cache: "no-store" });
