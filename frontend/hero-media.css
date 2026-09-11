@@ -70,6 +70,7 @@
   z-index: 3;
   border-radius: 50%;
   pointer-events: none;
+  transform-origin: 50% 50%;
   will-change: transform;
   animation: rotateGaneshRing 30s linear infinite;
 }
@@ -106,7 +107,10 @@
 .ganesh-ring-diya-three { top: 18%; right: 4%; transform: rotate(45deg); }
 .ganesh-ring-diya-four { bottom: 18%; left: 4%; transform: rotate(225deg); }
 
-@keyframes rotateGaneshRing { to { transform: rotate(360deg); } }
+@keyframes rotateGaneshRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 @keyframes pulseGaneshAura { 0%, 100% { box-shadow: 0 0 18px rgba(255, 215, 0, .65), inset 0 0 14px rgba(255, 215, 0, .4); } 50% { box-shadow: 0 0 34px rgba(255, 215, 0, .95), inset 0 0 22px rgba(255, 215, 0, .7); } }
 
 @media (max-width: 767.98px) {
