@@ -61,6 +61,20 @@
   padding: 0 !important;
 }
 
+#publicExpensePagination > strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 .8rem;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: var(--red);
+  color: #fff;
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 600px) {
   .public-expense-tools {
     width: 100%;

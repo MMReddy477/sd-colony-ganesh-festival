@@ -448,7 +448,7 @@ function renderPublicPager(id, total, page, size, onPage) {
   if (!panel) return;
   const pages = Math.max(1, Math.ceil(total / size));
   panel.innerHTML = total > size
-    ? `<span>Showing ${page * size + 1}-${Math.min((page + 1) * size, total)} of ${total}</span><button type="button" data-public-pager="prev" aria-label="Previous page" ${page === 0 ? "disabled" : ""}>&lt;</button><strong>${page + 1}</strong><button type="button" data-public-pager="next" aria-label="Next page" ${page >= pages - 1 ? "disabled" : ""}>&gt;</button>`
+    ? `<span>Showing ${page * size + 1}-${Math.min((page + 1) * size, total)} of ${total}</span><button type="button" data-public-pager="prev" aria-label="Previous page" ${page === 0 ? "disabled" : ""}>&lt;</button><strong aria-current="page">Page ${page + 1} of ${pages}</strong><button type="button" data-public-pager="next" aria-label="Next page" ${page >= pages - 1 ? "disabled" : ""}>&gt;</button>`
     : "";
   panel.querySelector('[data-public-pager="prev"]')?.addEventListener("click", () => onPage(page - 1));
   panel.querySelector('[data-public-pager="next"]')?.addEventListener("click", () => onPage(page + 1));
