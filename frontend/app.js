@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("startSlideshow")?.addEventListener("click", () => { openGallery(0); setSlideshow(true); });
   document.getElementById("galleryViewerPause")?.addEventListener("click", () => setSlideshow(!slideshowPlaying));
+  document.querySelector("[data-hero-image]")?.addEventListener("mouseenter", playFestivalSong);
 });
 const money = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -219,24 +220,11 @@ function closeDonationModal() {
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("donation-modal-open");
 }
-function playSlogan() {
-  const slogans = [
-    "Ganapathi Bappa Morya!",
-    "Best Festival Blessings!",
-    "Celebrate with Joy and Light!",
-    "Harathi Glow of Lord Ganesha!",
-  ];
-  const slogan = slogans[Math.floor(Math.random() * slogans.length)];
-  const element = document.getElementById("festivalSlogan");
-  if (element) {
-    element.textContent = slogan;
-    element.classList.remove("is-visible");
-    requestAnimationFrame(() => element.classList.add("is-visible"));
-  }
-  if ("speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(slogan));
-  }
+function playFestivalSong() {
+  const audio = document.getElementById("ganeshSong");
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
 }
 async function loadPortal() {
   const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
@@ -620,7 +608,7 @@ document.addEventListener("click", (event) => {
   }
   const heroImage = event.target.closest("[data-hero-image]");
   if (heroImage) {
-    playSlogan();
+    playFestivalSong();
     const viewer = document.getElementById("galleryViewer");
     document.getElementById("galleryViewerImage").src = heroImage.dataset.heroImage;
     document.getElementById("galleryViewerImage").alt = "Ganesh Utsav festival schedule";
