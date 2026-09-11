@@ -918,6 +918,7 @@ const galleryAdminPageSize = 4;
 function renderGalleryAdmin(items) {
   const fallbackPath = "/GaneshIdol_detail.jpeg";
   const mediaPath = item => {
+    if (item._id) return `/api/gallery/${encodeURIComponent(item._id)}/media`;
     const value = String(item.path || item.filename || "").trim().replace(/\\/g, "/");
     if (!value) return fallbackPath;
     const normalized = value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`;

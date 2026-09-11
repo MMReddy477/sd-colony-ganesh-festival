@@ -448,6 +448,7 @@ let slideshowTimer;
 let slideshowPlaying = false;
 const galleryFallbackPath = "/GaneshIdol_detail.jpeg";
 function galleryMediaPath(image) {
+  if (image?._id) return `/api/gallery/${encodeURIComponent(image._id)}/media`;
   const value = String(image?.path || image?.filename || "").trim().replace(/\\/g, "/");
   if (!value) return galleryFallbackPath;
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
