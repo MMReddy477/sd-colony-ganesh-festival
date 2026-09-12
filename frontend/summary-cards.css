@@ -529,6 +529,36 @@
   text-align: center;
 }
 
+#sponsorships .sponsorship-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+#sponsorships .sponsorship-table th:nth-child(1),
+#sponsorships .sponsorship-table td:nth-child(1) { width: 18%; }
+#sponsorships .sponsorship-table th:nth-child(2),
+#sponsorships .sponsorship-table td:nth-child(2) { width: 24%; }
+#sponsorships .sponsorship-table th:nth-child(3),
+#sponsorships .sponsorship-table td:nth-child(3) { width: 40%; }
+#sponsorships .sponsorship-table th:nth-child(4),
+#sponsorships .sponsorship-table td:nth-child(4) { width: 18%; }
+
+#sponsorships .sponsorship-table td {
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+#sponsorships .sponsorship-table td:last-child {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  #sponsorships .sponsorship-table {
+    min-width: 640px;
+  }
+}
+
 .summary-container .general-donations-card .amount {
   margin-top: auto;
   margin-bottom: auto;

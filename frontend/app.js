@@ -301,8 +301,8 @@ async function loadPortal() {
       <strong class="amount">${money(remainingBookBalance)}</strong>
       <span class="view-btn">View all</span>
     </article>
-    <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Ganesh Idol Sponsor" role="button" tabindex="0" aria-label="View Ganesh Idol Sponsorship 2026 contributions">
-      <h4>Ganesh Idol Sponsorship 2026</h4>
+    <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Ganesh Idol Sponsor" role="button" tabindex="0" aria-label="View Ganesh Idol & Laddu Sponsorship 2026 contributions">
+      <h4>Ganesh Idol &amp; Laddu Sponsorship 2026</h4>
       <strong class="total">${money(contributionTotal("Ganesh Idol Sponsor"))}</strong>
       <table class="mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${summaryRows("Ganesh Idol Sponsor", "No sponsorship records yet.")}</tbody></table>
       <span class="view-btn">View all</span>
