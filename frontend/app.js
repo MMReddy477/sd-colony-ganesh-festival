@@ -732,8 +732,14 @@ document.addEventListener("click", async (event) => {
     content = data.expenses.length
       ? `<div class="expense-popup-wrap"><table class="expense-popup-table"><thead><tr><th>Expense name</th><th>Amount</th><th>Payment mode</th><th>Expense date</th><th>Time</th></tr></thead><tbody>${data.expenses.map(item => `<tr><td>${item.name || "--"}</td><td class="amount-positive">${money(item.amount)}</td><td>${item.paymentMode || "--"}</td><td>${formatExpenseDate(item.date)}</td><td>${formatExpenseTime(item.createdAt)}</td></tr>`).join("")}</tbody></table></div>`
       : '<p class="muted">No expenditure recorded yet.</p>';
-  if (isBalance)
-    content = `<div class="balance-breakdown"><div><span>Total donations</span><strong>${money(data.stats.totalDonations)}</strong></div><div><span>Total expenditure</span><strong>${money(data.stats.totalExpenses)}</strong></div><div><span>Laddu Auction 2025 <small>(included in balance)</small></span><strong>${money(data.stats.ladduAuctionTotal)}</strong></div><div class="balance-result"><span>Final balance</span><strong>${money(data.stats.balance)}</strong></div></div>`;
+  if (isBalance) {
+    const collectedAmount = Number(data.stats?.totalDonations || 0) + Number(data.stats?.ladduAuctionTotal || 0);
+    const totalPaid = (data.expenses || []).reduce((sum, item) => {
+      const amount = Number(item.amount || 0);
+      return sum + ((item.status || "Due") === "Full Paid" ? amount : Number(item.advanceAmount || 0));
+    }, 0);
+    content = `<div class="balance-breakdown"><div><span>Collected Amount</span><strong>${money(collectedAmount)}</strong></div><div><span>Total Paid</span><strong>${money(totalPaid)}</strong></div><div class="balance-result"><span>Final Balance</span><strong>${money(collectedAmount - totalPaid)}</strong></div></div>`;
+  }
   let modal = document.getElementById("financeModal");
   if (!modal) {
     modal = document.createElement("div");
