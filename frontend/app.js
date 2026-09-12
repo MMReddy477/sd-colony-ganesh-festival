@@ -333,21 +333,20 @@ async function loadPortal() {
     }, 0);
     const expensePageSize = 10;
     const expenseQuery = document.getElementById("publicExpenseSearch")?.value.trim().toLowerCase() || "";
-    const filteredExpenseRows = expenseRows.filter(item => String(item.name || "").toLowerCase().includes(expenseQuery));
+    const filteredExpenseRows = expenseRows
+      .filter(item => String(item.name || "").toLowerCase().includes(expenseQuery))
+      .sort((left, right) => Number((left.status || "Due") !== "Due") - Number((right.status || "Due") !== "Due"));
     publicExpensesPage = Math.min(publicExpensesPage, Math.max(0, Math.ceil(filteredExpenseRows.length / expensePageSize) - 1));
     const visibleExpenses = filteredExpenseRows.slice(publicExpensesPage * expensePageSize, (publicExpensesPage + 1) * expensePageSize);
     const rows = visibleExpenses.map(item => `
       <tr>
         <td>${escapeHtml(item.name || "--")}</td>
         <td data-total="${Number(item.amount || 0)}">${money(item.amount)}</td>
-        <td data-advance="${Number(item.advanceAmount || 0)}">${money(item.advanceAmount ?? 0)}</td>
-        <td data-remaining="${Number(item.remainingAmount || 0)}">${money(item.remainingAmount ?? 0)}</td>
+        <td data-paid="${(item.status || "Due") === "Full Paid" ? Number(item.amount || 0) : Number(item.advanceAmount || 0)}">${money((item.status || "Due") === "Full Paid" ? item.amount : item.advanceAmount)}</td>
+        <td data-due="${(item.status || "Due") === "Full Paid" ? 0 : Number(item.remainingAmount || 0)}">${money((item.status || "Due") === "Full Paid" ? 0 : item.remainingAmount)}</td>
         <td><span class="public-expense-status ${((item.status || "Due")).toLowerCase().replace(/\s+/g, "-")}">${escapeHtml(item.status || "Due")}</span></td>
-        <td>${escapeHtml(item.paymentMode || "--")}</td>
-        <td>${escapeHtml(formatExpenseDate(item.date || item.createdAt))}</td>
-        <td>${escapeHtml(formatExpenseTime(item.createdAt || item.time || item.date))}</td>
       </tr>
-    `).join("") || '<tr><td colspan="8" class="donor-empty">No expenditure recorded yet.</td></tr>';
+    `).join("") || '<tr><td colspan="5" class="donor-empty">No expenditure recorded yet.</td></tr>';
     publicExpenditureSummary.innerHTML = `
       <div class="public-expense-summary-shell">
         <div class="public-expense-summary-box">
@@ -358,14 +357,11 @@ async function loadPortal() {
           <table class="public-expense-table">
             <thead>
               <tr>
-                <th>Expense Name</th>
-                <th>Total Amount</th>
-                <th>Advance Amount</th>
-                <th>Remaining Amount</th>
-                <th>Payment Status</th>
-                <th>Payment Mode</th>
-                <th>Date</th>
-                <th>Time</th>
+                <th>Item</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Due</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody id="publicExpenseTable">${rows}</tbody>
@@ -375,7 +371,7 @@ async function loadPortal() {
                 <td id="totalSumFooter">${money(total)}</td>
                 <td id="paidSumFooter">${money(paid)}</td>
                 <td id="dueSumFooter">${money(due)}</td>
-                <td colspan="4"></td>
+                <td></td>
               </tr>
             </tfoot>
           </table>
