@@ -422,6 +422,31 @@
   font-weight: 800;
 }
 
+.summary-container .sponsorship-summary-table {
+  table-layout: fixed;
+  font-size: .68rem;
+}
+
+.summary-container .sponsorship-summary-table th,
+.summary-container .sponsorship-summary-table td {
+  padding: .4rem .25rem;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.summary-container .sponsorship-summary-table th:nth-child(1),
+.summary-container .sponsorship-summary-table td:nth-child(1) { width: 20%; }
+.summary-container .sponsorship-summary-table th:nth-child(2),
+.summary-container .sponsorship-summary-table td:nth-child(2) { width: 27%; }
+.summary-container .sponsorship-summary-table th:nth-child(3),
+.summary-container .sponsorship-summary-table td:nth-child(3) { width: 35%; }
+.summary-container .sponsorship-summary-table th:nth-child(4),
+.summary-container .sponsorship-summary-table td:nth-child(4) { width: 18%; }
+
+.summary-container .sponsorship-summary-table td:last-child {
+  white-space: nowrap;
+}
+
 .summary-container .summary-empty {
   color: #806a60;
   font-size: .75rem;

@@ -270,6 +270,9 @@ async function loadPortal() {
   const contributionTotal = type => type === "Laddu Auction 2025" && data.stats.ladduAuctionTotal != null ? data.stats.ladduAuctionTotal : data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
   const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => { const plot = normalizePlotNumber(item.flatNumber); const donor = item.donorName || "--"; return `<tr><td>${escapeHtml(plot ? `${donor} (${plot})` : donor)}</td><td>${money(item.amount)}</td></tr>`; }).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
+  const sponsorshipDonations = data.donations.filter(item => ["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType) && item.status !== "Yet to receive");
+  const sponsorshipRows = [...sponsorshipDonations].sort(sortByPlotNumber).slice(0, 4);
+  const sponsorshipTotal = sponsorshipDonations.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const generalDonationTotal = Number(data.stats.totalDonations || 0);
   const ladduAuctionTotal = Number(data.stats.ladduAuctionTotal || 0);
   const paidTotal = (data.expenses || []).reduce((sum, item) => {
@@ -301,10 +304,10 @@ async function loadPortal() {
       <strong class="amount">${money(remainingBookBalance)}</strong>
       <span class="view-btn">View all</span>
     </article>
-    <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Ganesh Idol Sponsor" role="button" tabindex="0" aria-label="View Ganesh Idol & Laddu Sponsorship 2026 contributions">
+    <article class="summary-card stat-card contribution-stat-card sponsorship-summary-card" data-sponsorship-summary="true" role="button" tabindex="0" aria-label="View Ganesh Idol & Laddu Sponsorship 2026 contributions">
       <h4>Ganesh Idol &amp; Laddu Sponsorship 2026</h4>
-      <strong class="total">${money(contributionTotal("Ganesh Idol Sponsor"))}</strong>
-      <table class="mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${summaryRows("Ganesh Idol Sponsor", "No sponsorship records yet.")}</tbody></table>
+      <strong class="total">${money(sponsorshipTotal)}</strong>
+      <table class="mini-table sponsorship-summary-table"><thead><tr><th>Plot Number</th><th>Name</th><th>Contribution Type</th><th>Amount</th></tr></thead><tbody>${sponsorshipRows.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td>${escapeHtml(item.contributionType === "Ganesh Idol Sponsor" ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026")}</td><td>${money(item.amount)}</td></tr>`).join("") || '<tr><td colspan="4" class="summary-empty">No sponsorship records yet.</td></tr>'}</tbody></table>
       <span class="view-btn">View all</span>
     </article>`;
   const publicEvents = data.events || [];
@@ -709,6 +712,7 @@ document.addEventListener("click", async (event) => {
   const data = await response.json();
   const label = card.querySelector(".label")?.textContent || card.querySelector("h3, h4")?.textContent || "";
   const contributionType = card.dataset.contributionType;
+  const isSponsorshipSummary = card.dataset.sponsorshipSummary === "true";
   const isBalance = card.classList.contains("balance-stat");
   const isGeneralDonations = card.classList.contains("general-donations-card");
   const isAuction = contributionType === "Laddu Auction 2025";
@@ -719,8 +723,14 @@ document.addEventListener("click", async (event) => {
     const columns = "<th>Plot No.</th><th>Donor Name</th><th>Contribution Type</th><th>Amount</th><th>Date</th><th>Payment Mode</th><th>Actions</th>";
     content = `<div class="category-popup-wrap"><table class="donation-popup-table"><thead><tr>${columns}</tr></thead><tbody>${rows || `<tr><td colspan="${isAuction ? 7 : 6}" class="donor-empty">No ${escapeHtml(label.toLowerCase())} records yet.</td></tr>`}</tbody></table></div>`;
   }
+  if (isSponsorshipSummary) {
+    const sponsorships = data.donations.filter(item => ["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType)).sort(sortByPlotNumber);
+    content = `<div class="category-popup-wrap"><table class="donation-popup-table sponsorship-summary-popup"><thead><tr><th>Plot Number</th><th>Name</th><th>Contribution Type</th><th>Amount</th></tr></thead><tbody>${sponsorships.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td>${escapeHtml(item.contributionType === "Ganesh Idol Sponsor" ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026")}</td><td class="amount-positive">${money(item.amount)}</td></tr>`).join("") || '<tr><td colspan="4" class="donor-empty">No sponsorship records yet.</td></tr>'}</tbody></table></div>`;
+  }
   const title =
-    contributionType
+    isSponsorshipSummary
+      ? label
+      : contributionType
       ? label
       : label === "Total donations" || isGeneralDonations
       ? "Donation details"
