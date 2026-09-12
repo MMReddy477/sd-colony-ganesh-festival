@@ -884,12 +884,26 @@ document.addEventListener("change", event => { if (event.target.id === "adminPay
 const donorModal = document.getElementById("donorModal");
 const donorModalForm = document.getElementById("donorModalForm");
 let editingDonationId = null;
+const contributionTypeSelect = donorModalForm?.querySelector('[name="contributionType"]');
+if (contributionTypeSelect && !contributionTypeSelect.querySelector('option[value="Laddu Sponsorship 2026"]')) {
+  contributionTypeSelect.add(new Option("Laddu Sponsorship 2026", "Laddu Sponsorship 2026"));
+  const ladduTypeSelect = document.createElement("select");
+  ladduTypeSelect.name = "ladduType";
+  ladduTypeSelect.className = "contribution-extra contribution-laddu";
+  ladduTypeSelect.hidden = true;
+  ladduTypeSelect.innerHTML = '<option value="">-- Choose Laddu --</option><option value="1st Laddu (9 Kgs)">1st Laddu (9 Kgs)</option><option value="2nd Laddu (5 Kgs)">2nd Laddu (5 Kgs)</option>';
+  contributionTypeSelect.after(ladduTypeSelect);
+}
 function updateContributionFields(form) {
   const type = form.querySelector('[name="contributionType"]')?.value || "Regular Donation";
   const isAuction = type === "Laddu Auction 2025";
   const isSponsor = type === "Ganesh Idol Sponsor";
+  const isLadduSponsorship = type === "Laddu Sponsorship 2026";
+  const ladduType = form.querySelector('[name="ladduType"]');
+  const savedLadduType = form.querySelector('[name="itemName"]')?.value;
+  if (ladduType && isLadduSponsorship && !ladduType.value && savedLadduType) ladduType.value = savedLadduType;
   form.querySelectorAll(".contribution-extra").forEach(field => {
-    const visible = field.classList.contains("contribution-auction") ? isAuction : isSponsor;
+    const visible = field.classList.contains("contribution-auction") ? isAuction : field.classList.contains("contribution-laddu") ? isLadduSponsorship : isSponsor;
     field.hidden = !visible;
     field.disabled = !visible;
     field.required = visible && field.name !== "sponsorType";
@@ -908,7 +922,7 @@ document.getElementById("showDonorForm")?.addEventListener("click", () => { dono
 document.getElementById("closeDonorModal")?.addEventListener("click", closeDonorModal);
 document.getElementById("cancelDonor")?.addEventListener("click", closeDonorModal);
 donorModal?.addEventListener("click", event => { if (event.target === donorModal) closeDonorModal(); });
-function donorFormData() { const data = Object.fromEntries(new FormData(donorModalForm)); if (data.contributionType === "Regular Donation" && editingDonationId) { delete data.contributionType; delete data.itemName; delete data.winningBidAmount; delete data.sponsorshipAmount; delete data.sponsorType; } return data; }
+function donorFormData() { const data = Object.fromEntries(new FormData(donorModalForm)); if (data.contributionType === "Laddu Sponsorship 2026") data.itemName = data.ladduType; delete data.ladduType; if (data.contributionType === "Regular Donation" && editingDonationId) { delete data.contributionType; delete data.itemName; delete data.winningBidAmount; delete data.sponsorshipAmount; delete data.sponsorType; } return data; }
 async function saveDonor(keepOpen) { const endpoint = editingDonationId ? `/donations/${editingDonationId}` : "/donations"; const response = await api(endpoint, { method: editingDonationId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donorFormData()) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } await loadAdmin(); if (!keepOpen || editingDonationId) closeDonorModal(); else resetDonorModal(); }
 donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
 document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
