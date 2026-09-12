@@ -295,20 +295,10 @@ async function loadPortal() {
       }).join("") || '<tr><td colspan="2" class="summary-empty">No auction records yet.</td></tr>'}</tbody></table>
       <button class="view-all" type="button" data-scroll-to-donations>View All</button>
     </article>
-    <article class="summary-card stat-card general-donations-card" role="button" tabindex="0" aria-label="View general donation details">
-      <h4>General Donations</h4>
-      <strong class="amount">${money(data.stats.totalDonations)}</strong>
-    </article>
     <article class="balance-card stat-card balance-stat" role="button" tabindex="0" aria-label="View balance details">
       <h3>Remaining Balance</h3>
       <p class="formula">General Donations + Laddu Auction (Ganesh Utsav 2025) - Total Paid</p>
       <strong class="amount">${money(remainingBookBalance)}</strong>
-      <span class="view-btn">View all</span>
-    </article>
-    <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Laddu Auction 2025" role="button" tabindex="0" aria-label="View Laddu Auction 2025 contributions">
-      <h4>Laddu Auction (Ganesh Utsav 2025)</h4>
-      <strong class="total">${money(contributionTotal("Laddu Auction 2025"))}</strong>
-      <table class="mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${summaryRows("Laddu Auction 2025", "No auction records yet.")}</tbody></table>
       <span class="view-btn">View all</span>
     </article>
     <article class="summary-card stat-card contribution-stat-card" data-contribution-type="Ganesh Idol Sponsor" role="button" tabindex="0" aria-label="View Ganesh Idol Sponsorship 2026 contributions">
