@@ -420,9 +420,13 @@ function renderPublicDonors(items) {
 function renderPublicSponsorships(items) {
   const body = document.getElementById("publicSponsorshipsList");
   if (!body) return;
-  const sponsorships = items.filter(item => ["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType));
+  const sponsorships = (Array.isArray(items) ? items : []).filter(item => {
+    const type = String(item.contributionType || "").toLowerCase();
+    return type === "ganesh idol sponsor" || type === "ganesh idol sponsorship 2026" || type === "laddu sponsorship 2026";
+  });
   body.innerHTML = sponsorships.map(item => {
-    const contributionType = item.contributionType === "Ganesh Idol Sponsor" ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026";
+    const rawType = String(item.contributionType || "").toLowerCase();
+    const contributionType = rawType.includes("ganesh idol") ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026";
     return `<tr><td data-label="Plot Number">${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td data-label="Name">${escapeHtml(item.donorName || "--")}</td><td data-label="Contribution Type">${escapeHtml(contributionType)}</td><td data-label="Amount" class="amount-positive">${money(item.amount)}</td></tr>`;
   }).join("") || '<tr><td colspan="4" class="donor-empty">No sponsorships recorded yet.</td></tr>';
 }
