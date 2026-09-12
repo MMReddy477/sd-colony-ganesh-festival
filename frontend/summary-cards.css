@@ -502,6 +502,33 @@
   background: #f0d69e;
 }
 
+.sponsorship-table {
+  border: 1px solid #000;
+  border-collapse: collapse;
+  margin-top: .6rem;
+}
+
+.sponsorship-table th,
+.sponsorship-table td {
+  border: 1px solid #000 !important;
+  padding: .5rem .55rem !important;
+}
+
+.sponsorship-table thead th {
+  background: #f9f9f9 !important;
+  color: var(--ink) !important;
+}
+
+.sponsorship-table tbody td.amount-positive {
+  color: #1e8449 !important;
+  font-weight: 600 !important;
+}
+
+#sponsorships .section-heading h2 {
+  color: #8b2e2e;
+  text-align: center;
+}
+
 .summary-container .general-donations-card .amount {
   margin-top: auto;
   margin-bottom: auto;
