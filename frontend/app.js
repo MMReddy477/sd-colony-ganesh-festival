@@ -394,6 +394,7 @@ async function loadPortal() {
   }
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
   renderPublicDonors(data.donations);
+  renderPublicSponsorships(data.donations);
 }
 loadPortal();
 setInterval(loadPortal, 15000);
@@ -415,6 +416,15 @@ function renderPublicDonors(items) {
   const total = filtered.length; const first = total ? (size === "all" ? 1 : publicDonorPage * size + 1) : 0; const last = total ? (size === "all" ? total : Math.min((publicDonorPage + 1) * size, total)) : 0; const pages = size === "all" ? 1 : Math.max(1, Math.ceil(total / size));
   const panel = document.getElementById("publicDonorPagination");
   panel.innerHTML = `<span>Showing ${first}-${last} of ${total} Supporters</span><button type="button" data-public-page="prev" aria-label="Previous page" title="Previous page" ${publicDonorPage === 0 || size === "all" ? "disabled" : ""}>‹</button>${Array.from({ length: Math.min(pages, 7) }, (_, index) => `<button type="button" data-public-page="${index}" class="${index === publicDonorPage ? "active" : ""}">${index + 1}</button>`).join("")}<button type="button" data-public-page="next" aria-label="Next page" title="Next page" ${publicDonorPage >= pages - 1 || size === "all" ? "disabled" : ""}>›</button>`;
+}
+function renderPublicSponsorships(items) {
+  const body = document.getElementById("publicSponsorshipsList");
+  if (!body) return;
+  const sponsorships = items.filter(item => ["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType));
+  body.innerHTML = sponsorships.map(item => {
+    const contributionType = item.contributionType === "Ganesh Idol Sponsor" ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026";
+    return `<tr><td data-label="Plot Number">${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td data-label="Name">${escapeHtml(item.donorName || "--")}</td><td data-label="Contribution Type">${escapeHtml(contributionType)}</td><td data-label="Amount" class="amount-positive">${money(item.amount)}</td></tr>`;
+  }).join("") || '<tr><td colspan="4" class="donor-empty">No sponsorships recorded yet.</td></tr>';
 }
 function formatDonorDate(value) { return value ? `${formatDate(value)} ${new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "--"; }
 document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } if (event.target.id === "publicExpenseSearch") { publicExpensesPage = 0; loadPortal(); } });
