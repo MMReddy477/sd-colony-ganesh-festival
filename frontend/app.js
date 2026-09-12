@@ -280,6 +280,21 @@ async function loadPortal() {
   }, 0);
   const remainingBookBalance = generalDonationTotal + ladduAuctionTotal - paidTotal;
   document.getElementById("stats").innerHTML = `
+    <article class="summary-card donations-card">
+      <h4>Total Donations</h4>
+      <div class="collected"><strong>Collected Amount:</strong> ${money(generalDonationTotal + ladduAuctionTotal)}</div>
+      <table class="breakdown mini-table"><thead><tr><th>Category</th><th>Amount</th></tr></thead><tbody>
+        <tr><td>General Donations</td><td>${money(generalDonationTotal)}</td></tr>
+        <tr><td>Laddu Auction (Ganesh Utsav 2025)</td><td>${money(ladduAuctionTotal)}</td></tr>
+      </tbody></table>
+      <h5>Donor Details (from Laddu Auction)</h5>
+      <table class="donors mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${contributionRows("Laddu Auction 2025").map(item => {
+        const plot = normalizePlotNumber(item.flatNumber);
+        const donor = plot ? `${item.donorName || "--"} (${plot})` : item.donorName || "--";
+        return `<tr><td>${escapeHtml(donor)}</td><td>${money(item.amount)}</td></tr>`;
+      }).join("") || '<tr><td colspan="2" class="summary-empty">No auction records yet.</td></tr>'}</tbody></table>
+      <button class="view-all" type="button" data-scroll-to-donations>View All</button>
+    </article>
     <article class="summary-card stat-card general-donations-card" role="button" tabindex="0" aria-label="View general donation details">
       <h4>General Donations</h4>
       <strong class="amount">${money(data.stats.totalDonations)}</strong>
@@ -784,6 +799,10 @@ document.addEventListener("keydown", event => {
     event.preventDefault();
     card.click();
   }
+});
+document.addEventListener("click", event => {
+  if (!event.target.closest("[data-scroll-to-donations]")) return;
+  document.getElementById("donations")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 const teluguText = {
   gallery: "గ్యాలరీ",

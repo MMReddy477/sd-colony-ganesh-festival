@@ -444,6 +444,64 @@
   margin-top: auto;
 }
 
+.summary-container .donations-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.summary-container .donations-card h5 {
+  margin: 1rem 0 .35rem;
+  color: var(--red);
+  font-size: .85rem;
+  line-height: 1.35;
+}
+
+.summary-container .donations-card .collected {
+  margin: .15rem 0 .35rem;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.summary-container .donations-card .collected strong {
+  color: var(--red);
+}
+
+.summary-container .donations-card .mini-table {
+  table-layout: fixed;
+}
+
+.summary-container .donations-card .mini-table th:first-child,
+.summary-container .donations-card .mini-table td:first-child {
+  width: 68%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.summary-container .donations-card .mini-table th:last-child,
+.summary-container .donations-card .mini-table td:last-child {
+  width: 32%;
+  white-space: nowrap;
+}
+
+.summary-container .donations-card .view-all {
+  width: 100%;
+  margin-top: 1rem;
+  padding: .65rem .9rem;
+  border: 0;
+  border-radius: 6px;
+  background: #f5e6c8;
+  color: var(--red);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.summary-container .donations-card .view-all:hover,
+.summary-container .donations-card .view-all:focus-visible {
+  background: #f0d69e;
+}
+
 .summary-container .general-donations-card .amount {
   margin-top: auto;
   margin-bottom: auto;
@@ -468,5 +526,18 @@
 
   .summary-container .formula {
     min-height: 0;
+  }
+
+  .summary-container .donations-card {
+    padding: 1rem;
+  }
+
+  .summary-container .donations-card .mini-table {
+    font-size: .78rem;
+  }
+
+  .summary-container .donations-card .mini-table th,
+  .summary-container .donations-card .mini-table td {
+    padding: .5rem .35rem;
   }
 }
