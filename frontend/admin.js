@@ -811,10 +811,15 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 });
 
 async function loadAdmin() {
-  const r = await api("/public");
+  const updatedEl = document.getElementById("lastUpdated");
+  if (updatedEl) updatedEl.textContent = "Refreshing data...";
+  const [r, donationResponse, expenseResponse] = await Promise.all([
+    api("/public"),
+    api("/donations"),
+    api("/expenses"),
+  ]);
   if (!r.ok) return;
   const d = await r.json();
-  const donationResponse = await api("/donations");
   adminDonations = donationResponse.ok ? await donationResponse.json() : [];
   adminMembers = d.members;
   adminEvents = d.events;
@@ -824,7 +829,6 @@ async function loadAdmin() {
   if (donationSettingsForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = donationSettingsForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
   const welcomeMessage = document.getElementById("welcomeMessage");
   if (welcomeMessage && d.contact?.welcomeMessage != null) welcomeMessage.value = d.contact.welcomeMessage;
-  const expenseResponse = await api("/expenses");
   adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
   const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && !["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
