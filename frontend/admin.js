@@ -698,7 +698,10 @@ const showPopup = (message, color = "#d9f2d9") => {
   popup.textContent = message;
   popup.style.position = "fixed";
   popup.style.bottom = "20px";
-  popup.style.right = "20px";
+  popup.style.left = "max(20px, env(safe-area-inset-left))";
+  popup.style.right = "max(20px, env(safe-area-inset-right))";
+  popup.style.width = "fit-content";
+  popup.style.maxWidth = "calc(100vw - 40px)";
   popup.style.backgroundColor = color;
   popup.style.color = "#000";
   popup.style.padding = "10px 20px";
@@ -706,6 +709,9 @@ const showPopup = (message, color = "#d9f2d9") => {
   popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
   popup.style.zIndex = "9999";
   popup.style.fontWeight = "600";
+  popup.style.textAlign = "center";
+  popup.style.overflowWrap = "anywhere";
+  popup.style.margin = "0 auto";
   document.body.appendChild(popup);
   window.setTimeout(() => popup.remove(), 2500);
 };
@@ -923,7 +929,7 @@ document.getElementById("closeDonorModal")?.addEventListener("click", closeDonor
 document.getElementById("cancelDonor")?.addEventListener("click", closeDonorModal);
 donorModal?.addEventListener("click", event => { if (event.target === donorModal) closeDonorModal(); });
 function donorFormData() { const data = Object.fromEntries(new FormData(donorModalForm)); if (data.contributionType === "Laddu Sponsorship 2026") data.itemName = data.ladduType; delete data.ladduType; if (data.contributionType === "Regular Donation" && editingDonationId) { delete data.contributionType; delete data.itemName; delete data.winningBidAmount; delete data.sponsorshipAmount; delete data.sponsorType; } return data; }
-async function saveDonor(keepOpen) { const endpoint = editingDonationId ? `/donations/${editingDonationId}` : "/donations"; const response = await api(endpoint, { method: editingDonationId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donorFormData()) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } await loadAdmin(); if (!keepOpen || editingDonationId) closeDonorModal(); else resetDonorModal(); }
+async function saveDonor(keepOpen) { const wasEditing = Boolean(editingDonationId); const endpoint = wasEditing ? `/donations/${editingDonationId}` : "/donations"; const response = await api(endpoint, { method: wasEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donorFormData()) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } await loadAdmin(); showPopup(wasEditing ? "Donor updated successfully ✅" : keepOpen ? "Donor added successfully. Add another donor ✅" : "Donor added successfully ✅"); if (!keepOpen || wasEditing) closeDonorModal(); else resetDonorModal(); }
 donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
 document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
 document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => String(item._id) === String(button.dataset.editDonation)) || adminLiveDonations.find(item => String(item._id) === String(button.dataset.editDonation)); if (!donation || !donorModalForm) return; document.getElementById("adminFinanceModal")?.classList.remove("is-open"); editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, contributionType: donation.contributionType || "Regular Donation", itemName: donation.itemName, winningBidAmount: donation.winningBidAmount, sponsorshipAmount: donation.sponsorshipAmount, sponsorType: donation.sponsorType, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); updateContributionFields(donorModalForm); document.getElementById("donorModalTitle").textContent = "Edit Donor"; document.getElementById("donorEditContext").textContent = `Editing ${donation.donorName || "Unnamed donor"} · ${donation.flatNumber || "No plot number"}`; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
@@ -1056,7 +1062,7 @@ if (expenseForm) {
       return;
     }
 
-    showPopup(mode === "update" ? "Updated successfully ✅" : "Saved successfully ✅", "#d9f2d9");
+    showPopup(mode === "update" ? "Expense updated successfully ✅" : "Expense added successfully ✅", "#d9f2d9");
     e.target.reset();
     editingExpenseId = null;
     if (hiddenId) hiddenId.value = "";
