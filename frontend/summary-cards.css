@@ -674,11 +674,11 @@
 }
 
 #sponsorships .sponsorship-table th:nth-child(1),
-#sponsorships .sponsorship-table td:nth-child(1) { width: 22%; }
+#sponsorships .sponsorship-table td:nth-child(1) { width: 20%; }
 #sponsorships .sponsorship-table th:nth-child(2),
-#sponsorships .sponsorship-table td:nth-child(2) { width: 28%; }
+#sponsorships .sponsorship-table td:nth-child(2) { width: 18%; }
 #sponsorships .sponsorship-table th:nth-child(3),
-#sponsorships .sponsorship-table td:nth-child(3) { width: 40%; }
+#sponsorships .sponsorship-table td:nth-child(3) { width: 44%; }
 #sponsorships .sponsorship-table th:nth-child(4),
 #sponsorships .sponsorship-table td:nth-child(4) { width: 18%; }
 
@@ -692,8 +692,29 @@
 }
 
 @media (max-width: 600px) {
+  #sponsorships .public-donations-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   #sponsorships .sponsorship-table {
+    width: 640px;
     min-width: 640px;
+    table-layout: fixed;
+  }
+
+  #sponsorships .sponsorship-table th,
+  #sponsorships .sponsorship-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.35;
+    vertical-align: middle;
+  }
+
+  #sponsorships .sponsorship-table th {
+    white-space: nowrap;
   }
 }
 

@@ -730,7 +730,7 @@ document.addEventListener("click", async (event) => {
         ? "Expenditure details"
         : "Balance details";
   if (label === "Total donations" || isGeneralDonations) {
-    const regularDonations = data.donations.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor'].includes(item.contributionType));
+    const regularDonations = data.donations.filter(item => !['Laddu Auction 2025', 'Ganesh Idol Sponsor', 'Laddu Sponsorship 2026'].includes(item.contributionType));
     content = regularDonations.length
       ? regularDonations
           .map(
@@ -771,7 +771,7 @@ document.addEventListener("click", async (event) => {
   financeContent.closest(".finance-modal-panel")?.classList.toggle("category-finance-panel", Boolean(contributionType));
   financeContent.innerHTML = content;
   if (isGeneralDonations) {
-    const regularDonations = data.donations.filter(item => !["Laddu Auction 2025", "Ganesh Idol Sponsor"].includes(item.contributionType)).sort(sortByPlotNumber);
+    const regularDonations = data.donations.filter(item => !["Laddu Auction 2025", "Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType)).sort(sortByPlotNumber);
     let donationPage = 0;
     const renderGeneralDonations = () => {
       const query = financeContent.querySelector("[data-general-donation-search]")?.value.trim().toLowerCase() || "";
