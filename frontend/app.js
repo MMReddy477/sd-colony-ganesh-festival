@@ -330,7 +330,12 @@ async function loadPortal() {
     const expenseQuery = document.getElementById("publicExpenseSearch")?.value.trim().toLowerCase() || "";
     const filteredExpenseRows = expenseRows
       .filter(item => String(item.name || "").toLowerCase().includes(expenseQuery))
-      .sort((left, right) => Number((left.status || "Due") !== "Due") - Number((right.status || "Due") !== "Due"));
+      .sort((left, right) => {
+        const leftPending = (left.status || "Due") !== "Full Paid";
+        const rightPending = (right.status || "Due") !== "Full Paid";
+        if (leftPending !== rightPending) return Number(rightPending) - Number(leftPending);
+        return Number(right.remainingAmount || 0) - Number(left.remainingAmount || 0);
+      });
     publicExpensesPage = Math.min(publicExpensesPage, Math.max(0, Math.ceil(filteredExpenseRows.length / expensePageSize) - 1));
     const visibleExpenses = filteredExpenseRows.slice(publicExpensesPage * expensePageSize, (publicExpensesPage + 1) * expensePageSize);
     const rows = visibleExpenses.map(item => `
