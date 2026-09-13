@@ -12,6 +12,12 @@ const formatDonationDate = (value, fallback = "--") => {
   if (Number.isNaN(parsed.getTime())) return fallback;
   return `${String(parsed.getDate()).padStart(2, "0")}-${parsed.toLocaleString("en-IN", { month: "short" })}-${String(parsed.getFullYear()).slice(-2)}`;
 };
+const todayDateInput = () => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+};
 const formatExpenseDate = item => {
   const date = item.date || item.createdAt;
   if (!date) return "--";
@@ -731,7 +737,7 @@ const resetExpenseForm = () => {
   const hiddenId = document.getElementById("expenseId");
   if (hiddenId) hiddenId.value = "";
   const dateInput = form.elements.date;
-  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (dateInput && !dateInput.value) dateInput.value = todayDateInput();
   const statusSelect = form.elements.status;
   if (statusSelect && !statusSelect.value) statusSelect.value = "Due";
   setExpenseFormMode(false);
@@ -927,7 +933,7 @@ Array.from(document.querySelectorAll("form")).filter(form => form.querySelector(
   form.querySelector('[name="contributionType"]')?.addEventListener("change", () => updateContributionFields(form));
   updateContributionFields(form);
 });
-function resetDonorModal() { editingDonationId = null; donorModalForm.reset(); donorModalForm.querySelector("[name=date]").value = new Date().toISOString().slice(0, 10); donorModalForm.querySelector("[name=status]").value = "Received"; document.getElementById("donorModalTitle").textContent = "Add Donor"; document.getElementById("donorEditContext").textContent = ""; donorModalForm.querySelector('[type="submit"]').textContent = "Save Donor"; updateContributionFields(donorModalForm); }
+function resetDonorModal() { editingDonationId = null; donorModalForm.reset(); donorModalForm.querySelector("[name=date]").value = todayDateInput(); donorModalForm.querySelector("[name=status]").value = "Received"; document.getElementById("donorModalTitle").textContent = "Add Donor"; document.getElementById("donorEditContext").textContent = ""; donorModalForm.querySelector('[type="submit"]').textContent = "Save Donor"; updateContributionFields(donorModalForm); }
 function closeDonorModal() { donorModal.classList.remove("is-open"); donorModal.setAttribute("aria-hidden", "true"); resetDonorModal(); }
 document.getElementById("showDonorForm")?.addEventListener("click", () => { donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); resetDonorModal(); donorModalForm.querySelector("[name=flatNumber]").focus(); });
 document.getElementById("closeDonorModal")?.addEventListener("click", closeDonorModal);

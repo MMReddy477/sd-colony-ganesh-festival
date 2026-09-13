@@ -279,7 +279,7 @@ const resources = [ ['members', CommitteeMember], ['events', Event] ];
 resources.forEach(([name, Model]) => { router.get(`/${name}`, async (_r, res) => res.json(await Model.find().sort('-createdAt'))); router.post(`/${name}`, async (req, res) => res.status(201).json(await Model.create(req.body))); router.put(`/${name}/:id`, async (req, res) => res.json(await Model.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }))); router.delete(`/${name}/:id`, async (req, res) => { await Model.findByIdAndDelete(req.params.id); res.sendStatus(204); }); });
 router.get('/donations', async (_r, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate'); res.json(await Donation.find().sort('-date')); });
 router.post('/donations', async (req, res) => { const year = new Date().getFullYear(); let nextNum = 1; const lastDonation = await Donation.findOne({ receiptNumber: new RegExp(`^GU-${year}-`) }).sort({ receiptNumber: -1 }); if (lastDonation) { const match = lastDonation.receiptNumber.match(/GU-\d+-(\d+)/); if (match) nextNum = parseInt(match[1]) + 1; } const receiptNumber = `GU-${year}-${String(nextNum).padStart(4, '0')}`; const donation = await Donation.create({ ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber), receiptNumber }); const qrData = await QRCode.toDataURL(`${process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee'} | ${receiptNumber} | Rs. ${donation.amount}`); await Receipt.findOneAndUpdate({ receiptNumber }, { receiptNumber, donation: donation._id, qrData }, { upsert: true, new: true }); res.status(201).json(donation); });
-router.put('/donations/:id', async (req, res) => res.json(await Donation.findByIdAndUpdate(req.params.id, { ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber) }, { new: true, runValidators: true })));
+router.put('/donations/:id', async (req, res) => { const updates = { ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber) }; if (!req.body.date) delete updates.date; res.json(await Donation.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })); });
 router.delete('/donations/:id', async (req, res) => { const donation = await Donation.findByIdAndDelete(req.params.id); if (!donation) return res.sendStatus(404); await Receipt.deleteOne({ donation: donation._id }); res.sendStatus(204); });
 router.get('/expenses', async (_req, res) => res.json(await Expense.find().sort('-date')));
 router.post('/expenses', billUpload.single('bill'), async (req, res) => {
@@ -307,6 +307,7 @@ router.put('/expenses/:id', billUpload.single('bill'), async (req, res) => {
     advanceAmount: req.body.advanceAmount || 0,
     remainingAmount: req.body.remainingAmount || 0
   };
+  if (!req.body.date) delete payload.date;
 
   if (req.file) {
     const expense = await Expense.findById(req.params.id);
