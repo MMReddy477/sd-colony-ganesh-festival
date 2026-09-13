@@ -431,6 +431,18 @@
   text-align: center;
 }
 
+.summary-container .balance-card h3.formula-heading {
+  min-height: 0;
+  margin: .25rem 0 .5rem;
+  padding: 0;
+  background: transparent;
+  color: #d35400;
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .summary-container .amount,
 .summary-container .total {
   display: block;

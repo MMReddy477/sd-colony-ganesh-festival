@@ -299,7 +299,7 @@ async function loadPortal() {
     </article>
     <article class="balance-card stat-card balance-stat" role="button" tabindex="0" aria-label="View balance details">
       <h3>Remaining Balance</h3>
-      <p class="formula">General Donations + Laddu Auction (Ganesh Utsav 2025) - Total Paid</p>
+      <h3 class="formula formula-heading">General Donations + Laddu Auction (Ganesh Utsav 2025) &ndash; Total Paid</h3>
       <strong class="amount">${money(remainingBookBalance)}</strong>
       <span class="view-btn">View all</span>
     </article>
