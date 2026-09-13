@@ -1,0 +1,162 @@
+/* Keep data tables readable at every viewport size. */
+.table-responsive,
+.donation-table-wrap,
+.expense-table-wrap,
+.donation-popup-wrap,
+.expense-popup-wrap,
+.admin-finance-donation-wrap,
+.event-admin-table-wrap,
+.public-events-table-wrap,
+.member-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive > table,
+.donation-table-wrap > table,
+.expense-table-wrap > table,
+.donation-popup-wrap > table,
+.expense-popup-wrap > table,
+.admin-finance-donation-wrap > table,
+.event-admin-table-wrap > table,
+.public-events-table-wrap > table,
+.member-table-wrap > table {
+  border-collapse: collapse !important;
+  table-layout: auto !important;
+}
+
+.table-responsive th,
+.table-responsive td,
+.donation-table-wrap th,
+.donation-table-wrap td,
+.expense-table-wrap th,
+.expense-table-wrap td,
+.donation-popup-wrap th,
+.donation-popup-wrap td,
+.expense-popup-wrap th,
+.expense-popup-wrap td,
+.admin-finance-donation-wrap th,
+.admin-finance-donation-wrap td,
+.event-admin-table-wrap th,
+.event-admin-table-wrap td,
+.public-events-table-wrap th,
+.public-events-table-wrap td,
+.member-table-wrap th,
+.member-table-wrap td {
+  border: 1px solid var(--line) !important;
+  vertical-align: middle !important;
+}
+
+@media (max-width: 700px) {
+  .table-responsive > table,
+  .donation-table-wrap > table,
+  .expense-table-wrap > table,
+  .donation-popup-wrap > table,
+  .expense-popup-wrap > table,
+  .admin-finance-donation-wrap > table,
+  .event-admin-table-wrap > table,
+  .public-events-table-wrap > table,
+  .member-table-wrap > table {
+    display: table !important;
+    width: max-content !important;
+    min-width: 680px !important;
+    table-layout: auto !important;
+  }
+
+  .table-responsive thead,
+  .table-responsive tbody,
+  .table-responsive tr,
+  .donation-table-wrap thead,
+  .donation-table-wrap tbody,
+  .donation-table-wrap tr,
+  .expense-table-wrap thead,
+  .expense-table-wrap tbody,
+  .expense-table-wrap tr,
+  .donation-popup-wrap thead,
+  .donation-popup-wrap tbody,
+  .donation-popup-wrap tr,
+  .expense-popup-wrap thead,
+  .expense-popup-wrap tbody,
+  .expense-popup-wrap tr,
+  .admin-finance-donation-wrap thead,
+  .admin-finance-donation-wrap tbody,
+  .admin-finance-donation-wrap tr,
+  .event-admin-table-wrap thead,
+  .event-admin-table-wrap tbody,
+  .event-admin-table-wrap tr,
+  .public-events-table-wrap thead,
+  .public-events-table-wrap tbody,
+  .public-events-table-wrap tr,
+  .member-table-wrap thead,
+  .member-table-wrap tbody,
+  .member-table-wrap tr {
+    display: table-header-group !important;
+  }
+
+  .table-responsive tbody,
+  .donation-table-wrap tbody,
+  .expense-table-wrap tbody,
+  .donation-popup-wrap tbody,
+  .expense-popup-wrap tbody,
+  .admin-finance-donation-wrap tbody,
+  .event-admin-table-wrap tbody,
+  .public-events-table-wrap tbody,
+  .member-table-wrap tbody {
+    display: table-row-group !important;
+  }
+
+  .table-responsive tr,
+  .donation-table-wrap tr,
+  .expense-table-wrap tr,
+  .donation-popup-wrap tr,
+  .expense-popup-wrap tr,
+  .admin-finance-donation-wrap tr,
+  .event-admin-table-wrap tr,
+  .public-events-table-wrap tr,
+  .member-table-wrap tr {
+    display: table-row !important;
+  }
+
+  .table-responsive th,
+  .table-responsive td,
+  .donation-table-wrap th,
+  .donation-table-wrap td,
+  .expense-table-wrap th,
+  .expense-table-wrap td,
+  .donation-popup-wrap th,
+  .donation-popup-wrap td,
+  .expense-popup-wrap th,
+  .expense-popup-wrap td,
+  .admin-finance-donation-wrap th,
+  .admin-finance-donation-wrap td,
+  .event-admin-table-wrap th,
+  .event-admin-table-wrap td,
+  .public-events-table-wrap th,
+  .public-events-table-wrap td,
+  .member-table-wrap th,
+  .member-table-wrap td {
+    display: table-cell !important;
+    max-width: none !important;
+    min-width: 0;
+    padding: .65rem .55rem !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+  }
+
+  .table-responsive td::before,
+  .donation-table-wrap td::before,
+  .expense-table-wrap td::before,
+  .donation-popup-wrap td::before,
+  .expense-popup-wrap td::before,
+  .admin-finance-donation-wrap td::before,
+  .event-admin-table-wrap td::before,
+  .public-events-table-wrap td::before,
+  .member-table-wrap td::before {
+    content: none !important;
+  }
+}

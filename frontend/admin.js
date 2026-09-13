@@ -819,14 +819,17 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 async function loadAdmin() {
   const updatedEl = document.getElementById("lastUpdated");
   if (updatedEl) updatedEl.textContent = "Refreshing data...";
-  const [r, donationResponse, expenseResponse] = await Promise.all([
+  const [publicResult, donationResult, expenseResult] = await Promise.allSettled([
     api("/public"),
     api("/donations"),
     api("/expenses"),
   ]);
-  if (!r.ok) return;
+  const r = publicResult.status === "fulfilled" ? publicResult.value : null;
+  const donationResponse = donationResult.status === "fulfilled" ? donationResult.value : null;
+  const expenseResponse = expenseResult.status === "fulfilled" ? expenseResult.value : null;
+  if (!r?.ok) return;
   const d = await r.json();
-  adminDonations = donationResponse.ok ? await donationResponse.json() : [];
+  if (donationResponse?.ok) adminDonations = await donationResponse.json();
   adminMembers = d.members;
   adminEvents = d.events;
   const contactForm = document.getElementById("contactForm");
@@ -835,7 +838,7 @@ async function loadAdmin() {
   if (donationSettingsForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = donationSettingsForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
   const welcomeMessage = document.getElementById("welcomeMessage");
   if (welcomeMessage && d.contact?.welcomeMessage != null) welcomeMessage.value = d.contact.welcomeMessage;
-  adminExpenses = expenseResponse.ok ? await expenseResponse.json() : d.expenses;
+  if (expenseResponse?.ok) adminExpenses = await expenseResponse.json();
   const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && !["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   calculateExpenseTotals();

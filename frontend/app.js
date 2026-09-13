@@ -258,6 +258,11 @@ async function loadPortal() {
     return;
   }
   const data = await response.json();
+  data.donations = Array.isArray(data.donations) ? data.donations : [];
+  data.expenses = Array.isArray(data.expenses) ? data.expenses : [];
+  data.events = Array.isArray(data.events) ? data.events : [];
+  data.gallery = Array.isArray(data.gallery) ? data.gallery : [];
+  data.stats = data.stats || {};
   const contact = data.contact || {};
   renderDonationModal(contact);
   renderPublicScrolls(contact, data.events);
