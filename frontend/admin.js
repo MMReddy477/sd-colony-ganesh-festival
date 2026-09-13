@@ -124,6 +124,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const cancelExpenseModalBtn = document.getElementById("cancelExpenseModal");
     addExpenseButton?.addEventListener("click", () => {
       if (expenseModal) {
+        resetExpenseForm();
         expenseModal.style.display = "block";
         expenseModal.setAttribute("aria-hidden", "false");
       }
