@@ -272,7 +272,6 @@ async function loadPortal() {
   const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => { const plot = normalizePlotNumber(item.flatNumber); const donor = item.donorName || "--"; return `<tr><td>${escapeHtml(plot ? `${donor} (${plot})` : donor)}</td><td>${money(item.amount)}</td></tr>`; }).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
   const sponsorshipDonations = data.donations.filter(item => ["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType) && item.status !== "Yet to receive");
   const sponsorshipRows = [...sponsorshipDonations].sort(sortByPlotNumber).slice(0, 4);
-  const sponsorshipTotal = sponsorshipDonations.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const generalDonationTotal = Number(data.stats.totalDonations || 0);
   const ladduAuctionTotal = Number(data.stats.ladduAuctionTotal || 0);
   const paidTotal = (data.expenses || []).reduce((sum, item) => {
@@ -304,9 +303,8 @@ async function loadPortal() {
       <strong class="amount">${money(remainingBookBalance)}</strong>
       <span class="view-btn">View all</span>
     </article>
-    <article class="summary-card stat-card contribution-stat-card sponsorship-summary-card" data-sponsorship-summary="true" role="button" tabindex="0" aria-label="View Ganesh Idol & Laddu Sponsorship 2026 contributions">
-      <h4>Ganesh Idol &amp; Laddu Sponsorship 2026</h4>
-      <strong class="total">${money(sponsorshipTotal)}</strong>
+    <article class="summary-card stat-card contribution-stat-card sponsorship-summary-card" data-sponsorship-summary="true" role="button" tabindex="0" aria-label="View Ganesh Idol & Laddu Support 2026 contributions">
+      <h4>Ganesh Idol &amp; Laddu Support 2026</h4>
       <table class="mini-table sponsorship-summary-table"><thead><tr><th>Plot Number</th><th>Name</th><th>Contribution Type</th><th>Amount</th></tr></thead><tbody>${sponsorshipRows.map(item => `<tr><td>${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td>${escapeHtml(item.donorName || "--")}</td><td>${escapeHtml(item.contributionType === "Ganesh Idol Sponsor" ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026")}</td><td>${money(item.amount)}</td></tr>`).join("") || '<tr><td colspan="4" class="summary-empty">No sponsorship records yet.</td></tr>'}</tbody></table>
       <span class="view-btn">View all</span>
     </article>`;
