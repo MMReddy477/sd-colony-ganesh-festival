@@ -430,8 +430,8 @@ function renderPublicSponsorships(items) {
   body.innerHTML = sponsorships.map(item => {
     const rawType = String(item.contributionType || "").toLowerCase();
     const contributionType = rawType.includes("ganesh idol") ? "Ganesh Idol Sponsorship 2026" : item.itemName ? `Laddu Sponsorship 2026 - ${item.itemName}` : "Laddu Sponsorship 2026";
-    return `<tr><td data-label="Plot Number">${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td data-label="Name">${escapeHtml(item.donorName || "--")}</td><td data-label="Contribution Type">${escapeHtml(contributionType)}</td><td data-label="Amount" class="amount-positive">${money(item.amount)}</td></tr>`;
-  }).join("") || '<tr><td colspan="4" class="donor-empty">No sponsorships recorded yet.</td></tr>';
+    return `<tr><td data-label="Plot Number">${escapeHtml(normalizePlotNumber(item.flatNumber) || "--")}</td><td data-label="Name">${escapeHtml(item.donorName || "--")}</td><td data-label="Contribution Type">${escapeHtml(contributionType)}</td></tr>`;
+  }).join("") || '<tr><td colspan="3" class="donor-empty">No sponsorships recorded yet.</td></tr>';
 }
 function formatDonorDate(value) { return value ? `${formatDate(value)} ${new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "--"; }
 document.addEventListener("input", event => { if (event.target.id === "publicDonorSearch") { publicDonorPage = 0; renderPublicDonors(publicDonorRows); } if (event.target.id === "publicExpenseSearch") { publicExpensesPage = 0; loadPortal(); } });
