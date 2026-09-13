@@ -248,7 +248,7 @@ function toggleFestivalSongMute(event) {
 let publicDataCache = null;
 let publicDataFetchedAt = 0;
 let publicDataRequest = null;
-const publicDataCacheTtl = 500;
+const publicDataCacheTtl = 5000;
 
 async function getPublicData({ refresh = false } = {}) {
   const cacheIsFresh = publicDataCache && Date.now() - publicDataFetchedAt < publicDataCacheTtl;
@@ -479,8 +479,9 @@ let galleryIndex = 0;
 let slideshowTimer;
 let slideshowPlaying = false;
 const galleryFallbackPath = "/GaneshIdol_detail.jpeg";
-const isGalleryVideo = image => image?.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image?.originalName || image?.path || "");
-const isGalleryAudio = image => image?.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image?.originalName || image?.path || "");
+const galleryLegacyMediaName = image => image?.originalName || image?.filename || image?.path || "";
+const isGalleryVideo = image => image?.mediaType?.startsWith("video/") || /\.(mp4|webm|mov)$/i.test(galleryLegacyMediaName(image));
+const isGalleryAudio = image => image?.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(galleryLegacyMediaName(image));
 function galleryMediaPath(image) {
   if (image?._id) {
     const version = image.updatedAt || image.createdAt;

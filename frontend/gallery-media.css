@@ -85,6 +85,21 @@
   min-height: 64px;
 }
 
+@media (max-width: 600px) {
+  .gallery-admin-row .admin-actions {
+    display: flex;
+    gap: .55rem;
+    width: 100%;
+  }
+
+  .gallery-admin-row .admin-actions .admin-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    touch-action: manipulation;
+  }
+}
+
 #publicDonorPagination {
   display: flex !important;
   align-items: center;

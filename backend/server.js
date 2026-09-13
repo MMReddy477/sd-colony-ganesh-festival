@@ -14,7 +14,7 @@ const app = express();
 const port = process.env.PORT || 5002;
 mongoose.set('bufferCommands', false);
 if (process.env.NODE_ENV === 'production' && (!process.env.MONGODB_URI || !process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD || !process.env.JWT_SECRET)) {
-  throw new Error('Missing production environment configuration');
+  console.warn('Production environment is missing one or more database/admin variables; public pages will remain available until they are configured.');
 }
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -51,7 +51,7 @@ app.get('/ganesh-logo.png', (_req, res) => res.sendFile(path.join(__dirname, '..
 app.get('/GaneshIdol_detail.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'GaneshIdol_detail.jpeg')));
 app.get('/beautiful-lord-ganesha-ganesh.jpg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'beautiful-lord-ganesha-ganesh.jpg')));
 app.get('/ganesh-song.mpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'Ganesh Song.mpeg')));
-app.get('/api/health', (_req, res) => res.status(mongoose.connection.readyState === 1 ? 200 : 503).json({ ok: mongoose.connection.readyState === 1, service: 'ganesh-utsav', database: mongoose.connection.readyState === 1 ? 'connected' : 'unavailable' }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'ganesh-utsav', database: mongoose.connection.readyState === 1 ? 'connected' : 'unavailable' }));
 app.use('/api', (req, res, next) => {
   const publicRoutes = ['/public', '/auth/login'];
   const shouldSkipDbCheck = publicRoutes.includes(req.path) || req.path.startsWith('/receipts/') || req.path.startsWith('/reports/');

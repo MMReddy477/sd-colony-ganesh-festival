@@ -760,12 +760,21 @@ document.addEventListener("click", async (event) => {
   if (!window.confirm("Delete this record permanently?")) return;
   button.disabled = true;
   try {
-    const response = await api(button.dataset.delete, { method: "DELETE" });
+    const isGalleryDelete = button.dataset.delete.startsWith("/gallery/");
+    const response = await api(isGalleryDelete ? `${button.dataset.delete}/delete` : button.dataset.delete, { method: isGalleryDelete ? "POST" : "DELETE" });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.message || "Delete failed");
     }
-    await loadAdmin();
+    if (isGalleryDelete) {
+      const deletedId = button.dataset.delete.split("/").pop();
+      window.adminGalleryItems = (window.adminGalleryItems || []).filter(item => String(item._id) !== String(deletedId));
+      galleryAdminPage = Math.min(galleryAdminPage, Math.max(0, Math.ceil(window.adminGalleryItems.length / galleryAdminPageSize) - 1));
+      renderGalleryAdmin(window.adminGalleryItems);
+      loadAdmin();
+    } else {
+      await loadAdmin();
+    }
     showDeleteSuccess("Record deleted successfully.");
   } catch (error) {
     button.disabled = false;
@@ -943,6 +952,7 @@ document.addEventListener("click", event => { const button = event.target.closes
 let galleryAdminPage = 0;
 const galleryAdminPageSize = 4;
 function renderGalleryAdmin(items) {
+  window.adminGalleryItems = Array.isArray(items) ? items : [];
   const fallbackPath = "/GaneshIdol_detail.jpeg";
   const mediaPath = item => {
     if (item._id) return `/api/gallery/${encodeURIComponent(item._id)}/media`;
@@ -956,14 +966,16 @@ function renderGalleryAdmin(items) {
   galleryAdminPage = Math.min(galleryAdminPage, pages - 1);
   const visibleItems = items.slice(galleryAdminPage * galleryAdminPageSize, (galleryAdminPage + 1) * galleryAdminPageSize);
   list.innerHTML = visibleItems.map((item) => {
-    const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(item.originalName || item.path || "");
-    const isAudio = item.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(item.originalName || item.path || "");
+    const legacyMediaName = item.originalName || item.filename || item.path || "";
+    const isVideo = item.mediaType?.startsWith("video/") || /\.(mp4|webm|mov)$/i.test(legacyMediaName);
+    const isAudio = item.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(legacyMediaName);
     const media = isVideo
       ? `<video src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery video"}"></video>`
       : isAudio
         ? `<audio src="${mediaPath(item)}" controls preload="metadata" aria-label="${item.originalName || "Gallery audio"}"></audio>`
         : `<img src="${mediaPath(item)}" alt="${item.originalName || "Gallery image"}">`;
-    return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${item.originalName || (isVideo ? "Video" : isAudio ? "Audio" : "Image")}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">✎</button><button class="admin-icon-btn delete-btn" type="button" data-delete="/gallery/${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`;
+    const recordName = item.originalName || (isVideo ? "Video" : isAudio ? "Audio" : "Image");
+    return `<div class="gallery-admin-row"><div class="gallery-admin-media">${media}</div><div><strong>${escapeHtml(recordName)}</strong><time>${item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN") : ""}</time></div><div class="admin-actions"><button class="admin-icon-btn" type="button" data-gallery-edit="${item._id}" title="Update record" aria-label="Update record">✎</button><button class="admin-icon-btn" type="button" data-gallery-replace="${item._id}" title="Replace media" aria-label="Replace media">↥</button><button class="admin-icon-btn delete-btn" type="button" data-gallery-delete="${item._id}" title="Delete media" aria-label="Delete media">🗑</button></div></div>`;
   }).join("") || '<div class="admin-row muted">Nothing here yet.</div>';
   list.querySelectorAll(".gallery-admin-media > img, .gallery-admin-media > video, .gallery-admin-media > audio").forEach((media) => media.addEventListener("error", () => {
     media.hidden = true;
@@ -1093,13 +1105,63 @@ document.getElementById("eventForm").addEventListener("submit", (e) => {
 });
 document.getElementById("galleryForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const r = await api("/gallery", {
-    method: "POST",
-    body: new FormData(e.target),
-  });
-  if (!r.ok) alert("Upload failed");
+  const submitButton = e.target.querySelector('button[type="submit"]');
+  if (submitButton) submitButton.disabled = true;
+  const r = await api("/gallery", { method: "POST", body: new FormData(e.target) });
+  if (!r.ok) {
+    alert((await r.json().catch(() => ({}))).message || "Upload failed");
+    if (submitButton) submitButton.disabled = false;
+    return;
+  }
+  const uploaded = await r.json().catch(() => []);
+  const uploadedItems = Array.isArray(uploaded) ? uploaded : [uploaded];
+  window.adminGalleryItems = [...uploadedItems, ...(window.adminGalleryItems || [])];
   e.target.reset();
+  galleryAdminPage = 0;
+  renderGalleryAdmin(window.adminGalleryItems);
+  if (submitButton) submitButton.disabled = false;
   loadAdmin();
+});
+document.getElementById("deleteAllGallery")?.addEventListener("click", async (event) => {
+  const items = window.adminGalleryItems || [];
+  if (!items.length) {
+    document.getElementById("galleryDeleteMessage").textContent = "Gallery is already empty.";
+    return;
+  }
+  if (!window.confirm(`Delete all ${items.length} Gallery media records permanently?`)) return;
+  const button = event.currentTarget;
+  button.disabled = true;
+  const response = await api("/gallery/delete-all", { method: "POST" });
+  if (!response.ok) {
+    button.disabled = false;
+    document.getElementById("galleryDeleteMessage").textContent = (await response.json().catch(() => ({}))).message || "Could not delete Gallery media.";
+    return;
+  }
+  window.adminGalleryItems = [];
+  galleryAdminPage = 0;
+  renderGalleryAdmin([]);
+  document.getElementById("galleryDeleteMessage").textContent = "All Gallery media deleted.";
+  button.disabled = false;
+  loadAdmin();
+});
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-gallery-delete]");
+  if (!button) return;
+  event.preventDefault();
+  if (!window.confirm("Delete this Gallery record permanently?")) return;
+  button.disabled = true;
+  try {
+    const response = await api(`/gallery/${encodeURIComponent(button.dataset.galleryDelete)}/delete`, { method: "POST" });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "Gallery delete failed");
+    window.adminGalleryItems = (window.adminGalleryItems || []).filter(item => String(item._id) !== String(button.dataset.galleryDelete));
+    galleryAdminPage = Math.min(galleryAdminPage, Math.max(0, Math.ceil(window.adminGalleryItems.length / galleryAdminPageSize) - 1));
+    renderGalleryAdmin(window.adminGalleryItems);
+    showDeleteSuccess("Gallery record deleted successfully.");
+    loadAdmin();
+  } catch (error) {
+    button.disabled = false;
+    alert(error.message);
+  }
 });
 document.getElementById("passwordForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -1171,6 +1233,25 @@ document.addEventListener("click", async (event) => {
   if (bill) { const item = adminExpenses.find(expense => String(expense._id) === bill.dataset.billView); if (!item) return; const modal = document.createElement("div"); modal.className = "bill-preview-modal"; modal.innerHTML = `<div class="bill-preview-panel"><button type="button" class="bill-preview-close">✕</button><strong>Bill Preview</strong><a class="bill-download" download="${item.billOriginalName || "bill"}">↓ Download bill</a><div class="bill-preview-loading">Loading bill...</div></div>`; document.body.appendChild(modal); modal.addEventListener("click", close => { if (close.target === modal || close.target.closest(".bill-preview-close")) modal.remove(); }); const response = await api(`/expenses/${item._id}/bill`); if (!response.ok) return; const blobUrl = URL.createObjectURL(await response.blob()); modal.querySelector(".bill-download").href = blobUrl; modal.querySelector(".bill-preview-loading").outerHTML = item.billMimeType === "application/pdf" ? `<iframe src="${blobUrl}" title="Bill preview"></iframe>` : `<img src="${blobUrl}" alt="Bill preview">`; return; }
   const replaceBill = event.target.closest("[data-bill-replace]");
   if (replaceBill) { const input = document.createElement("input"); input.type = "file"; input.accept = ".pdf,.jpg,.jpeg,.png"; input.onchange = async () => { if (!input.files[0]) return; const form = new FormData(); form.append("bill", input.files[0]); await api(`/expenses/${replaceBill.dataset.billReplace}/bill`, { method: "POST", body: form }); loadAdmin(); }; input.click(); return; }
+  const editGallery = event.target.closest("[data-gallery-edit]");
+  if (editGallery) {
+    const item = (window.adminGalleryItems || []).find(record => String(record._id) === String(editGallery.dataset.galleryEdit));
+    if (!item) return;
+    const modal = document.createElement("div");
+    modal.className = "finance-modal is-open";
+    modal.innerHTML = `<div class="finance-modal-panel donor-modal-panel" role="dialog" aria-modal="true"><button class="finance-close" type="button" aria-label="Close">×</button><p class="eyebrow">Gallery</p><h3>Update existing record</h3><form class="donor-modal-form"><label class="edit-field"><span>Title *</span><input name="title" required value="${escapeHtml(item.title || item.originalName || "")}"></label><label class="edit-field"><span>Caption</span><textarea name="caption" rows="3">${escapeHtml(item.caption || "")}</textarea></label><label class="edit-field"><span>Display order</span><input name="displayOrder" type="number" min="0" value="${Number(item.displayOrder || 0)}"></label><div class="donor-modal-actions"><button class="btn btn-saffron" type="submit">Save changes</button><button class="btn btn-link" type="button" data-close-gallery-edit>Cancel</button></div></form></div>`;
+    document.body.appendChild(modal);
+    const close = () => modal.remove();
+    modal.addEventListener("click", click => { if (click.target === modal || click.target.closest(".finance-close, [data-close-gallery-edit]")) close(); });
+    modal.querySelector("form").addEventListener("submit", async submit => {
+      submit.preventDefault();
+      const response = await api(`/gallery/${item._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData(submit.target)) });
+      if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not update gallery record"); return; }
+      close();
+      loadAdmin();
+    });
+    return;
+  }
   const replace = event.target.closest("[data-gallery-replace]");
   if (replace) {
     const input = document.createElement("input");
