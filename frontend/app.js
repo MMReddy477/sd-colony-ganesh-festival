@@ -354,7 +354,7 @@ async function loadPortal() {
       <div class="public-expense-summary-shell">
         <div class="public-expense-summary-box">
           <h3>Where the Money Is Going</h3>
-          <button class="estimated-results-button" type="button" data-estimated-results>Estimated Results</button>
+          <button class="estimated-results-button" type="button" data-estimated-results>Estimated Balance Summary [Click Me]</button>
         </div>
         <div class="public-expense-table-wrap">
           <table class="public-expense-table">
