@@ -248,7 +248,7 @@ function toggleFestivalSongMute(event) {
 let publicDataCache = null;
 let publicDataFetchedAt = 0;
 let publicDataRequest = null;
-const publicDataCacheTtl = 30_000;
+const publicDataCacheTtl = 5_000;
 
 async function getPublicData({ refresh = false } = {}) {
   const cacheIsFresh = publicDataCache && Date.now() - publicDataFetchedAt < publicDataCacheTtl;

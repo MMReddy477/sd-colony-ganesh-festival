@@ -201,8 +201,8 @@ router.get('/public', async (_req, res) => {
       stats: { totalDonations: 0, ladduAuctionTotal: 0, totalExpenses: 0, balance: 0, billsUploaded: 0 }
     });
   }
-  const [members, events, galleryRecords, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name'), Event.find().sort('date'), Gallery.find().select('-mediaData').sort({ displayOrder: 1, createdAt: -1 }), Donation.find({ $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date'), Expense.find().sort('-date'), SiteSettings.findOne({ key: 'contact' }).lean()]);
-  const gallery = galleryRecords.map(item => ({ ...item.toObject(), path: `/api/gallery/${item._id}/media` }));
+  const [members, events, galleryRecords, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name').lean(), Event.find().sort('date').lean(), Gallery.find().select('-mediaData').sort({ displayOrder: 1, createdAt: -1 }).lean(), Donation.find({ $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date').lean(), Expense.find().sort('-date').lean(), SiteSettings.findOne({ key: 'contact' }).lean()]);
+  const gallery = galleryRecords.map(item => ({ ...item, path: `/api/gallery/${item._id}/media` }));
   donations.sort(comparePlotNumbers);
   const receivedDonations = donations.filter(donation => donation.status !== 'Yet to receive');
   const regularDonations = receivedDonations.filter(donation => !['Laddu Auction 2025', 'Ganesh Idol Sponsor', 'Laddu Sponsorship 2026'].includes(donation.contributionType));
