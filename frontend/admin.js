@@ -819,17 +819,10 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 async function loadAdmin() {
   const updatedEl = document.getElementById("lastUpdated");
   if (updatedEl) updatedEl.textContent = "Refreshing data...";
-  const [publicResult, donationResult, expenseResult] = await Promise.allSettled([
-    api("/public"),
-    api("/donations"),
-    api("/expenses"),
-  ]);
-  const r = publicResult.status === "fulfilled" ? publicResult.value : null;
-  const donationResponse = donationResult.status === "fulfilled" ? donationResult.value : null;
-  const expenseResponse = expenseResult.status === "fulfilled" ? expenseResult.value : null;
+  const r = await api("/admin/bootstrap").catch(() => null);
   if (!r?.ok) return;
   const d = await r.json();
-  if (donationResponse?.ok) adminDonations = await donationResponse.json();
+  adminDonations = Array.isArray(d.donations) ? d.donations : [];
   adminMembers = d.members;
   adminEvents = d.events;
   const contactForm = document.getElementById("contactForm");
@@ -838,7 +831,7 @@ async function loadAdmin() {
   if (donationSettingsForm && d.contact) Object.entries(d.contact).forEach(([name, value]) => { const field = donationSettingsForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; });
   const welcomeMessage = document.getElementById("welcomeMessage");
   if (welcomeMessage && d.contact?.welcomeMessage != null) welcomeMessage.value = d.contact.welcomeMessage;
-  if (expenseResponse?.ok) adminExpenses = await expenseResponse.json();
+  adminExpenses = Array.isArray(d.expenses) ? d.expenses : [];
   const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && !["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   calculateExpenseTotals();

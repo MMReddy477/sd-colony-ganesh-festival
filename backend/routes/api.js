@@ -293,6 +293,26 @@ router.get('/gallery/:id/media', async (req, res) => {
   return res.send(media.subarray(start, end + 1));
 });
 router.use(auth);
+router.get('/admin/bootstrap', async (_req, res) => {
+  const [members, events, galleryRecords, donations, expenses, contact] = await Promise.all([
+    CommitteeMember.find().sort('name').lean(),
+    Event.find().sort('date').lean(),
+    Gallery.find().select('-mediaData').sort({ displayOrder: 1, createdAt: -1 }).lean(),
+    Donation.find().sort('-date').lean(),
+    Expense.find().sort('-date').lean(),
+    SiteSettings.findOne({ key: 'contact' }).lean(),
+  ]);
+  const gallery = galleryRecords.map(item => ({ ...item, path: `/api/gallery/${item._id}/media` }));
+  const receivedDonations = donations.filter(donation => donation.status !== 'Yet to receive');
+  const regularDonations = receivedDonations.filter(donation => !['Ganesh Idol Sponsor', 'Laddu Sponsorship 2026', 'Laddu Auction 2025'].includes(donation.contributionType));
+  const ladduAuctionTotal = receivedDonations.filter(donation => donation.contributionType === 'Laddu Auction 2025').reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
+  const totalDonations = regularDonations.reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const defaultWelcomeMessage = '🙏 శ్రీ గణేశ చతుర్థి మహోత్సవములకు మీకు హృదయపూర్వక స్వాగతం-సూర్యోదయ కాలనీ 🙏\n🙏 Heartfelt Welcome to Sri Ganesh Chaturthi Celebrations 2026 - Suryodaya Colony 🙏';
+  const publicContact = contact ? { ...contact, welcomeMessage: contact.welcomeMessage === undefined ? defaultWelcomeMessage : contact.welcomeMessage } : { contactEmail: 'hello@ganeshutsav.org', phone1: '8555958559', phone2: '9676344244', upiId: '', welcomeMessage: defaultWelcomeMessage };
+  if (publicContact.upiId && !publicContact.qrImagePath) publicContact.qrData = await QRCode.toDataURL(`upi://pay?pa=${encodeURIComponent(publicContact.upiId)}&pn=${encodeURIComponent(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee')}`);
+  res.json({ committeeName: process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', contact: publicContact, members, events, gallery, donations, expenses, stats: { totalDonations, ladduAuctionTotal, totalExpenses, balance: totalDonations + ladduAuctionTotal - totalExpenses, billsUploaded: expenses.filter(expense => expense.billFilename).length } });
+});
 router.put('/settings/contact', async (req, res) => res.json(await SiteSettings.findOneAndUpdate({ key: 'contact' }, { key: 'contact', contactEmail: req.body.contactEmail, phone1: req.body.phone1, phone2: req.body.phone2, upiId: req.body.upiId, bankName: req.body.bankName, accountName: req.body.accountName, accountNumber: req.body.accountNumber, ifscCode: req.body.ifscCode }, { upsert: true, new: true, runValidators: true })));
 router.post('/settings/donation-qr', upload.single('qr'), async (req, res) => { if (!req.file) return res.status(400).json({ message: 'Please select a QR image.' }); const settings = await SiteSettings.findOneAndUpdate({ key: 'contact' }, { key: 'contact', qrImagePath: `/uploads/${req.file.filename}` }, { upsert: true, new: true }); res.json(settings); });
 router.delete('/settings/donation', async (_req, res) => { const settings = await SiteSettings.findOne({ key: 'contact' }); if (settings?.qrImagePath) { const oldPath = path.join(uploadDir, path.basename(settings.qrImagePath.split('?')[0])); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } await SiteSettings.findOneAndUpdate({ key: 'contact' }, { $set: { upiId: '', bankName: '', accountName: '', accountNumber: '', ifscCode: '', qrImagePath: '' } }); res.sendStatus(204); });
