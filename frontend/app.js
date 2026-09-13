@@ -7,9 +7,8 @@ const publicDonationTableObserver = new MutationObserver(async () => {
   )
     return;
   if (modal.querySelector("h3")?.textContent !== "Donation details") return;
-  const response = await fetch("/api/public");
-  if (!response.ok) return;
-  const data = await response.json();
+  const data = await getPublicData();
+  if (!data) return;
   const donations = [...data.donations].sort(sortByPlotNumber);
   const pageSize = 10;
   let page = 0;
@@ -43,9 +42,8 @@ const publicExpenseTableObserver = new MutationObserver(async () => {
   )
     return;
   if (modal.querySelector("h3")?.textContent !== "Expenditure details") return;
-  const response = await fetch("/api/public");
-  if (!response.ok) return;
-  const data = await response.json();
+  const data = await getPublicData();
+  if (!data) return;
   const expenses = [...data.expenses];
   let page = 0;
   const renderExpenses = () => {
@@ -247,22 +245,45 @@ function toggleFestivalSongMute(event) {
   toggle.setAttribute("aria-label", audio.muted ? "Unmute festival song" : "Mute festival song");
   toggle.textContent = audio.muted ? "🔇" : "🔊";
 }
-async function loadPortal() {
-  const response = await fetch("/api/public", { cache: "no-store" }).catch(() => null);
-  if (!response?.ok) {
+let publicDataCache = null;
+let publicDataFetchedAt = 0;
+let publicDataRequest = null;
+const publicDataCacheTtl = 30_000;
+
+async function getPublicData({ refresh = false } = {}) {
+  const cacheIsFresh = publicDataCache && Date.now() - publicDataFetchedAt < publicDataCacheTtl;
+  if (!refresh && cacheIsFresh) return publicDataCache;
+  if (publicDataRequest) return publicDataRequest;
+
+  publicDataRequest = fetch("/api/public", { cache: "no-store" })
+    .then(async response => {
+      if (!response.ok) return null;
+      const data = await response.json();
+      data.donations = Array.isArray(data.donations) ? data.donations : [];
+      data.expenses = Array.isArray(data.expenses) ? data.expenses : [];
+      data.events = Array.isArray(data.events) ? data.events : [];
+      data.gallery = Array.isArray(data.gallery) ? data.gallery : [];
+      data.stats = data.stats || {};
+      publicDataCache = data;
+      publicDataFetchedAt = Date.now();
+      return data;
+    })
+    .catch(() => null)
+    .finally(() => { publicDataRequest = null; });
+
+  return publicDataRequest;
+}
+
+async function loadPortal({ refresh = false } = {}) {
+  const data = await getPublicData({ refresh });
+  if (!data) {
     const stats = document.getElementById("stats");
     const events = document.getElementById("eventsList");
-    const message = response?.status === 503 ? "Finance records are temporarily unavailable. Please check the database connection." : "Finance records could not be loaded. Please try again shortly.";
+    const message = "Finance records could not be loaded. Please try again shortly.";
     if (stats) stats.innerHTML = `<p class="portal-data-error" role="alert">${message}</p>`;
     if (events) events.innerHTML = `<p class="portal-data-error" role="alert">${message}</p>`;
     return;
   }
-  const data = await response.json();
-  data.donations = Array.isArray(data.donations) ? data.donations : [];
-  data.expenses = Array.isArray(data.expenses) ? data.expenses : [];
-  data.events = Array.isArray(data.events) ? data.events : [];
-  data.gallery = Array.isArray(data.gallery) ? data.gallery : [];
-  data.stats = data.stats || {};
   const contact = data.contact || {};
   renderDonationModal(contact);
   renderPublicScrolls(contact, data.events);
