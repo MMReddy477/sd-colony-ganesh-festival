@@ -479,8 +479,13 @@ let galleryIndex = 0;
 let slideshowTimer;
 let slideshowPlaying = false;
 const galleryFallbackPath = "/GaneshIdol_detail.jpeg";
+const isGalleryVideo = image => image?.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image?.originalName || image?.path || "");
+const isGalleryAudio = image => image?.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image?.originalName || image?.path || "");
 function galleryMediaPath(image) {
-  if (image?._id) return `/api/gallery/${encodeURIComponent(image._id)}/media`;
+  if (image?._id) {
+    const version = image.updatedAt || image.createdAt;
+    return `/api/gallery/${encodeURIComponent(image._id)}/media${version ? `?v=${encodeURIComponent(version)}` : ""}`;
+  }
   const value = String(image?.path || image?.filename || "").trim().replace(/\\/g, "/");
   if (!value) return galleryFallbackPath;
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
@@ -498,8 +503,6 @@ function renderGallery(images) {
   galleryImages = images;
   const list = document.getElementById("galleryList");
   if (!list) return;
-  const isVideo = image => image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
-  const isAudio = image => image.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image.originalName || image.path || "");
   document.getElementById("galleryTotal").textContent = `Total media: ${images.length}`;
   const galleryPageSize = 10;
   const galleryPages = Math.max(1, Math.ceil(images.length / galleryPageSize));
@@ -508,9 +511,9 @@ function renderGallery(images) {
   list.innerHTML = visibleImages.map((image, index) => {
     const galleryIndex = publicGalleryPage * galleryPageSize + index;
     const mediaPath = galleryMediaPath(image);
-    const media = isVideo(image)
+    const media = isGalleryVideo(image)
       ? `<video src="${mediaPath}" controls playsinline preload="metadata" aria-label="${image.title || "Ganesh Utsav video"}"></video>`
-      : isAudio(image)
+      : isGalleryAudio(image)
         ? `<audio src="${mediaPath}" controls preload="metadata" aria-label="${image.title || "Ganesh Utsav audio"}"></audio>`
         : `<img src="${mediaPath}" alt="${image.title || "Ganesh Utsav memory"}" loading="lazy">`;
     return `<figure class="gallery-card"><div class="gallery-item" data-gallery-index="${galleryIndex}" role="button" tabindex="0" aria-label="Open ${image.title || "gallery media"}">${media}<span class="gallery-check"><input class="gallery-select" type="checkbox" data-gallery-select="${galleryIndex}" aria-label="Select media ${galleryIndex + 1}"></span><button class="gallery-card-download" type="button" data-gallery-download="${galleryIndex}" aria-label="Download ${image.title || "gallery media"}" title="Download media">↓</button></div></figure>`;
@@ -532,6 +535,15 @@ async function downloadMedia(image) {
   const mediaUrl = galleryMediaPath(image);
   const url = `${mediaUrl}${mediaUrl.includes("?") ? "&" : "?"}download=1`;
   const filename = image.originalName || `${(image.title || "ganesh-memory").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.jpg`;
+  if (isGalleryVideo(image) || isGalleryAudio(image)) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.click();
+    return;
+  }
   try {
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) throw new Error(`Download failed: ${response.status}`);
@@ -565,8 +577,8 @@ function openGallery(index) {
   const viewerImage = document.getElementById("galleryViewerImage");
   const existingVideo = document.getElementById("galleryViewerVideo");
   const existingAudio = document.getElementById("galleryViewerAudio");
-  const isVideo = image.mediaType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(image.originalName || image.path || "");
-  const isAudio = image.mediaType?.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(image.originalName || image.path || "");
+  const isVideo = isGalleryVideo(image);
+  const isAudio = isGalleryAudio(image);
   if (isVideo) {
     existingAudio?.remove();
     viewerImage.hidden = true;

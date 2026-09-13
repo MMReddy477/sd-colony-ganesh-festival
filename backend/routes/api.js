@@ -15,6 +15,29 @@ const { User, CommitteeMember, Event, Gallery, Donation, Expense, Receipt, SiteS
 const router = express.Router();
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
+const galleryMediaCache = new Map();
+const galleryMediaCacheLimit = 64 * 1024 * 1024;
+let galleryMediaCacheBytes = 0;
+const cacheGalleryMedia = (key, media) => {
+  const existing = galleryMediaCache.get(key);
+  if (existing) galleryMediaCacheBytes -= existing.length;
+  galleryMediaCache.delete(key);
+  while (galleryMediaCacheBytes + media.length > galleryMediaCacheLimit && galleryMediaCache.size) {
+    const oldestKey = galleryMediaCache.keys().next().value;
+    const oldest = galleryMediaCache.get(oldestKey);
+    galleryMediaCacheBytes -= oldest.length;
+    galleryMediaCache.delete(oldestKey);
+  }
+  if (media.length <= galleryMediaCacheLimit) {
+    galleryMediaCache.set(key, media);
+    galleryMediaCacheBytes += media.length;
+  }
+};
+const clearGalleryMediaCache = key => {
+  const media = galleryMediaCache.get(key);
+  if (media) galleryMediaCacheBytes -= media.length;
+  galleryMediaCache.delete(key);
+};
 const extensionForMime = mimeType => {
   const map = {
     'image/jpeg': '.jpg',
@@ -241,24 +264,20 @@ router.get('/receipts/:number/image', async (req, res) => {
 
 router.get('/receipts/:number/public-pdf', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); const donation = receipt?.donation || await Donation.findOne({ receiptNumber: req.params.number }); if (!donation) return res.sendStatus(404); const number = receipt?.receiptNumber || donation.receiptNumber || req.params.number; const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(donation, number, 'pdf')); doc.pipe(res); doc.fontSize(22).fillColor('#8d2d24').text(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', { align: 'center' }); doc.moveDown().fontSize(15).fillColor('#222').text(`Receipt No: ${number}`).text(`Donor: ${donation.donorName}`).text(`Flat Number: ${donation.flatNumber || '--'}`).text(`Mobile Number: ${donation.mobile || '--'}`).text(`Amount: Rs. ${donation.amount}`).text(`Payment Mode: ${donation.paymentMode || 'Cash'}`).text(`Date: ${displayDate(donation.createdAt || donation.date)}`); doc.end(); });
 router.get('/gallery/:id/media', async (req, res) => {
-  const item = await Gallery.findById(req.params.id).select('+mediaData');
+  const item = await Gallery.findById(req.params.id).select('+mediaData').lean();
   if (!item) return res.sendStatus(404);
-  let media = item.mediaData?.length ? Buffer.from(item.mediaData) : null;
+  const cacheKey = String(item._id);
+  let media = galleryMediaCache.get(cacheKey) || (item.mediaData?.length ? Buffer.from(item.mediaData) : null);
   if (!media && item.filename) {
     const filePath = path.join(uploadDir, path.basename(item.filename));
     if (fs.existsSync(filePath)) media = fs.readFileSync(filePath);
   }
   if (!media) return res.sendStatus(404);
-  if (!item.mediaData?.length) {
-    item.mediaData = media;
-    item.filename = '';
-    item.path = '';
-    await item.save();
-  }
+  cacheGalleryMedia(cacheKey, media);
   const type = item.mediaType || 'application/octet-stream';
   const name = encodeURIComponent(item.originalName || `gallery-${item._id}`);
   const range = req.headers.range;
-  res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Accept-Ranges': 'bytes', 'Content-Type': type, 'Content-Disposition': `${req.query.download === '1' ? 'attachment' : 'inline'}; filename*=UTF-8''${name}` });
+  res.set({ 'Cache-Control': 'public, max-age=3600', 'Accept-Ranges': 'bytes', 'Content-Type': type, 'Content-Disposition': `${req.query.download === '1' ? 'attachment' : 'inline'}; filename*=UTF-8''${name}` });
   if (!range) return res.set('Content-Length', media.length).send(media);
   const match = range.match(/bytes=(\d*)-(\d*)/);
   if (!match) return res.status(416).set('Content-Range', `bytes */${media.length}`).end();
@@ -330,8 +349,8 @@ router.get('/expenses/:id/bill', async (req, res) => { const expense = await Exp
 router.post('/expenses/:id/bill', billUpload.single('bill'), async (req, res) => { const expense = await Expense.findById(req.params.id); if (!expense || !req.file) return res.sendStatus(404); if (expense.billFilename) { const oldPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } expense.billFilename = req.file.filename; expense.billOriginalName = req.file.originalname; expense.billPath = `/api/expenses/${expense._id}/bill`; expense.billMimeType = req.file.mimetype; await expense.save(); res.json(expense); });
 router.post('/gallery', galleryUpload.array('images', 20), async (req, res) => { const items = await Promise.all(req.files.map((file, index) => Gallery.create({ title: req.body.title || file.originalname.replace(/\.[^.]+$/, ''), caption: req.body.caption || '', displayOrder: Number(req.body.displayOrder || index), originalName: file.originalname, mediaType: file.mimetype, mediaData: file.buffer, path: '' }))); res.status(201).json(items); });
 router.put('/gallery/:id', async (req, res) => res.json(await Gallery.findByIdAndUpdate(req.params.id, { title: req.body.title, caption: req.body.caption, displayOrder: req.body.displayOrder }, { new: true, runValidators: true })));
-router.post('/gallery/:id/replace', galleryUpload.single('image'), async (req, res) => { const item = await Gallery.findById(req.params.id); if (!item || !req.file) return res.sendStatus(404); if (item.filename) { const oldPath = path.join(uploadDir, path.basename(item.filename)); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } item.filename = ''; item.originalName = req.file.originalname; item.mediaType = req.file.mimetype; item.mediaData = req.file.buffer; item.path = ''; await item.save(); res.json(item); });
-router.delete('/gallery/:id', async (req, res) => { const item = await Gallery.findByIdAndDelete(req.params.id); if (!item) return res.sendStatus(404); const imagePath = path.join(uploadDir, item.filename); if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath); res.sendStatus(204); });
+router.post('/gallery/:id/replace', galleryUpload.single('image'), async (req, res) => { const item = await Gallery.findById(req.params.id); if (!item || !req.file) return res.sendStatus(404); if (item.filename) { const oldPath = path.join(uploadDir, path.basename(item.filename)); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } clearGalleryMediaCache(String(item._id)); item.filename = ''; item.originalName = req.file.originalname; item.mediaType = req.file.mimetype; item.mediaData = req.file.buffer; item.path = ''; await item.save(); res.json(item); });
+router.delete('/gallery/:id', async (req, res) => { const item = await Gallery.findByIdAndDelete(req.params.id); if (!item) return res.sendStatus(404); clearGalleryMediaCache(String(item._id)); const imagePath = path.join(uploadDir, item.filename); if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath); res.sendStatus(204); });
 router.get('/receipts/:number/public-pdf', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); const donation = receipt?.donation || await Donation.findOne({ receiptNumber: req.params.number }); if (!donation) return res.sendStatus(404); const number = receipt?.receiptNumber || donation.receiptNumber || req.params.number; const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(donation, number, 'pdf')); doc.pipe(res); doc.fontSize(22).fillColor('#8d2d24').text(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', { align: 'center' }); doc.moveDown().fontSize(15).fillColor('#222').text(`Receipt No: ${number}`).text(`Donor: ${donation.donorName}`).text(`Flat Number: ${donation.flatNumber || '--'}`).text(`Mobile Number: ${donation.mobile || '--'}`).text(`Amount: Rs. ${donation.amount}`).text(`Payment Mode: ${donation.paymentMode || 'Cash'}`).text(`Date: ${new Date(donation.createdAt || donation.date).toLocaleString('en-IN')}`); doc.end(); });
 router.get('/receipts/:number/pdf', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); const donation = receipt?.donation || await Donation.findOne({ receiptNumber: req.params.number }); if (!donation) return res.sendStatus(404); const number = receipt?.receiptNumber || donation.receiptNumber || req.params.number; const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(donation, number, 'pdf')); doc.pipe(res); doc.fontSize(24).fillColor('#8d2d24').text('SD COLONY GANESH UTSAV COMMITTEE', { align: 'center' }); doc.moveDown(0.4).fontSize(14).fillColor('#d4af37').text('OFFICIAL DONATION RECEIPT', { align: 'center' }); doc.moveDown(1.5).fontSize(13).fillColor('#222').text(`Receipt No: ${number}`).text(`Date: ${new Date(donation.date || Date.now()).toLocaleDateString('en-IN')}`); doc.moveDown().fontSize(15).fillColor('#8d2d24').text('Donor details'); doc.moveDown(0.4).fontSize(13).fillColor('#222').text(`Donor name: ${donation.donorName}`).text(`Flat number: ${donation.flatNumber || 'Not provided'}`).text(`Mobile number: ${donation.mobile || 'Not provided'}`).text(`Payment mode: ${donation.paymentMode || 'Cash'}`); doc.moveDown(1.2).fontSize(20).fillColor('#2d5f3f').text(`Amount received: Rs. ${Number(donation.amount || 0).toLocaleString('en-IN')}`, { align: 'center' }); doc.moveDown().fontSize(12).fillColor('#8d2d24').text('Ganpati Bappa Morya!', { align: 'center' }); doc.moveDown(2).fillColor('#555').text('Thank you for supporting SD Colony Ganesh Utsav Committee. May this festive season bring happiness, prosperity, and success to you and your family.', { align: 'center' }); doc.moveDown(2).fontSize(10).fillColor('#888').text('This is a computer-generated receipt.', { align: 'center' }); doc.end(); });
 router.get('/receipts/:number', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); if (!receipt) return res.sendStatus(404); const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(receipt.donation, receipt.receiptNumber, 'pdf')); doc.pipe(res); doc.fontSize(22).fillColor('#a42b1c').text(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', { align: 'center' }); doc.moveDown().fontSize(16).fillColor('#222').text(`Donation Receipt: ${receipt.receiptNumber}`); doc.moveDown().fontSize(13).text(`Flat number: ${receipt.donation.flatNumber || 'Not provided'}`).text(`Donor: ${receipt.donation.donorName}`).text(`Mobile: ${receipt.donation.mobile || 'Not provided'}`).text(`Amount: Rs. ${receipt.donation.amount}`).text(`Date: ${new Date(receipt.donation.date).toLocaleDateString('en-IN')}`).text(`Payment mode: ${receipt.donation.paymentMode || 'Cash'}`).text(`Generated: ${new Date(receipt.createdAt).toLocaleString('en-IN')}`); doc.moveDown().fontSize(12).fillColor('#8d2d24').text('Your kindness keeps our community celebration bright. Thank you for supporting Ganesh Utsav.', { align: 'center' }); doc.moveDown(2).fillColor('#222').text('Signature: ____________________'); doc.end(); });
