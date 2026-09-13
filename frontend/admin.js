@@ -1003,11 +1003,13 @@ const expenseForm = document.getElementById("expenseForm");
 if (expenseForm) {
   const saveBtn = document.getElementById("saveBtn");
   const updateBtn = document.getElementById("updateBtn");
-  saveBtn?.addEventListener("click", () => {
+  saveBtn?.addEventListener("click", event => {
+    event.preventDefault();
     expenseForm.dataset.mode = "save";
     expenseForm.requestSubmit();
   });
-  updateBtn?.addEventListener("click", () => {
+  updateBtn?.addEventListener("click", event => {
+    event.preventDefault();
     expenseForm.dataset.mode = "update";
     expenseForm.requestSubmit();
   });
