@@ -340,18 +340,9 @@ async function loadPortal({ refresh = false } = {}) {
   const publicExpenditureSummary = document.getElementById("publicExpenditureSummary");
   if (publicExpenditureSummary) {
     const expenseRows = data.expenses || [];
-    const total = expenseRows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const paid = expenseRows.reduce((sum, item) => {
-      const status = item.status || "Due";
-      const amount = Number(item.amount || 0);
-      const advance = Number(item.advanceAmount || 0);
-      return sum + (status === "Full Paid" ? amount : advance);
-    }, 0);
-    const due = expenseRows.reduce((sum, item) => {
-      const status = item.status || "Due";
-      const remaining = Number(item.remainingAmount || 0);
-      return sum + (status === "Full Paid" ? 0 : remaining);
-    }, 0);
+    const total = Number(data.stats?.totalExpenses || 0);
+    const paid = Number(data.stats?.totalPaid || 0);
+    const due = Number(data.stats?.totalDue || 0);
     const expensePageSize = 10;
     const expenseQuery = document.getElementById("publicExpenseSearch")?.value.trim().toLowerCase() || "";
     const filteredExpenseRows = expenseRows
@@ -495,6 +486,12 @@ function galleryMediaPath(image) {
 }
 function setGalleryImageFallback(event) {
   const image = event.currentTarget;
+  if (!image.dataset.galleryRetry) {
+    image.dataset.galleryRetry = "true";
+    const separator = image.src.includes("?") ? "&" : "?";
+    image.src = `${image.src}${separator}retry=${Date.now()}`;
+    return;
+  }
   if (image.dataset.fallbackApplied) return;
   image.dataset.fallbackApplied = "true";
   image.hidden = true;
@@ -790,11 +787,8 @@ document.addEventListener("click", async (event) => {
       : '<p class="muted">No expenditure recorded yet.</p>';
   if (isBalance) {
     const collectedAmount = Number(data.stats?.totalDonations || 0) + Number(data.stats?.ladduAuctionTotal || 0);
-    const totalPaid = (data.expenses || []).reduce((sum, item) => {
-      const amount = Number(item.amount || 0);
-      return sum + ((item.status || "Due") === "Full Paid" ? amount : Number(item.advanceAmount || 0));
-    }, 0);
-    content = `<div class="balance-breakdown"><div><span>Collected Amount</span><strong>${money(collectedAmount)}</strong></div><div><span>Total Paid</span><strong>${money(totalPaid)}</strong></div><div class="balance-result"><span>Final Balance</span><strong>${money(collectedAmount - totalPaid)}</strong></div></div>`;
+    const totalPaid = Number(data.stats?.totalPaid || 0);
+    content = `<div class="balance-breakdown"><div><span>Collected Amount</span><strong>${money(collectedAmount)}</strong></div><div><span>Total Paid</span><strong>${money(totalPaid)}</strong></div><div class="balance-result"><span>Final Balance</span><strong>${money(data.stats?.balance ?? collectedAmount - totalPaid)}</strong></div></div>`;
   }
   let modal = document.getElementById("financeModal");
   if (!modal) {

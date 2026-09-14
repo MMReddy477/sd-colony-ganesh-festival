@@ -158,19 +158,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function calculateExpenseTotals() {
   const totalAmount = adminExpenses.reduce((sum, item) => sum + Number(item.amount || item.total || 0), 0);
-  const paidAmount = adminExpenses.reduce((sum, item) => {
-    const amount = Number(item.amount || item.total || 0);
-    const status = item.status || "Due";
-    return sum + (status === "Full Paid" ? amount : Number(item.advanceAmount || 0));
-  }, 0);
-  const dueAmount = adminExpenses.reduce((sum, item) => {
-    const status = item.status || "Due";
-    return sum + (status === "Full Paid" ? 0 : Number(item.remainingAmount || 0));
-  }, 0);
+  const paidAmount = adminExpenses.reduce((sum, item) => sum + Number(item.advanceAmount || 0), 0);
+  const dueAmount = adminExpenses.reduce((sum, item) => sum + Number(item.remainingAmount || 0), 0);
   const collectedAmount = adminDonations
     .filter(item => item.status !== "Yet to receive" && !["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType))
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const estimatedBalance = collectedAmount - totalAmount;
+  const estimatedBalance = collectedAmount - paidAmount;
 
   const table = document.querySelector("#expenseAdminList .expense-table");
   if (table) {
@@ -268,7 +261,7 @@ const donationPopupObserver = new MutationObserver(async () => {
   const response = await fetch("/api/public");
   if (!response.ok) return;
   const data = await response.json();
-  const adminTotalDonations = adminDonations.filter(item => item.status !== "Yet to receive" && !["Ganesh Idol Sponsor", "Laddu Sponsorship 2026"].includes(item.contributionType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const adminTotalDonations = Number(d.stats?.totalDonations || 0) + Number(d.stats?.ladduAuctionTotal || 0);
   const adminTotalExpenses = adminExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const donations = [...data.donations].sort(sortByPlotNumber);
   adminLiveDonations = donations;
@@ -847,7 +840,7 @@ async function loadAdmin() {
   document.getElementById("adminStats").innerHTML = [
     ["Donations", adminTotalDonations],
     ["Expenses", adminTotalExpenses],
-    ["Balance", adminTotalDonations - adminTotalExpenses],
+    ["Balance", Number(d.stats?.balance ?? adminTotalDonations - Number(d.stats?.totalPaid || 0))],
   ]
     .map(
       ([a, b]) =>
