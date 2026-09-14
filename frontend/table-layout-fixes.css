@@ -15,6 +15,31 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.public-events-table-wrap,
+.event-admin-table-wrap {
+  max-height: 360px;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: #d8b88b #fff8ed;
+}
+
+.public-events-table-wrap::-webkit-scrollbar,
+.event-admin-table-wrap::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.public-events-table-wrap::-webkit-scrollbar-thumb,
+.event-admin-table-wrap::-webkit-scrollbar-thumb {
+  background: #d8b88b;
+  border-radius: 8px;
+}
+
+.public-events-table-wrap::-webkit-scrollbar-track,
+.event-admin-table-wrap::-webkit-scrollbar-track {
+  background: #fff8ed;
+}
+
 .table-responsive > table,
 .donation-table-wrap > table,
 .expense-table-wrap > table,
