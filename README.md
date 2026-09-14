@@ -1,7 +1,7 @@
 
 ### Uploaded gallery media
 
-Gallery images, audio, and video are stored in MongoDB and also written to `UPLOAD_DIR` (defaults to `./uploads`) for fast serving. The database copy keeps newly uploaded and replaced media available after a Render restart or redeploy. Existing records whose temporary files were already lost must be uploaded again.
+Gallery images, audio, and video are stored in MongoDB GridFS and also written to `UPLOAD_DIR` (defaults to `./uploads`) for fast serving. GridFS keeps new uploads and replacements available after a Render restart or redeploy, including media larger than MongoDB's document-size limit. Existing records whose temporary files and database copies were already lost must be uploaded again.
 # Ganesh Utsav Committee Website
 
 Full-stack responsive committee portal using HTML5, CSS3, vanilla JavaScript, Bootstrap 5, Node.js, Express, MongoDB, JWT, bcrypt, PDFKit, ExcelJS, Multer, and Archiver.

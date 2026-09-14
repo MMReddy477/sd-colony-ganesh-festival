@@ -18,6 +18,21 @@ fs.mkdirSync(uploadDir, { recursive: true });
 const galleryMediaCache = new Map();
 const galleryMediaCacheLimit = 64 * 1024 * 1024;
 let galleryMediaCacheBytes = 0;
+let galleryMediaBucket;
+const getGalleryMediaBucket = () => {
+  if (!galleryMediaBucket && mongoose.connection.readyState === 1) galleryMediaBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'galleryMedia' });
+  return galleryMediaBucket;
+};
+const storeGalleryMedia = file => new Promise((resolve, reject) => {
+  const bucket = getGalleryMediaBucket();
+  if (!bucket) return reject(new Error('Gallery storage is unavailable'));
+  const uploadStream = bucket.openUploadStream(file.originalname, { contentType: file.mimetype, metadata: { mediaType: file.mimetype } });
+  fs.createReadStream(file.path).on('error', reject).pipe(uploadStream).on('error', reject).on('finish', () => resolve(uploadStream.id));
+});
+const deleteGalleryMedia = async id => {
+  if (!id || !getGalleryMediaBucket()) return;
+  try { await getGalleryMediaBucket().delete(id); } catch (error) { if (error.code !== 'FileNotFound') throw error; }
+};
 const cacheGalleryMedia = (key, media) => {
   const existing = galleryMediaCache.get(key);
   if (existing) galleryMediaCacheBytes -= existing.length;
@@ -294,7 +309,7 @@ router.get('/receipts/:number/image', async (req, res) => {
 
 router.get('/receipts/:number/public-pdf', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); const donation = receipt?.donation || await Donation.findOne({ receiptNumber: req.params.number }); if (!donation) return res.sendStatus(404); const number = receipt?.receiptNumber || donation.receiptNumber || req.params.number; const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(donation, number, 'pdf')); doc.pipe(res); doc.fontSize(22).fillColor('#8d2d24').text(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', { align: 'center' }); doc.moveDown().fontSize(15).fillColor('#222').text(`Receipt No: ${number}`).text(`Donor: ${donation.donorName}`).text(`Flat Number: ${donation.flatNumber || '--'}`).text(`Mobile Number: ${donation.mobile || '--'}`).text(`Amount: Rs. ${donation.amount}`).text(`Payment Mode: ${donation.paymentMode || 'Cash'}`).text(`Date: ${displayDate(donation.createdAt || donation.date)}`); doc.end(); });
 router.get('/gallery/:id/media', async (req, res) => {
-  const item = await Gallery.findById(req.params.id).select('+mediaData').lean();
+  const item = await Gallery.findById(req.params.id).select('+mediaData +mediaFileId').lean();
   if (!item) return res.sendStatus(404);
   const cacheKey = String(item._id);
   const type = mimeTypeForGallery(item);
@@ -303,13 +318,16 @@ router.get('/gallery/:id/media', async (req, res) => {
   const fileStats = filePath && fs.existsSync(filePath) ? fs.statSync(filePath) : null;
   const cachedMedia = galleryMediaCache.get(cacheKey);
   const media = cachedMedia || (item.mediaData?.length ? Buffer.from(item.mediaData) : null);
-  if (!media && !fileStats) return res.sendStatus(404);
+  const bucket = getGalleryMediaBucket();
+  const gridFile = item.mediaFileId && bucket ? await bucket.find({ _id: new mongoose.Types.ObjectId(item.mediaFileId) }).next() : null;
+  if (!media && !fileStats && !gridFile) return res.sendStatus(404);
   const range = req.headers.range;
   res.set({ 'Cache-Control': 'public, max-age=3600', 'Accept-Ranges': 'bytes', 'Content-Type': type, 'Content-Disposition': `${req.query.download === '1' ? 'attachment' : 'inline'}; filename*=UTF-8''${name}` });
-  const totalSize = fileStats?.size || media.length;
+  const totalSize = fileStats?.size || gridFile?.length || media.length;
   if (!range) {
     res.set('Content-Length', totalSize);
     if (fileStats) return fs.createReadStream(filePath).pipe(res);
+    if (gridFile) return bucket.openDownloadStream(gridFile._id).pipe(res);
     cacheGalleryMedia(cacheKey, media);
     return res.send(media);
   }
@@ -320,6 +338,7 @@ router.get('/gallery/:id/media', async (req, res) => {
   if (start > end || start >= totalSize) return res.status(416).set('Content-Range', `bytes */${totalSize}`).end();
   res.status(206).set({ 'Content-Range': `bytes ${start}-${end}/${totalSize}`, 'Content-Length': end - start + 1 });
   if (fileStats) return fs.createReadStream(filePath, { start, end }).pipe(res);
+  if (gridFile) return bucket.openDownloadStream(gridFile._id, { start, end: end + 1 }).pipe(res);
   cacheGalleryMedia(cacheKey, media);
   return res.send(media.subarray(start, end + 1));
 });
@@ -404,7 +423,7 @@ router.get('/expenses/:id/bill', async (req, res) => { const expense = await Exp
 router.post('/expenses/:id/bill', billUpload.single('bill'), async (req, res) => { const expense = await Expense.findById(req.params.id); if (!expense || !req.file) return res.sendStatus(404); if (expense.billFilename) { const oldPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } expense.billFilename = req.file.filename; expense.billOriginalName = req.file.originalname; expense.billPath = `/api/expenses/${expense._id}/bill`; expense.billMimeType = req.file.mimetype; await expense.save(); res.json(expense); });
 router.post('/gallery', galleryUpload.array('images', 20), async (req, res) => {
   if (!req.files?.length) return res.status(400).json({ message: 'Please select at least one image, video, or audio file' });
-  const items = await Promise.all(req.files.map((file, index) => Gallery.create({ title: req.body.title || file.originalname.replace(/\.[^.]+$/, ''), caption: req.body.caption || '', displayOrder: Number(req.body.displayOrder || index), originalName: file.originalname, mediaType: file.mimetype, filename: file.filename, path: '', mediaData: fs.readFileSync(file.path) })));
+  const items = await Promise.all(req.files.map(async (file, index) => Gallery.create({ title: req.body.title || file.originalname.replace(/\.[^.]+$/, ''), caption: req.body.caption || '', displayOrder: Number(req.body.displayOrder || index), originalName: file.originalname, mediaType: file.mimetype, filename: file.filename, path: '', mediaFileId: await storeGalleryMedia(file) })));
   res.status(201).json(items);
 });
 router.put('/gallery/:id', async (req, res) => {
@@ -419,12 +438,13 @@ router.put('/gallery/:id', async (req, res) => {
   clearGalleryMediaCache(String(updated._id));
   res.json(updated);
 });
-router.post('/gallery/:id/replace', galleryUpload.single('image'), async (req, res) => { const item = await Gallery.findById(req.params.id); if (!item || !req.file) return res.sendStatus(404); const replacementData = fs.readFileSync(req.file.path); if (item.filename) { const oldPath = path.join(uploadDir, path.basename(item.filename)); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } clearGalleryMediaCache(String(item._id)); item.filename = req.file.filename; item.originalName = req.file.originalname; item.mediaType = req.file.mimetype; item.mediaData = replacementData; item.path = ''; await item.save(); res.json(item); });
+router.post('/gallery/:id/replace', galleryUpload.single('image'), async (req, res) => { const item = await Gallery.findById(req.params.id).select('+mediaFileId +mediaData'); if (!item || !req.file) return res.sendStatus(404); const replacementFileId = await storeGalleryMedia(req.file); const previousFileId = item.mediaFileId; if (item.filename) { const oldPath = path.join(uploadDir, path.basename(item.filename)); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } clearGalleryMediaCache(String(item._id)); item.filename = req.file.filename; item.originalName = req.file.originalname; item.mediaType = req.file.mimetype; item.mediaFileId = replacementFileId; item.mediaData = undefined; item.path = ''; await item.save(); await deleteGalleryMedia(previousFileId); res.json(item); });
 const removeAllGalleryRecords = async (_req, res) => {
-  const items = await Gallery.find().select('_id filename').lean();
+  const items = await Gallery.find().select('_id filename +mediaFileId').lean();
   await Gallery.deleteMany({});
   items.forEach(item => {
     clearGalleryMediaCache(String(item._id));
+    void deleteGalleryMedia(item.mediaFileId);
     try {
       if (typeof item.filename !== 'string' || !item.filename.trim()) return;
       const filePath = path.join(uploadDir, path.basename(item.filename));
@@ -439,9 +459,11 @@ router.delete('/gallery', removeAllGalleryRecords);
 router.post('/gallery/delete-all', removeAllGalleryRecords);
 const removeGalleryRecord = async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid gallery record' });
-  const item = await Gallery.findByIdAndDelete(req.params.id);
+  const item = await Gallery.findById(req.params.id).select('+mediaFileId');
   if (!item) return res.status(404).json({ message: 'Gallery record not found' });
+  await Gallery.deleteOne({ _id: item._id });
   clearGalleryMediaCache(String(item._id));
+  await deleteGalleryMedia(item.mediaFileId);
   try {
     if (typeof item.filename === 'string' && item.filename.trim()) {
       const imagePath = path.join(uploadDir, path.basename(item.filename));
