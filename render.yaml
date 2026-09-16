@@ -22,6 +22,6 @@ services:
       - key: TWILIO_AUTH_TOKEN
         sync: false
       - key: TWILIO_WHATSAPP_FROM
-        value: whatsapp:+14155238886
+        value: whatsapp:+918374778183
       - key: PUBLIC_BASE_URL
         sync: false
