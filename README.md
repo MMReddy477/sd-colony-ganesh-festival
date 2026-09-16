@@ -30,6 +30,15 @@ Public data is available at `GET /api/public`. Admin endpoints are JWT-protected
 
 Render's free filesystem is temporary, so uploaded gallery files can disappear after a restart. Use a paid persistent disk mounted at `/opt/render/project/src/uploads`, or move image storage to Cloudinary/S3 for production.
 
+### WhatsApp donor receipts
+
+1. Create a Twilio account and open the WhatsApp Sandbox, or configure an approved WhatsApp sender.
+2. Add the Twilio Account SID and Auth Token to the Render environment variables `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`.
+3. Keep `TWILIO_WHATSAPP_FROM` as `whatsapp:+14155238886` for the Sandbox, and have each donor join the Sandbox using Twilio's join code. Use your approved sender number after WhatsApp approval.
+4. Deploy again. `PUBLIC_BASE_URL` is optional on Render because the app uses Render's automatic public URL; set it only when using a custom domain.
+
+WhatsApp receipts are sent after every successful donor Save, Save & Add More, or Update action. Missing credentials or a missing donor mobile number are logged and do not prevent the donor record from being saved.
+
 ### Vercel
 
 Vercel is suitable for the static frontend, but this Express/MongoDB service should remain on Render or another Node host. For a single public URL, use the Render deployment above.
