@@ -18,10 +18,16 @@ const getReceiptImageUrl = (req, receiptNumber) => {
 };
 
 async function sendWhatsAppReceipt(donor, req) {
-  if (!client) return false;
+  if (!client) {
+    console.warn('WhatsApp receipt skipped: set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env');
+    return false;
+  }
 
   const mobile = normalizeMobile(donor.mobile);
-  if (!mobile) return false;
+  if (!mobile) {
+    console.warn(`WhatsApp receipt skipped for ${donor.donorName || 'donor'}: mobile number is missing`);
+    return false;
+  }
 
   const messageText = `🙏 Thank you for donating to ${process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee'} 2026 🌺
 
