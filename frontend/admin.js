@@ -962,9 +962,33 @@ document.getElementById("closeDonorModal")?.addEventListener("click", closeDonor
 document.getElementById("cancelDonor")?.addEventListener("click", closeDonorModal);
 donorModal?.addEventListener("click", event => { if (event.target === donorModal) closeDonorModal(); });
 function donorFormData() { const data = Object.fromEntries(new FormData(donorModalForm)); if (data.contributionType === "Laddu Sponsorship 2026") data.itemName = data.ladduType; delete data.ladduType; if (data.contributionType === "Regular Donation" && editingDonationId) { delete data.contributionType; delete data.itemName; delete data.winningBidAmount; delete data.sponsorshipAmount; delete data.sponsorType; } return data; }
-async function saveDonor(keepOpen) { const wasEditing = Boolean(editingDonationId); const endpoint = wasEditing ? `/donations/${editingDonationId}` : "/donations"; const response = await api(endpoint, { method: wasEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donorFormData()) }); if (!response.ok) { alert((await response.json().catch(() => ({}))).message || "Could not save donor"); return; } await loadAdmin(); showPopup(wasEditing ? "Donor updated successfully ✅" : keepOpen ? "Donor added successfully. Add another donor ✅" : "Donor added successfully ✅"); if (!keepOpen || wasEditing) closeDonorModal(); else resetDonorModal(); }
+async function saveDonor(keepOpen) {
+  const wasEditing = Boolean(editingDonationId);
+  const endpoint = wasEditing ? `/donations/${editingDonationId}` : "/donations";
+  try {
+    const response = await api(endpoint, { method: wasEditing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donorFormData()) });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      alert(data.message || "Could not save donor");
+      return false;
+    }
+    await loadAdmin();
+    showPopup(wasEditing ? "Donor updated successfully ✅" : keepOpen ? "Donor added successfully. Add another donor ✅" : "Donor added successfully ✅");
+    if (!keepOpen || wasEditing) closeDonorModal(); else resetDonorModal();
+    return true;
+  } catch (error) {
+    alert(error.message || "Could not save donor");
+    return false;
+  }
+}
 donorModalForm?.addEventListener("submit", event => { event.preventDefault(); saveDonor(false); });
-document.getElementById("saveAddMore")?.addEventListener("click", () => { if (donorModalForm.reportValidity()) saveDonor(true); });
+document.getElementById("saveAddMore")?.addEventListener("click", async event => {
+  if (!donorModalForm.reportValidity()) return;
+  const button = event.currentTarget;
+  button.disabled = true;
+  await saveDonor(true);
+  button.disabled = false;
+});
 document.addEventListener("click", event => { const button = event.target.closest("[data-edit-donation]"); if (!button) return; const donation = adminDonations.find(item => String(item._id) === String(button.dataset.editDonation)) || adminLiveDonations.find(item => String(item._id) === String(button.dataset.editDonation)); if (!donation || !donorModalForm) return; document.getElementById("adminFinanceModal")?.classList.remove("is-open"); editingDonationId = donation._id; donorModalForm.reset(); Object.entries({ flatNumber: donation.flatNumber, donorName: donation.donorName, mobile: donation.mobile, contributionType: donation.contributionType || "Regular Donation", itemName: donation.itemName, winningBidAmount: donation.winningBidAmount, sponsorshipAmount: donation.sponsorshipAmount, sponsorType: donation.sponsorType, amount: donation.amount, status: donation.status || (Number(donation.amount) > 0 ? "Received" : "Yet to receive"), paymentMode: donation.paymentMode, date: String(donation.date || donation.createdAt || "").slice(0, 10) }).forEach(([name, value]) => { const field = donorModalForm.querySelector(`[name="${name}"]`); if (field) field.value = value || ""; }); updateContributionFields(donorModalForm); document.getElementById("donorModalTitle").textContent = "Edit Donor"; document.getElementById("donorEditContext").textContent = `Editing ${donation.donorName || "Unnamed donor"} · ${donation.flatNumber || "No plot number"}`; donorModalForm.querySelector('[type="submit"]').textContent = "Update Donor"; donorModal.classList.add("is-open"); donorModal.setAttribute("aria-hidden", "false"); donorModalForm.querySelector("[name=flatNumber]").focus(); });
 let galleryAdminPage = 0;
 const galleryAdminPageSize = 4;
