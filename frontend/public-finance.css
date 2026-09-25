@@ -1,3 +1,23 @@
+.ganesh-public-back {
+  position: fixed;
+  top: .8rem;
+  left: 1rem;
+  z-index: 1100;
+  padding: .45rem .7rem;
+  border: 1px solid rgba(255, 248, 237, .65);
+  border-radius: 6px;
+  background: rgba(36, 29, 27, .72);
+  color: #fff8ed;
+  font: 700 .8rem 'DM Sans', sans-serif;
+  text-decoration: none;
+}
+
+.ganesh-public-back:hover,
+.ganesh-public-back:focus-visible {
+  background: #f4b942;
+  color: #241d1b;
+}
+
 .public-finance-selector {
   display: flex;
   align-items: center;

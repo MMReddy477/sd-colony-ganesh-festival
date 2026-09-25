@@ -453,10 +453,6 @@ document.getElementById("financeSelector")?.addEventListener("change", event => 
   publicDonorPage = 0;
   loadPortal();
 });
-document.getElementById("homePageSelector")?.addEventListener("change", event => {
-  if (event.target.value === "ganesh") window.location.href = "/";
-  if (event.target.value === "family") window.location.href = "/family.html";
-});
 loadPortal();
 setInterval(loadPortal, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPortal(); });
