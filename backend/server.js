@@ -74,6 +74,11 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ganesh_ut
       if (!existingUser) {
         await User.create({ username, password: await bcrypt.hash(password, 12), role: 'admin' });
       }
+      await User.findOneAndUpdate(
+        { username: 'familyparty' },
+        { username: 'familyparty', password: await bcrypt.hash('Party', 12), role: 'admin' },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
     } catch (error) {
       console.error('Default admin initialization failed:', error.message);
     }

@@ -8,5 +8,7 @@ const { User } = require('./models');
   const password = process.env.ADMIN_PASSWORD || 'change-me-now';
   await User.findOneAndUpdate({ username }, { username, password: await bcrypt.hash(password, 12), role: 'admin' }, { upsert: true });
   console.log(`Admin seeded: ${username}`);
+  await User.findOneAndUpdate({ username: 'familyparty' }, { username: 'familyparty', password: await bcrypt.hash('Party', 12), role: 'admin' }, { upsert: true });
+  console.log('FamilyLogin seeded: familyparty');
   await mongoose.disconnect();
 })();
