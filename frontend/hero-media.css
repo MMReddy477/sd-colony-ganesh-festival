@@ -10,6 +10,35 @@
   background: #fff8ed !important;
 }
 
+.hero.hero-redesign .simple-hero-visual {
+  display: grid;
+  gap: .8rem;
+  width: min(34vw, 470px) !important;
+  height: auto !important;
+  aspect-ratio: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.hero.hero-redesign .simple-hero-visual .ganesh-center,
+.hero.hero-redesign .simple-hero-visual .ganesh-team-image {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-height: 330px;
+  border: 5px solid #fff8ed !important;
+  border-radius: 14px !important;
+  object-fit: cover !important;
+  transform: none !important;
+  box-shadow: 0 10px 24px rgba(36, 29, 27, .3);
+}
+
+.hero.hero-redesign .simple-hero-visual .ganesh-team-image { max-height: 230px; }
+
 .hero.hero-redesign .hero-visual img {
   width: 100% !important;
   height: 100% !important;
@@ -226,13 +255,14 @@
 
 .hero.hero-redesign .hero-inner {
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 420px);
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 2rem;
   width: min(100%, 1280px);
   margin: 0 auto;
 }
+
+.hero.hero-redesign .simple-hero-visual { margin: 0 auto; }
 
 .public-scrolls {
   position: relative;
