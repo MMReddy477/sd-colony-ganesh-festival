@@ -308,7 +308,7 @@ async function loadPortal({ refresh = false } = {}) {
   renderPublicScrolls(contact, data.events);
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
-  document.title = selectedFinanceView === "family" ? "Family Gathering Party Finance" : data.committeeName;
+  document.title = data.committeeName;
   document.getElementById("heroDonations").textContent = money(financeData.stats.totalDonations);
   const contributionTotal = type => type === "Laddu Auction 2025" && financeData.stats.ladduAuctionTotal != null ? financeData.stats.ladduAuctionTotal : financeData.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const contributionRows = type => financeData.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
