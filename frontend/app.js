@@ -252,9 +252,22 @@ let selectedFinanceView = window.location.pathname === "/ganesh-public.html" ? "
 let familyFinanceCache = null;
 let publicLoadVersion = 0;
 const publicDataCacheTtl = 5000;
+const publicDataStorageKey = "ganesh-public-data-v1";
+const familyFinanceStorageKey = "family-public-data-v1";
 document.body.classList.toggle("finance-family-view", selectedFinanceView === "family");
 
 async function getPublicData({ refresh = false } = {}) {
+  if (!publicDataCache && !refresh) {
+    try {
+      const stored = JSON.parse(localStorage.getItem(publicDataStorageKey) || "null");
+      if (stored?.stats) {
+        publicDataCache = stored;
+        publicDataFetchedAt = Date.now();
+        setTimeout(() => loadPortal({ refresh: true }), 0);
+        return stored;
+      }
+    } catch {}
+  }
   const cacheIsFresh = publicDataCache && Date.now() - publicDataFetchedAt < publicDataCacheTtl;
   if (!refresh && cacheIsFresh) return publicDataCache;
   if (publicDataRequest) return publicDataRequest;
@@ -270,6 +283,7 @@ async function getPublicData({ refresh = false } = {}) {
       data.stats = data.stats || {};
       publicDataCache = data;
       publicDataFetchedAt = Date.now();
+      try { localStorage.setItem(publicDataStorageKey, JSON.stringify(data)); } catch {}
       return data;
     })
     .catch(() => null)
@@ -278,14 +292,23 @@ async function getPublicData({ refresh = false } = {}) {
   return publicDataRequest;
 }
 
-async function getFamilyFinance() {
-  if (familyFinanceCache) return familyFinanceCache;
+async function getFamilyFinance({ refresh = false } = {}) {
+  if (familyFinanceCache && !refresh) return familyFinanceCache;
+  if (!refresh) try {
+    const stored = JSON.parse(localStorage.getItem(familyFinanceStorageKey) || "null");
+    if (stored?.stats) {
+      familyFinanceCache = stored;
+      setTimeout(() => loadPortal({ refresh: true }), 0);
+      return stored;
+    }
+  } catch {}
   const response = await fetch("/api/public/family", { cache: "no-store" });
   if (!response.ok) return null;
   familyFinanceCache = await response.json();
   familyFinanceCache.donations = Array.isArray(familyFinanceCache.donations) ? familyFinanceCache.donations : [];
   familyFinanceCache.expenses = Array.isArray(familyFinanceCache.expenses) ? familyFinanceCache.expenses : [];
   familyFinanceCache.stats = familyFinanceCache.stats || {};
+  try { localStorage.setItem(familyFinanceStorageKey, JSON.stringify(familyFinanceCache)); } catch {}
   return familyFinanceCache;
 }
 
@@ -300,7 +323,7 @@ async function loadPortal({ refresh = false } = {}) {
     if (events) events.innerHTML = `<p class="portal-data-error" role="alert">${message}</p>`;
     return;
   }
-  const financeData = selectedFinanceView === "family" ? await getFamilyFinance() : data;
+  const financeData = selectedFinanceView === "family" ? await getFamilyFinance({ refresh }) : data;
   if (!financeData) return;
   if (loadVersion !== publicLoadVersion) return;
   const contact = data.contact || {};
