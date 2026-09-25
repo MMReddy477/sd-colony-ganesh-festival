@@ -248,7 +248,7 @@ function toggleFestivalSongMute(event) {
 let publicDataCache = null;
 let publicDataFetchedAt = 0;
 let publicDataRequest = null;
-let selectedFinanceView = window.location.pathname === "/family-public.html" ? "family" : "ganesh";
+let selectedFinanceView = window.location.pathname === "/ganesh-public.html" ? "ganesh" : "family";
 let familyFinanceCache = null;
 let publicLoadVersion = 0;
 const publicDataCacheTtl = 5000;

@@ -52,7 +52,6 @@
 }
 
 .finance-family-view .open-books-heading marquee { color: #0f7b4d; }
-.finance-family-view > .navbar,
 .finance-family-view > .hero,
 .finance-family-view > footer { display: none !important; }
 .family-public-image-wrap { display: none; }
