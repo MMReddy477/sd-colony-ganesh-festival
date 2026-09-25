@@ -55,6 +55,17 @@
 .finance-family-view > .navbar,
 .finance-family-view > .hero,
 .finance-family-view > footer { display: none !important; }
+.family-public-image { display: none; }
+.finance-family-view .family-public-image {
+  display: block;
+  width: min(calc(100% - 2rem), 980px);
+  height: clamp(180px, 34vw, 360px);
+  margin: 1rem auto 0;
+  border: 5px solid var(--cream);
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 12px 28px rgba(36, 29, 27, .24);
+}
 .finance-family-view #sponsorships { display: none; }
 .finance-family-view #gallery,
 .finance-family-view #events,
