@@ -236,6 +236,7 @@ router.post('/auth/login', [body('username').trim().notEmpty().withMessage('User
 });
 router.get('/public', async (_req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  try {
   if (mongoose.connection.readyState !== 1) {
     return res.json({
       committeeName: process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee',
@@ -265,9 +266,13 @@ router.get('/public', async (_req, res) => {
   const publicContact = contact ? { ...contact, welcomeMessage: contact.welcomeMessage === undefined ? defaultWelcomeMessage : contact.welcomeMessage } : { contactEmail: 'hello@ganeshutsav.org', phone1: '8555958559', phone2: '9676344244', upiId: '', welcomeMessage: defaultWelcomeMessage };
   if (publicContact.upiId && !publicContact.qrImagePath) publicContact.qrData = await QRCode.toDataURL(`upi://pay?pa=${encodeURIComponent(publicContact.upiId)}&pn=${encodeURIComponent(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee')}`);
   res.json({ committeeName: process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', contact: publicContact, members, events, gallery, donations, expenses: publicExpenses, stats: { totalDonations, ladduAuctionTotal, totalExpenses, totalPaid, totalDue, balance, billsUploaded: expenses.filter(expense => expense.billFilename).length } });
+  } catch (error) {
+    res.json({ committeeName: process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', contact: {}, members: [], events: [], gallery: [], donations: [], expenses: [], stats: { totalDonations: 0, ladduAuctionTotal: 0, totalExpenses: 0, totalPaid: 0, totalDue: 0, balance: 0, billsUploaded: 0 } });
+  }
 });
 router.get('/public/family', async (_req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  try {
   if (mongoose.connection.readyState !== 1) return res.json({ donations: [], expenses: [], stats: { totalDonations: 0, totalExpenses: 0, totalPaid: 0, balance: 0 } });
   const [donations, expenses] = await Promise.all([
     Donation.find({ scope: 'party', $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date').lean(),
@@ -275,6 +280,9 @@ router.get('/public/family', async (_req, res) => {
   ]);
   const totals = calculateFinanceTotals(donations, expenses);
   res.json({ donations, expenses: totals.normalizedExpenses, stats: { totalDonations: totals.generalDonations, totalExpenses: totals.totalExpenses, totalPaid: totals.totalPaid, totalDue: totals.totalDue, balance: totals.balance } });
+  } catch (error) {
+    res.json({ donations: [], expenses: [], stats: { totalDonations: 0, totalExpenses: 0, totalPaid: 0, totalDue: 0, balance: 0 } });
+  }
 });
 const amountInWords = (amount) => { const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']; const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']; const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']; const scales = ['', 'Thousand', 'Lac', 'Crore']; const convertHundreds = (num) => { let result = ''; if (num >= 100) { result += ones[Math.floor(num / 100)] + ' Hundred '; num %= 100; } if (num >= 20) { result += tens[Math.floor(num / 10)] + ' '; num %= 10; } if (num >= 10) { result += teens[num - 10] + ' '; } else if (num > 0) { result += ones[num] + ' '; } return result.trim(); }; const num = Math.floor(amount); const parts = []; let scaleIdx = 0; let temp = num; while (temp > 0 && scaleIdx < scales.length) { parts.unshift(temp % (scaleIdx === 0 ? 1000 : scaleIdx === 1 ? 1000 : 100)); temp = Math.floor(temp / (scaleIdx === 0 ? 1000 : scaleIdx === 1 ? 1000 : 100)); scaleIdx++; } let result = []; for (let i = 0; i < parts.length; i++) { if (parts[i] > 0) { result.push(convertHundreds(parts[i]) + ' ' + scales[parts.length - 1 - i]); } } return result.join(' ').trim() + ' Rupees Only'; };
 const svgText = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
