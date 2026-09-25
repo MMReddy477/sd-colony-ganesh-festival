@@ -5,23 +5,23 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Family Login · Ganesh Utsav</title>
     <link rel="stylesheet" href="/styles.css?v=20260911-2" />
+    <link rel="stylesheet" href="/family-login.css?v=20260925-1" />
   </head>
-  <body class="admin-body">
-    <main class="login-shell">
-      <section class="login-panel" aria-labelledby="familyLoginTitle">
-        <span class="brand-mark" aria-hidden="true">&#128106;</span>
-        <p class="eyebrow">Family Gathering Party</p>
+  <body class="family-login-page">
+    <main class="family-login-shell">
+      <section class="family-login-panel" aria-labelledby="familyLoginTitle">
+        <span class="family-login-mark" aria-hidden="true">&#128106;</span>
+        <p class="family-login-eyebrow">Family Gathering Party</p>
         <h1 id="familyLoginTitle">Family Login</h1>
-        <p class="muted">Sign in to keep the family gathering finance moving.</p>
-        <form id="familyLoginForm" class="mt-4" action="/api/auth/login" method="post">
+        <p class="family-login-copy">Sign in to keep the family gathering finance moving.</p>
+        <form id="familyLoginForm" class="family-login-form" action="/api/auth/login" method="post">
           <input type="hidden" name="loginType" value="family" />
           <label>Username<input class="form-control" name="username" required autocomplete="username" /></label>
           <label>Password<input class="form-control" type="password" name="password" required autocomplete="current-password" /></label>
-          <button id="familyLoginButton" class="btn btn-saffron w-100" type="submit">Enter dashboard ↗</button>
-          <div id="familyLoginError" class="alert alert-danger mt-3" role="alert" hidden></div>
+          <button id="familyLoginButton" class="family-login-button" type="submit">Enter dashboard ↗</button>
+          <div id="familyLoginError" class="family-login-error" role="alert" hidden></div>
         </form>
-        <a class="back-link" href="/">Back to public portal</a>
-        <p class="login-switch"><a href="/admin.html">Admin Login</a></p>
+        <div class="family-login-links"><a href="/">Back to public portal</a><a href="/admin.html">Admin Login</a></div>
       </section>
     </main>
     <script src="/family.js?v=20260925-1"></script>
