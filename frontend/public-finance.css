@@ -88,6 +88,8 @@
   color: var(--ink);
 }
 .finance-family-view #sponsorships { display: none; }
+.finance-family-view .donations-card h5,
+.finance-family-view .donations-card .donors { display: none; }
 .finance-family-view #gallery,
 .finance-family-view #events,
 .finance-family-view a[href="#gallery"],

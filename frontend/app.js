@@ -784,8 +784,8 @@ document.addEventListener("click", async (event) => {
   }
   const card = event.target.closest(".stat-card");
   if (!card) return;
-  const response = await fetch("/api/public");
-  const data = await response.json();
+  const data = selectedFinanceView === "family" ? await getFamilyFinance() : await getPublicData();
+  if (!data) return;
   const label = card.querySelector(".label")?.textContent || card.querySelector("h3, h4")?.textContent || "";
   const contributionType = card.dataset.contributionType;
   const isSponsorshipSummary = card.dataset.sponsorshipSummary === "true";
