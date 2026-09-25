@@ -229,8 +229,8 @@ router.post('/auth/login', [body('username').trim().notEmpty().withMessage('User
   }
   const user = await User.findOne({ username: req.body.username });
   if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).json({ message: 'Invalid username or password' });
-  if (req.body.loginType === 'admin' && user.role !== 'admin') return res.status(403).json({ message: 'This account must use Family Login.' });
-  if (req.body.loginType === 'family' && user.role !== 'party') return res.status(403).json({ message: 'This account must use Admin Login.' });
+  if (req.body.loginType === 'admin' && user.role !== 'admin') return res.status(401).json({ message: 'Invalid username or password' });
+  if (req.body.loginType === 'family' && user.role !== 'party') return res.status(401).json({ message: 'Invalid username or password' });
   const scope = user.scope || (user.role === 'party' ? 'party' : 'ganesh');
   res.json({ token: jwt.sign({ id: user._id, role: user.role, scope }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '4h' }), scope });
 });
