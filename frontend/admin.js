@@ -751,6 +751,12 @@ function applyDashboardScope(data) {
   document.title = "Family Gathering Party Finance";
   const brandCopy = document.querySelector(".admin-brand-copy strong");
   if (brandCopy) brandCopy.textContent = "👨‍👩‍👧‍👦 FAMILY GATHERING PARTY FINANCE";
+  const contributionType = document.querySelector('#donorModalForm [name="contributionType"]');
+  if (contributionType) {
+    contributionType.innerHTML = '<option value="Party Donation">Party Donation</option>';
+    contributionType.value = "Party Donation";
+    contributionType.hidden = true;
+  }
   const hiddenSections = ["events", "gallery", "account"];
   hiddenSections.forEach(id => document.getElementById(id)?.setAttribute("hidden", ""));
   document.querySelectorAll("#adminNavLinks a").forEach(link => {
