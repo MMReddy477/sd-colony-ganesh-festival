@@ -58,16 +58,16 @@
 .finance-family-view .family-public-image-wrap {
   display: block;
   width: min(calc(100% - 2rem), 980px);
-  margin: 1rem auto 0;
+  margin: 7.5rem auto 0;
 }
 .family-public-image {
   display: block;
   width: 100%;
-  height: clamp(180px, 34vw, 360px);
-  margin: 1rem auto 0;
+  height: auto;
+  margin: 0 auto;
   border: 5px solid var(--cream);
   border-radius: 14px;
-  object-fit: cover;
+  object-fit: contain;
   box-shadow: 0 12px 28px rgba(36, 29, 27, .24);
 }
 .family-public-image-download {
