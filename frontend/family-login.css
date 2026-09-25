@@ -52,7 +52,9 @@
 .family-login-panel h1 {
   margin: 0;
   font-family: 'Outfit', sans-serif;
-  font-size: clamp(2.7rem, 9vw, 4.5rem);
+  max-width: 100%;
+  color: var(--family-ink);
+  font-size: clamp(2.35rem, 8vw, 3.6rem);
   line-height: .95;
   white-space: nowrap;
 }
