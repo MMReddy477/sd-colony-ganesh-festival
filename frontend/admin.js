@@ -740,6 +740,23 @@ function showDashboard() {
   document.getElementById("dashboardView").classList.remove("d-none");
   loadAdmin();
 }
+function applyDashboardScope(data) {
+  const isFamily = data?.committeeName === "Family Gathering Party Finance";
+  document.body.classList.toggle("family-finance-only", isFamily);
+  if (!isFamily) return;
+  const hour = new Date().getHours();
+  const period = hour < 5 ? "Good Night" : hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : hour < 21 ? "Good Evening" : "Good Night";
+  const greeting = document.getElementById("adminGreeting");
+  if (greeting) greeting.textContent = `${period}, Family party admin.`;
+  document.title = "Family Gathering Party Finance";
+  const brandCopy = document.querySelector(".admin-brand-copy strong");
+  if (brandCopy) brandCopy.textContent = "👨‍👩‍👧‍👦 FAMILY GATHERING PARTY FINANCE";
+  const hiddenSections = ["events", "gallery", "account"];
+  hiddenSections.forEach(id => document.getElementById(id)?.setAttribute("hidden", ""));
+  document.querySelectorAll("#adminNavLinks a").forEach(link => {
+    if (!["#dashboard", "#donations", "#expenses"].includes(link.getAttribute("href"))) link.setAttribute("hidden", "");
+  });
+}
 if (token) showDashboard();
 document.getElementById("logout").addEventListener("click", () => {
   localStorage.removeItem("ganeshToken");
@@ -824,6 +841,7 @@ async function loadAdmin() {
   const r = await api("/admin/bootstrap").catch(() => null);
   if (!r?.ok) return;
   const d = await r.json();
+  applyDashboardScope(d);
   adminDonations = Array.isArray(d.donations) ? d.donations : [];
   adminMembers = d.members;
   adminEvents = d.events;
