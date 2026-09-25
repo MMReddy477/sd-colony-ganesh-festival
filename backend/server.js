@@ -72,11 +72,11 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ganesh_ut
       if (mongoose.connection.readyState !== 1) return;
       const existingUser = await User.findOne({ username });
       if (!existingUser) {
-        await User.create({ username, password: await bcrypt.hash(password, 12), role: 'admin' });
+        await User.create({ username, password: await bcrypt.hash(password, 12), role: 'admin', scope: 'ganesh' });
       }
       await User.findOneAndUpdate(
         { username: 'familyparty' },
-        { username: 'familyparty', password: await bcrypt.hash('Party', 12), role: 'admin' },
+        { username: 'familyparty', password: await bcrypt.hash('Party', 12), role: 'party', scope: 'party' },
         { upsert: true, setDefaultsOnInsert: true }
       );
     } catch (error) {

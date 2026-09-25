@@ -14,6 +14,8 @@ const { auth } = require('../middleware');
 const { User, CommitteeMember, Event, Gallery, Donation, Expense, Receipt, SiteSettings } = require('../models');
 const { sendWhatsAppReceipt } = require('../whatsapp');
 const router = express.Router();
+const financeScope = req => req.user?.scope === 'party' ? 'party' : 'ganesh';
+const financeFilter = req => financeScope(req) === 'party' ? { scope: 'party' } : { $or: [{ scope: 'ganesh' }, { scope: { $exists: false } }] };
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 const galleryMediaCache = new Map();
@@ -227,7 +229,8 @@ router.post('/auth/login', [body('username').trim().notEmpty().withMessage('User
   }
   const user = await User.findOne({ username: req.body.username });
   if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).json({ message: 'Invalid username or password' });
-  res.json({ token: jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '4h' }) });
+  const scope = user.scope || (user.role === 'party' ? 'party' : 'ganesh');
+  res.json({ token: jwt.sign({ id: user._id, role: user.role, scope }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '4h' }), scope });
 });
 router.get('/public', async (_req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -249,7 +252,7 @@ router.get('/public', async (_req, res) => {
       stats: { totalDonations: 0, ladduAuctionTotal: 0, totalExpenses: 0, balance: 0, billsUploaded: 0 }
     });
   }
-  const [members, events, galleryRecords, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name').lean(), Event.find().sort('date').lean(), Gallery.find().select('-mediaData').sort({ displayOrder: 1, createdAt: -1 }).lean(), Donation.find({ $or: [{ status: 'Received' }, { status: { $exists: false } }] }).sort('-date').lean(), Expense.find().sort('-date').lean(), SiteSettings.findOne({ key: 'contact' }).lean()]);
+  const [members, events, galleryRecords, donations, expenses, contact] = await Promise.all([CommitteeMember.find().sort('name').lean(), Event.find().sort('date').lean(), Gallery.find().select('-mediaData').sort({ displayOrder: 1, createdAt: -1 }).lean(), Donation.find({ $and: [{ $or: [{ scope: 'ganesh' }, { scope: { $exists: false } }] }, { $or: [{ status: 'Received' }, { status: { $exists: false } }] }] }).sort('-date').lean(), Expense.find({ $or: [{ scope: 'ganesh' }, { scope: { $exists: false } }] }).sort('-date').lean(), SiteSettings.findOne({ key: 'contact' }).lean()]);
   const gallery = galleryRecords.map(item => ({ ...item, path: `/api/gallery/${item._id}/media` }));
   donations.sort(comparePlotNumbers);
   const totals = calculateFinanceTotals(donations, expenses);
@@ -344,13 +347,13 @@ router.get('/gallery/:id/media', async (req, res) => {
   return res.send(media.subarray(start, end + 1));
 });
 router.use(auth);
-router.get('/admin/bootstrap', async (_req, res) => {
+router.get('/admin/bootstrap', async (req, res) => {
   const [members, events, galleryRecords, donations, expenses, contact] = await Promise.all([
     CommitteeMember.find().sort('name').lean(),
     Event.find().sort('date').lean(),
     Gallery.find().select('-mediaData').sort({ displayOrder: 1, createdAt: -1 }).lean(),
-    Donation.find().sort('-date').lean(),
-    Expense.find().sort('-date').lean(),
+    Donation.find(financeFilter(req)).sort('-date').lean(),
+    Expense.find(financeFilter(req)).sort('-date').lean(),
     SiteSettings.findOne({ key: 'contact' }).lean(),
   ]);
   const gallery = galleryRecords.map(item => ({ ...item, path: `/api/gallery/${item._id}/media` }));
@@ -371,13 +374,14 @@ router.delete('/settings/upi', async (_req, res) => { await SiteSettings.findOne
 router.put('/auth/password', async (req, res) => { const { currentPassword, newPassword, confirmPassword } = req.body; if (!currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8) return res.status(400).json({ message: 'Use a matching password of at least 8 characters.' }); const user = await User.findById(req.user.id); if (!user || !(await bcrypt.compare(currentPassword, user.password))) return res.status(401).json({ message: 'Current password is incorrect.' }); user.password = await bcrypt.hash(newPassword, 12); await user.save(); res.json({ message: 'Password updated successfully.' }); });
 const resources = [ ['members', CommitteeMember], ['events', Event] ];
 resources.forEach(([name, Model]) => { router.get(`/${name}`, async (_r, res) => res.json(await Model.find().sort('-createdAt'))); router.post(`/${name}`, async (req, res) => res.status(201).json(await Model.create(req.body))); router.put(`/${name}/:id`, async (req, res) => res.json(await Model.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }))); router.delete(`/${name}/:id`, async (req, res) => { await Model.findByIdAndDelete(req.params.id); res.sendStatus(204); }); });
-router.get('/donations', async (_r, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate'); res.json(await Donation.find().sort('-date')); });
-router.post('/donations', async (req, res) => { const year = new Date().getFullYear(); let nextNum = 1; const lastDonation = await Donation.findOne({ receiptNumber: new RegExp(`^GU-${year}-`) }).sort({ receiptNumber: -1 }); if (lastDonation) { const match = lastDonation.receiptNumber.match(/GU-\d+-(\d+)/); if (match) nextNum = parseInt(match[1]) + 1; } const receiptNumber = `GU-${year}-${String(nextNum).padStart(4, '0')}`; const donation = await Donation.create({ ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber), receiptNumber }); const qrData = await QRCode.toDataURL(`${process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee'} | ${receiptNumber} | Rs. ${donation.amount}`); await Receipt.findOneAndUpdate({ receiptNumber }, { receiptNumber, donation: donation._id, qrData }, { upsert: true, new: true }); try { await sendWhatsAppReceipt({ ...donation.toObject(), isUpdate: false }, req); } catch (error) { console.error('WhatsApp receipt failed:', error.message); } res.status(201).json(donation); });
-router.put('/donations/:id', async (req, res) => { const updates = { ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber) }; if (!req.body.date) delete updates.date; const donation = await Donation.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true }); if (!donation) return res.status(404).json({ message: 'Donation not found' }); try { await sendWhatsAppReceipt({ ...donation.toObject(), isUpdate: true }, req); } catch (error) { console.error('WhatsApp receipt failed:', error.message); } res.json(donation); });
-router.delete('/donations/:id', async (req, res) => { const donation = await Donation.findByIdAndDelete(req.params.id); if (!donation) return res.sendStatus(404); await Receipt.deleteOne({ donation: donation._id }); res.sendStatus(204); });
-router.get('/expenses', async (_req, res) => res.json(await Expense.find().sort('-date')));
+router.get('/donations', async (req, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate'); res.json(await Donation.find(financeFilter(req)).sort('-date')); });
+router.post('/donations', async (req, res) => { const year = new Date().getFullYear(); const prefix = financeScope(req) === 'party' ? 'FP' : 'GU'; let nextNum = 1; const lastDonation = await Donation.findOne({ ...financeFilter(req), receiptNumber: new RegExp(`^${prefix}-${year}-`) }).sort({ receiptNumber: -1 }); if (lastDonation) { const match = lastDonation.receiptNumber.match(new RegExp(`${prefix}-\\d+-(\\d+)`)); if (match) nextNum = parseInt(match[1]) + 1; } const receiptNumber = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`; const donation = await Donation.create({ ...req.body, scope: financeScope(req), flatNumber: normalizePlotNumber(req.body.flatNumber), receiptNumber }); const qrData = await QRCode.toDataURL(`${process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee'} | ${receiptNumber} | Rs. ${donation.amount}`); await Receipt.findOneAndUpdate({ receiptNumber }, { receiptNumber, donation: donation._id, qrData }, { upsert: true, new: true }); try { await sendWhatsAppReceipt({ ...donation.toObject(), isUpdate: false }, req); } catch (error) { console.error('WhatsApp receipt failed:', error.message); } res.status(201).json(donation); });
+router.put('/donations/:id', async (req, res) => { const updates = { ...req.body, flatNumber: normalizePlotNumber(req.body.flatNumber) }; delete updates.scope; if (!req.body.date) delete updates.date; const donation = await Donation.findOneAndUpdate({ _id: req.params.id, ...financeFilter(req) }, updates, { new: true, runValidators: true }); if (!donation) return res.status(404).json({ message: 'Donation not found' }); try { await sendWhatsAppReceipt({ ...donation.toObject(), isUpdate: true }, req); } catch (error) { console.error('WhatsApp receipt failed:', error.message); } res.json(donation); });
+router.delete('/donations/:id', async (req, res) => { const donation = await Donation.findOneAndDelete({ _id: req.params.id, ...financeFilter(req) }); if (!donation) return res.sendStatus(404); await Receipt.deleteOne({ donation: donation._id }); res.sendStatus(204); });
+router.get('/expenses', async (req, res) => res.json(await Expense.find(financeFilter(req)).sort('-date')));
 router.post('/expenses', billUpload.single('bill'), async (req, res) => {
   const expense = await Expense.create({
+    scope: financeScope(req),
     name: req.body.name,
     amount: req.body.amount,
     date: req.body.date,
@@ -404,7 +408,7 @@ router.put('/expenses/:id', billUpload.single('bill'), async (req, res) => {
   if (!req.body.date) delete payload.date;
 
   if (req.file) {
-    const expense = await Expense.findById(req.params.id);
+    const expense = await Expense.findOne({ _id: req.params.id, ...financeFilter(req) });
     if (expense?.billFilename) {
       const oldPath = path.join(uploadDir, expense.billFilename);
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
@@ -415,13 +419,13 @@ router.put('/expenses/:id', billUpload.single('bill'), async (req, res) => {
     payload.billMimeType = req.file.mimetype;
   }
 
-  const updated = await Expense.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+  const updated = await Expense.findOneAndUpdate({ _id: req.params.id, ...financeFilter(req) }, payload, { new: true, runValidators: true });
   if (!updated) return res.status(404).json({ message: 'Expense not found' });
   res.json(updated);
 });
-router.delete('/expenses/:id', async (req, res) => { const expense = await Expense.findByIdAndDelete(req.params.id); if (!expense) return res.sendStatus(404); if (expense.billFilename) { const billPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(billPath)) fs.unlinkSync(billPath); } res.sendStatus(204); });
-router.get('/expenses/:id/bill', async (req, res) => { const expense = await Expense.findById(req.params.id); if (!expense?.billFilename) return res.sendStatus(404); res.sendFile(path.join(uploadDir, expense.billFilename)); });
-router.post('/expenses/:id/bill', billUpload.single('bill'), async (req, res) => { const expense = await Expense.findById(req.params.id); if (!expense || !req.file) return res.sendStatus(404); if (expense.billFilename) { const oldPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } expense.billFilename = req.file.filename; expense.billOriginalName = req.file.originalname; expense.billPath = `/api/expenses/${expense._id}/bill`; expense.billMimeType = req.file.mimetype; await expense.save(); res.json(expense); });
+router.delete('/expenses/:id', async (req, res) => { const expense = await Expense.findOneAndDelete({ _id: req.params.id, ...financeFilter(req) }); if (!expense) return res.sendStatus(404); if (expense.billFilename) { const billPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(billPath)) fs.unlinkSync(billPath); } res.sendStatus(204); });
+router.get('/expenses/:id/bill', async (req, res) => { const expense = await Expense.findOne({ _id: req.params.id, ...financeFilter(req) }); if (!expense?.billFilename) return res.sendStatus(404); res.sendFile(path.join(uploadDir, expense.billFilename)); });
+router.post('/expenses/:id/bill', billUpload.single('bill'), async (req, res) => { const expense = await Expense.findOne({ _id: req.params.id, ...financeFilter(req) }); if (!expense || !req.file) return res.sendStatus(404); if (expense.billFilename) { const oldPath = path.join(uploadDir, expense.billFilename); if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } expense.billFilename = req.file.filename; expense.billOriginalName = req.file.originalname; expense.billPath = `/api/expenses/${expense._id}/bill`; expense.billMimeType = req.file.mimetype; await expense.save(); res.json(expense); });
 router.post('/gallery', galleryUpload.array('images', 20), async (req, res) => {
   if (!req.files?.length) return res.status(400).json({ message: 'Please select at least one image, video, or audio file' });
   const items = await Promise.all(req.files.map(async (file, index) => Gallery.create({ title: req.body.title || file.originalname.replace(/\.[^.]+$/, ''), caption: req.body.caption || '', displayOrder: Number(req.body.displayOrder || index), originalName: file.originalname, mediaType: file.mimetype, filename: file.filename, path: '', mediaFileId: await storeGalleryMedia(file) })));
@@ -482,7 +486,7 @@ router.get('/receipts/:number/pdf', async (req, res) => { const receipt = await 
 router.get('/receipts/:number', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); if (!receipt) return res.sendStatus(404); const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(receipt.donation, receipt.receiptNumber, 'pdf')); doc.pipe(res); doc.fontSize(22).fillColor('#a42b1c').text(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', { align: 'center' }); doc.moveDown().fontSize(16).fillColor('#222').text(`Donation Receipt: ${receipt.receiptNumber}`); doc.moveDown().fontSize(13).text(`Flat number: ${receipt.donation.flatNumber || 'Not provided'}`).text(`Donor: ${receipt.donation.donorName}`).text(`Mobile: ${receipt.donation.mobile || 'Not provided'}`).text(`Amount: Rs. ${receipt.donation.amount}`).text(`Date: ${new Date(receipt.donation.date).toLocaleDateString('en-IN')}`).text(`Payment mode: ${receipt.donation.paymentMode || 'Cash'}`).text(`Generated: ${new Date(receipt.createdAt).toLocaleString('en-IN')}`); doc.moveDown().fontSize(12).fillColor('#8d2d24').text('Your kindness keeps our community celebration bright. Thank you for supporting Ganesh Utsav.', { align: 'center' }); doc.moveDown(2).fillColor('#222').text('Signature: ____________________'); doc.end(); });
 router.get('/reports/:type/:format', async (req, res) => {
   if (req.params.type === 'finance' && req.params.format === 'xlsx') {
-    const [donations, expenses] = await Promise.all([Donation.find().lean(), Expense.find().lean()]);
+    const [donations, expenses] = await Promise.all([Donation.find(financeFilter(req)).lean(), Expense.find(financeFilter(req)).lean()]);
     donations.sort(comparePlotNumbers);
     const workbook = new ExcelJS.Workbook();
     workbook.calcProperties.fullCalcOnLoad = true;
@@ -503,8 +507,8 @@ router.get('/reports/:type/:format', async (req, res) => {
     res.attachment('SD_Colony_Ganesh_Utsav_2026_Details.xlsx'); return workbook.xlsx.write(res);
   }
   const Model = req.params.type === 'donations' ? Donation : Expense;
-  const filter = req.params.type === 'donations' ? { $or: [{ status: 'Received' }, { status: { $exists: false } }] } : {};
-  const rows = await Model.find(req.params.type === 'donations' && ['xlsx', 'pdf'].includes(req.params.format) ? {} : filter).sort('-date').lean();
+  const filter = req.params.type === 'donations' ? { $and: [financeFilter(req), { $or: [{ status: 'Received' }, { status: { $exists: false } }] }] } : financeFilter(req);
+  const rows = await Model.find(filter).sort('-date').lean();
   if (req.params.type === 'donations' && ['xlsx', 'pdf'].includes(req.params.format)) rows.sort(comparePlotNumbers);
   if (req.params.format === 'xlsx') {
     const workbook = new ExcelJS.Workbook();
@@ -549,5 +553,5 @@ router.get('/reports/:type/:format', async (req, res) => {
   } else { doc.fontSize(18).fillColor('#241d1b').text(`${req.params.type} report`); rows.forEach(row => doc.moveDown().fontSize(11).text(`${row.donorName || row.name} | Rs. ${row.amount} | ${displayDate(row.date)}`)); }
   doc.end();
 });
-router.get('/reports/annual-summary/pdf', async (_req, res) => { const receivedFilter = { $or: [{ status: 'Received' }, { status: { $exists: false } }] }; const [donations, expenses] = await Promise.all([Donation.find(receivedFilter), Expense.find()]); const totalDonations = donations.filter(row => !['Ganesh Idol Sponsor', 'Laddu Sponsorship 2026'].includes(row.contributionType)).reduce((sum, row) => sum + row.amount, 0); const totalExpenses = expenses.reduce((sum, row) => sum + row.amount, 0); const doc = new PDFDocument(); res.attachment('annual-financial-summary.pdf'); doc.pipe(res); doc.fontSize(22).text(process.env.COMMITTEE_NAME || 'Ganesh Utsav Committee'); doc.moveDown().fontSize(16).text('Annual Financial Summary'); doc.moveDown().fontSize(13).text(`Total donations: Rs. ${totalDonations}`).text(`Total expenditure: Rs. ${totalExpenses}`).text(`Final balance: Rs. ${totalDonations - totalExpenses}`); doc.end(); });
+router.get('/reports/annual-summary/pdf', async (req, res) => { const receivedFilter = { $and: [financeFilter(req), { $or: [{ status: 'Received' }, { status: { $exists: false } }] }] }; const [donations, expenses] = await Promise.all([Donation.find(receivedFilter), Expense.find(financeFilter(req))]); const totalDonations = donations.filter(row => !['Ganesh Idol Sponsor', 'Laddu Sponsorship 2026'].includes(row.contributionType)).reduce((sum, row) => sum + row.amount, 0); const totalExpenses = expenses.reduce((sum, row) => sum + row.amount, 0); const doc = new PDFDocument(); res.attachment('annual-financial-summary.pdf'); doc.pipe(res); doc.fontSize(22).text(process.env.COMMITTEE_NAME || 'Ganesh Utsav Committee'); doc.moveDown().fontSize(16).text('Annual Financial Summary'); doc.moveDown().fontSize(13).text(`Total donations: Rs. ${totalDonations}`).text(`Total expenditure: Rs. ${totalExpenses}`).text(`Final balance: Rs. ${totalDonations - totalExpenses}`); doc.end(); });
 module.exports = router;
