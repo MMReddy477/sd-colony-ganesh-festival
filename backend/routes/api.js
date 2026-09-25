@@ -229,6 +229,8 @@ router.post('/auth/login', [body('username').trim().notEmpty().withMessage('User
   }
   const user = await User.findOne({ username: req.body.username });
   if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).json({ message: 'Invalid username or password' });
+  if (req.body.loginType === 'admin' && user.role !== 'admin') return res.status(403).json({ message: 'This account must use Family Login.' });
+  if (req.body.loginType === 'family' && user.role !== 'party') return res.status(403).json({ message: 'This account must use Admin Login.' });
   const scope = user.scope || (user.role === 'party' ? 'party' : 'ganesh');
   res.json({ token: jwt.sign({ id: user._id, role: user.role, scope }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '4h' }), scope });
 });
@@ -363,7 +365,8 @@ router.get('/admin/bootstrap', async (req, res) => {
   const defaultWelcomeMessage = '🙏 శ్రీ గణేశ చతుర్థి మహోత్సవములకు మీకు హృదయపూర్వక స్వాగతం-సూర్యోదయ కాలనీ 🙏\n🙏 Heartfelt Welcome to Sri Ganesh Chaturthi Celebrations 2026 - Suryodaya Colony 🙏';
   const publicContact = contact ? { ...contact, welcomeMessage: contact.welcomeMessage === undefined ? defaultWelcomeMessage : contact.welcomeMessage } : { contactEmail: 'hello@ganeshutsav.org', phone1: '8555958559', phone2: '9676344244', upiId: '', welcomeMessage: defaultWelcomeMessage };
   if (publicContact.upiId && !publicContact.qrImagePath) publicContact.qrData = await QRCode.toDataURL(`upi://pay?pa=${encodeURIComponent(publicContact.upiId)}&pn=${encodeURIComponent(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee')}`);
-  res.json({ committeeName: process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', contact: publicContact, members, events, gallery, donations, expenses: totals.normalizedExpenses, stats: { totalDonations, ladduAuctionTotal, totalExpenses, totalPaid, totalDue, balance, billsUploaded: expenses.filter(expense => expense.billFilename).length } });
+  const isParty = financeScope(req) === 'party';
+  res.json({ committeeName: isParty ? 'Family Gathering Party Finance' : (process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee'), contact: publicContact, members: isParty ? [] : members, events: isParty ? [] : events, gallery: isParty ? [] : gallery, donations, expenses: totals.normalizedExpenses, stats: { totalDonations, ladduAuctionTotal, totalExpenses, totalPaid, totalDue, balance, billsUploaded: expenses.filter(expense => expense.billFilename).length } });
 });
 router.put('/settings/contact', async (req, res) => res.json(await SiteSettings.findOneAndUpdate({ key: 'contact' }, { key: 'contact', contactEmail: req.body.contactEmail, phone1: req.body.phone1, phone2: req.body.phone2, upiId: req.body.upiId, bankName: req.body.bankName, accountName: req.body.accountName, accountNumber: req.body.accountNumber, ifscCode: req.body.ifscCode }, { upsert: true, new: true, runValidators: true })));
 router.post('/settings/donation-qr', upload.single('qr'), async (req, res) => { if (!req.file) return res.status(400).json({ message: 'Please select a QR image.' }); const settings = await SiteSettings.findOneAndUpdate({ key: 'contact' }, { key: 'contact', qrImagePath: `/uploads/${req.file.filename}` }, { upsert: true, new: true }); res.json(settings); });

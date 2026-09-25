@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Family Login · Ganesh Utsav</title>
+    <link rel="stylesheet" href="/styles.css?v=20260911-2" />
+    <style>.d-none { display: none !important; }</style>
+  </head>
+  <body class="admin-body">
+    <main class="login-shell">
+      <section class="login-panel" aria-labelledby="familyLoginTitle">
+        <span class="brand-mark" aria-hidden="true">&#128106;</span>
+        <p class="eyebrow">Family Gathering Party</p>
+        <h1 id="familyLoginTitle">Family Login</h1>
+        <p class="muted">Sign in to manage Party Contributions and Expenditure.</p>
+        <form id="familyLoginForm" class="mt-4">
+          <label>Username<input class="form-control" name="username" required autocomplete="username" /></label>
+          <label>Password<input class="form-control" type="password" name="password" required autocomplete="current-password" /></label>
+          <button class="btn btn-saffron w-100" type="submit">Enter Family Finance</button>
+          <div id="familyLoginError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+        </form>
+        <a class="back-link" href="/">Back to public portal</a>
+        <p class="login-switch"><a href="/admin.html">Admin Login</a></p>
+      </section>
+    </main>
+    <script>
+      document.getElementById("familyLoginForm").addEventListener("submit", async event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const error = document.getElementById("familyLoginError");
+        error.classList.add("d-none");
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: form.username.value.trim(), password: form.password.value, loginType: "family" })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            error.textContent = data.message || "Invalid Family Login credentials.";
+            error.classList.remove("d-none");
+            return;
+          }
+          localStorage.setItem("ganeshToken", data.token);
+          window.location.href = "/admin.html";
+        } catch (requestError) {
+          error.textContent = "Network error: " + requestError.message;
+          error.classList.remove("d-none");
+        }
+      });
+    </script>
+  </body>
+</html>
