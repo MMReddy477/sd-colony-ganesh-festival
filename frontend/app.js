@@ -248,10 +248,11 @@ function toggleFestivalSongMute(event) {
 let publicDataCache = null;
 let publicDataFetchedAt = 0;
 let publicDataRequest = null;
-let selectedFinanceView = "ganesh";
+let selectedFinanceView = window.location.pathname === "/family-public.html" ? "family" : "ganesh";
 let familyFinanceCache = null;
 let publicLoadVersion = 0;
 const publicDataCacheTtl = 5000;
+document.body.classList.toggle("finance-family-view", selectedFinanceView === "family");
 
 async function getPublicData({ refresh = false } = {}) {
   const cacheIsFresh = publicDataCache && Date.now() - publicDataFetchedAt < publicDataCacheTtl;
@@ -359,6 +360,8 @@ async function loadPortal({ refresh = false } = {}) {
     const expenditureCopy = document.querySelector("#outgoings .section-heading p:not(.eyebrow)");
     if (expenditureHeading) expenditureHeading.textContent = "Family Party Expenditure";
     if (expenditureCopy) expenditureCopy.textContent = "Transparent spending for the family gathering party.";
+    const donationsHeading = document.querySelector(".donations-title span:last-child");
+    if (donationsHeading) donationsHeading.textContent = "Party Contributors";
   }
   const publicEvents = data.events || [];
   const eventPageSize = 10;

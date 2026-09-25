@@ -52,7 +52,16 @@
 }
 
 .finance-family-view .open-books-heading marquee { color: #0f7b4d; }
+.finance-family-view > .navbar,
+.finance-family-view > .hero,
+.finance-family-view > footer { display: none !important; }
 .finance-family-view #sponsorships { display: none; }
+.finance-family-view #gallery,
+.finance-family-view #events,
+.finance-family-view a[href="#gallery"],
+.finance-family-view a[href="#events"] { display: none !important; }
+.finance-family-view #contact,
+.finance-family-view a[href="#contact"] { display: none !important; }
 .finance-family-view #outgoings .section-heading p:not(.eyebrow)::after { content: ' Family Gathering Party spending.'; }
 
 @media (max-width: 600px) {
