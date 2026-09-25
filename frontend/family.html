@@ -43,7 +43,9 @@
             return;
           }
           localStorage.setItem("ganeshToken", data.token);
-          window.location.href = "/admin.html";
+          error.textContent = "Welcome to Family Login. Login successful.";
+          error.className = "alert alert-success mt-3";
+          window.setTimeout(() => { window.location.href = "/admin.html"; }, 700);
         } catch (requestError) {
           error.textContent = "Network error: " + requestError.message;
           error.classList.remove("d-none");
