@@ -325,7 +325,12 @@ router.get('/receipts/:number/image', async (req, res) => {
 
 router.get('/receipts/:number/public-pdf', async (req, res) => { const receipt = await Receipt.findOne({ receiptNumber: req.params.number }).populate('donation'); const donation = receipt?.donation || await Donation.findOne({ receiptNumber: req.params.number }); if (!donation) return res.sendStatus(404); const number = receipt?.receiptNumber || donation.receiptNumber || req.params.number; const doc = new PDFDocument({ margin: 50 }); res.attachment(receiptDownloadName(donation, number, 'pdf')); doc.pipe(res); doc.fontSize(22).fillColor('#8d2d24').text(process.env.COMMITTEE_NAME || 'SD Colony Ganesh Utsav Committee', { align: 'center' }); doc.moveDown().fontSize(15).fillColor('#222').text(`Receipt No: ${number}`).text(`Donor: ${donation.donorName}`).text(`Flat Number: ${donation.flatNumber || '--'}`).text(`Mobile Number: ${donation.mobile || '--'}`).text(`Amount: Rs. ${donation.amount}`).text(`Payment Mode: ${donation.paymentMode || 'Cash'}`).text(`Date: ${displayDate(donation.createdAt || donation.date)}`); doc.end(); });
 router.get('/gallery/:id/media', async (req, res) => {
-  const item = await Gallery.findById(req.params.id).select('+mediaData +mediaFileId').lean();
+  let item;
+  try {
+    item = await Gallery.findById(req.params.id).select('+mediaData +mediaFileId').lean();
+  } catch (error) {
+    return res.status(503).json({ error: 'Gallery media is temporarily unavailable.' });
+  }
   if (!item) return res.sendStatus(404);
   const cacheKey = String(item._id);
   const type = mimeTypeForGallery(item);
@@ -335,15 +340,20 @@ router.get('/gallery/:id/media', async (req, res) => {
   const cachedMedia = galleryMediaCache.get(cacheKey);
   const media = cachedMedia || (item.mediaData?.length ? Buffer.from(item.mediaData) : null);
   const bucket = getGalleryMediaBucket();
-  const gridFile = item.mediaFileId && bucket ? await bucket.find({ _id: new mongoose.Types.ObjectId(item.mediaFileId) }).next() : null;
+  let gridFile = null;
+  try {
+    gridFile = item.mediaFileId && bucket ? await bucket.find({ _id: new mongoose.Types.ObjectId(item.mediaFileId) }).next() : null;
+  } catch (error) {
+    return res.status(503).json({ error: 'Gallery media is temporarily unavailable.' });
+  }
   if (!media && !fileStats && !gridFile) return res.sendStatus(404);
   const range = req.headers.range;
   res.set({ 'Cache-Control': 'public, max-age=3600', 'Accept-Ranges': 'bytes', 'Content-Type': type, 'Content-Disposition': `${req.query.download === '1' ? 'attachment' : 'inline'}; filename*=UTF-8''${name}` });
   const totalSize = fileStats?.size || gridFile?.length || media.length;
   if (!range) {
     res.set('Content-Length', totalSize);
-    if (fileStats) return fs.createReadStream(filePath).pipe(res);
-    if (gridFile) return bucket.openDownloadStream(gridFile._id).pipe(res);
+    if (fileStats) return fs.createReadStream(filePath).on('error', error => { if (!res.headersSent) res.sendStatus(503); else res.destroy(error); }).pipe(res);
+    if (gridFile) return bucket.openDownloadStream(gridFile._id).on('error', error => { if (!res.headersSent) res.sendStatus(503); else res.destroy(error); }).pipe(res);
     cacheGalleryMedia(cacheKey, media);
     return res.send(media);
   }
@@ -353,8 +363,8 @@ router.get('/gallery/:id/media', async (req, res) => {
   const end = match[2] ? Math.min(Number(match[2]), totalSize - 1) : totalSize - 1;
   if (start > end || start >= totalSize) return res.status(416).set('Content-Range', `bytes */${totalSize}`).end();
   res.status(206).set({ 'Content-Range': `bytes ${start}-${end}/${totalSize}`, 'Content-Length': end - start + 1 });
-  if (fileStats) return fs.createReadStream(filePath, { start, end }).pipe(res);
-  if (gridFile) return bucket.openDownloadStream(gridFile._id, { start, end: end + 1 }).pipe(res);
+  if (fileStats) return fs.createReadStream(filePath, { start, end }).on('error', error => { if (!res.headersSent) res.sendStatus(503); else res.destroy(error); }).pipe(res);
+  if (gridFile) return bucket.openDownloadStream(gridFile._id, { start, end: end + 1 }).on('error', error => { if (!res.headersSent) res.sendStatus(503); else res.destroy(error); }).pipe(res);
   cacheGalleryMedia(cacheKey, media);
   return res.send(media.subarray(start, end + 1));
 });
