@@ -13,7 +13,8 @@
         <p class="eyebrow">Family Gathering Party</p>
         <h1 id="familyLoginTitle">Family Login</h1>
         <p class="muted">Sign in to keep the family gathering finance moving.</p>
-        <form id="familyLoginForm" class="mt-4">
+        <form id="familyLoginForm" class="mt-4" action="/api/auth/login" method="post">
+          <input type="hidden" name="loginType" value="family" />
           <label>Username<input class="form-control" name="username" required autocomplete="username" /></label>
           <label>Password<input class="form-control" type="password" name="password" required autocomplete="current-password" /></label>
           <button id="familyLoginButton" class="btn btn-saffron w-100" type="submit">Enter dashboard ↗</button>
