@@ -248,6 +248,9 @@ function toggleFestivalSongMute(event) {
 let publicDataCache = null;
 let publicDataFetchedAt = 0;
 let publicDataRequest = null;
+let selectedFinanceView = "ganesh";
+let familyFinanceCache = null;
+let publicLoadVersion = 0;
 const publicDataCacheTtl = 5000;
 
 async function getPublicData({ refresh = false } = {}) {
@@ -274,7 +277,19 @@ async function getPublicData({ refresh = false } = {}) {
   return publicDataRequest;
 }
 
+async function getFamilyFinance() {
+  if (familyFinanceCache) return familyFinanceCache;
+  const response = await fetch("/api/public/family", { cache: "no-store" });
+  if (!response.ok) return null;
+  familyFinanceCache = await response.json();
+  familyFinanceCache.donations = Array.isArray(familyFinanceCache.donations) ? familyFinanceCache.donations : [];
+  familyFinanceCache.expenses = Array.isArray(familyFinanceCache.expenses) ? familyFinanceCache.expenses : [];
+  familyFinanceCache.stats = familyFinanceCache.stats || {};
+  return familyFinanceCache;
+}
+
 async function loadPortal({ refresh = false } = {}) {
+  const loadVersion = ++publicLoadVersion;
   const data = await getPublicData({ refresh });
   if (!data) {
     const stats = document.getElementById("stats");
@@ -284,21 +299,22 @@ async function loadPortal({ refresh = false } = {}) {
     if (events) events.innerHTML = `<p class="portal-data-error" role="alert">${message}</p>`;
     return;
   }
+  const financeData = selectedFinanceView === "family" ? await getFamilyFinance() : data;
+  if (!financeData) return;
+  if (loadVersion !== publicLoadVersion) return;
   const contact = data.contact || {};
   renderDonationModal(contact);
   renderPublicScrolls(contact, data.events);
   const contactDetails = document.querySelector(".contact-details");
   if (contactDetails) { const lines = contactDetails.querySelectorAll("span"); if (lines[0]) lines[0].textContent = `📧 ${contact.contactEmail || "hello@ganeshutsav.org"} · 📞 ${contact.phone1 || "8555958559"}${contact.phone2 ? ` | ${contact.phone2}` : ""}`; }
-  document.title = data.committeeName;
-  document.getElementById("heroDonations").textContent = money(
-    data.stats.totalDonations,
-  );
-  const contributionTotal = type => type === "Laddu Auction 2025" && data.stats.ladduAuctionTotal != null ? data.stats.ladduAuctionTotal : data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const contributionRows = type => data.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
+  document.title = selectedFinanceView === "family" ? "Family Gathering Party Finance" : data.committeeName;
+  document.getElementById("heroDonations").textContent = money(financeData.stats.totalDonations);
+  const contributionTotal = type => type === "Laddu Auction 2025" && financeData.stats.ladduAuctionTotal != null ? financeData.stats.ladduAuctionTotal : financeData.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const contributionRows = type => financeData.donations.filter(item => item.contributionType === type && item.status !== "Yet to receive").sort(sortSpecialContributions).slice(0, 2);
   const summaryRows = (type, emptyLabel) => contributionRows(type).map(item => { const plot = normalizePlotNumber(item.flatNumber); const donor = item.donorName || "--"; return `<tr><td>${escapeHtml(plot ? `${donor} (${plot})` : donor)}</td><td>${money(item.amount)}</td></tr>`; }).join("") || `<tr><td colspan="2" class="summary-empty">${emptyLabel}</td></tr>`;
-  const generalDonationTotal = Number(data.stats.totalDonations || 0);
-  const ladduAuctionTotal = Number(data.stats.ladduAuctionTotal || 0);
-  const paidTotal = (data.expenses || []).reduce((sum, item) => {
+  const generalDonationTotal = Number(financeData.stats.totalDonations || 0);
+  const ladduAuctionTotal = Number(financeData.stats.ladduAuctionTotal || 0);
+  const paidTotal = (financeData.expenses || []).reduce((sum, item) => {
     const amount = Number(item.amount || 0);
     const advance = Number(item.advanceAmount || 0);
     const status = item.status || "Due";
@@ -310,8 +326,8 @@ async function loadPortal({ refresh = false } = {}) {
       <h4>Total Donations</h4>
       <p class="collected"><strong>Collected Amount (General Donations + Laddu Auction 2025):</strong> <span class="collected-amount">${money(generalDonationTotal + ladduAuctionTotal)}</span></p>
       <table class="breakdown mini-table"><thead><tr><th>Category</th><th>Amount</th></tr></thead><tbody>
-        <tr><td>General Donations</td><td>${money(generalDonationTotal)}</td></tr>
-        <tr><td>Laddu Auction (Ganesh Utsav 2025)</td><td>${money(ladduAuctionTotal)}</td></tr>
+        <tr><td>${selectedFinanceView === "family" ? "Party Contributions" : "General Donations"}</td><td>${money(generalDonationTotal)}</td></tr>
+        ${selectedFinanceView === "family" ? "" : `<tr><td>Laddu Auction (Ganesh Utsav 2025)</td><td>${money(ladduAuctionTotal)}</td></tr>`}
       </tbody></table>
       <h5>Donor Details (from Laddu Auction)</h5>
       <table class="donors mini-table"><thead><tr><th>Name</th><th>Amount</th></tr></thead><tbody>${contributionRows("Laddu Auction 2025").map(item => {
@@ -323,11 +339,27 @@ async function loadPortal({ refresh = false } = {}) {
     </article>
     <article class="balance-card stat-card balance-stat" role="button" tabindex="0" aria-label="View balance details">
       <h3>Remaining Balance</h3>
-      <h3 class="formula formula-heading">General Donations + Laddu Auction (Ganesh Utsav 2025) &ndash; Total Paid</h3>
+      <h3 class="formula formula-heading">${selectedFinanceView === "family" ? "Party Contributions &ndash; Total Paid" : "General Donations + Laddu Auction (Ganesh Utsav 2025) &ndash; Total Paid"}</h3>
       <strong class="amount">${money(remainingBookBalance)}</strong>
       <span class="view-btn">View all</span>
     </article>
     `;
+  if (selectedFinanceView === "family") {
+    const stats = document.getElementById("stats");
+    const donationCard = stats?.querySelector(".donations-card");
+    if (donationCard) {
+      donationCard.querySelector("h4").textContent = "Family Gathering Party Finance";
+      donationCard.querySelector(".collected strong").textContent = "Total Party Contributions:";
+      const partyDetailsHeading = donationCard.querySelector("h5");
+      const formulaHeading = donationCard.querySelector(".formula-heading");
+      if (partyDetailsHeading) partyDetailsHeading.textContent = "Party Donor Details";
+      if (formulaHeading) formulaHeading.textContent = "Total Party Contributions - Total Paid";
+    }
+    const expenditureHeading = document.querySelector("#outgoings .section-heading h2");
+    const expenditureCopy = document.querySelector("#outgoings .section-heading p:not(.eyebrow)");
+    if (expenditureHeading) expenditureHeading.textContent = "Family Party Expenditure";
+    if (expenditureCopy) expenditureCopy.textContent = "Transparent spending for the family gathering party.";
+  }
   const publicEvents = data.events || [];
   const eventPageSize = 10;
   const eventPages = Math.max(1, Math.ceil(publicEvents.length / eventPageSize));
@@ -339,10 +371,10 @@ async function loadPortal({ refresh = false } = {}) {
   renderPublicPager("publicEventsPagination", publicEvents.length, publicEventsPage, eventPageSize, page => { publicEventsPage = page; loadPortal(); });
   const publicExpenditureSummary = document.getElementById("publicExpenditureSummary");
   if (publicExpenditureSummary) {
-    const expenseRows = data.expenses || [];
-    const total = Number(data.stats?.totalExpenses || 0);
-    const paid = Number(data.stats?.totalPaid || 0);
-    const due = Number(data.stats?.totalDue || 0);
+    const expenseRows = financeData.expenses || [];
+    const total = Number(financeData.stats?.totalExpenses || 0);
+    const paid = Number(financeData.stats?.totalPaid || 0);
+    const due = Number(financeData.stats?.totalDue || 0);
     const expensePageSize = 10;
     const expenseQuery = document.getElementById("publicExpenseSearch")?.value.trim().toLowerCase() || "";
     const filteredExpenseRows = expenseRows
@@ -410,9 +442,21 @@ async function loadPortal({ refresh = false } = {}) {
     renderPublicPager("publicExpensePagination", filteredExpenseRows.length, publicExpensesPage, expensePageSize, page => { publicExpensesPage = page; loadPortal(); });
   }
   renderGallery(data.gallery.length ? data.gallery : [{ title: "Ganesh Utsav memories", caption: "", path: "/GaneshIdol_detail.jpeg" }]);
-  renderPublicDonors(data.donations);
-  renderPublicSponsorships(data.donations);
+  renderPublicDonors(financeData.donations);
+  renderPublicSponsorships(financeData.donations);
 }
+document.getElementById("financeSelector")?.addEventListener("change", event => {
+  selectedFinanceView = event.target.value;
+  publicLoadVersion += 1;
+  document.body.classList.toggle("finance-family-view", selectedFinanceView === "family");
+  publicExpensesPage = 0;
+  publicDonorPage = 0;
+  loadPortal();
+});
+document.getElementById("homePageSelector")?.addEventListener("change", event => {
+  if (event.target.value === "ganesh") window.location.href = "/";
+  if (event.target.value === "family") window.location.href = "/family.html";
+});
 loadPortal();
 setInterval(loadPortal, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPortal(); });

@@ -50,10 +50,11 @@ app.get('/phonepe-qr.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..
 app.get('/ganesh-logo.png', (_req, res) => res.sendFile(path.join(__dirname, '..', 'ganesh-logo.png')));
 app.get('/GaneshIdol_detail.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'GaneshIdol_detail.jpeg')));
 app.get('/beautiful-lord-ganesha-ganesh.jpg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'beautiful-lord-ganesha-ganesh.jpg')));
+app.get('/sd-team-image.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'SD Team.jpeg')));
 app.get('/ganesh-song.mpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'Ganesh Song.mpeg')));
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'ganesh-utsav', database: mongoose.connection.readyState === 1 ? 'connected' : 'unavailable' }));
 app.use('/api', (req, res, next) => {
-  const publicRoutes = ['/public', '/auth/login'];
+  const publicRoutes = ['/public', '/public/family', '/auth/login'];
   const shouldSkipDbCheck = publicRoutes.includes(req.path) || req.path.startsWith('/receipts/') || req.path.startsWith('/reports/');
   if (shouldSkipDbCheck) return next();
   if (mongoose.connection.readyState !== 1) return res.status(503).json({ error: 'Database unavailable. Start MongoDB to enable admin data.' });

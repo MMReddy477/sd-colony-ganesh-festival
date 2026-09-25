@@ -64,6 +64,56 @@
   transform: none !important;
 }
 
+.home-page-picker {
+  display: grid;
+  gap: .55rem;
+  width: min(100%, 390px);
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 248, 237, .45);
+  border-radius: 12px;
+  background: rgba(36, 29, 27, .28);
+}
+
+.home-page-picker label {
+  color: #fff8ed;
+  font-weight: 700;
+}
+
+.home-page-picker select {
+  min-height: 44px;
+  padding: .65rem .75rem;
+  border: 1px solid #f4b942;
+  border-radius: 6px;
+  background: #fff8ed;
+  color: #241d1b;
+}
+
+.home-login-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+}
+
+.home-login-actions .btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+.hero.hero-redesign .ganesh-circle .sd-team-image {
+  position: absolute;
+  right: -2.2rem;
+  bottom: -2.2rem;
+  z-index: 4;
+  width: clamp(112px, 31%, 170px) !important;
+  height: clamp(82px, 23%, 126px) !important;
+  border: 5px solid #fff8ed !important;
+  border-radius: 14px !important;
+  object-fit: cover !important;
+  box-shadow: 0 8px 20px rgba(36, 29, 27, .35);
+  transform: rotate(-5deg) !important;
+}
+
 .ganesh-circle-ring {
   position: absolute;
   inset: -18px;
@@ -116,6 +166,15 @@
 @keyframes pulseGaneshAura { 0%, 100% { box-shadow: 0 0 18px rgba(255, 215, 0, .65), inset 0 0 14px rgba(255, 215, 0, .4); } 50% { box-shadow: 0 0 34px rgba(255, 215, 0, .95), inset 0 0 22px rgba(255, 215, 0, .7); } }
 
 @media (max-width: 767.98px) {
+  .home-login-actions { grid-template-columns: 1fr; }
+
+  .hero.hero-redesign .ganesh-circle .sd-team-image {
+    right: -.8rem;
+    bottom: -.8rem;
+    width: 112px !important;
+    height: 82px !important;
+  }
+
   .hero.hero-redesign .ganesh-circle-ring {
     animation: rotateGaneshRing 24s linear infinite;
   }
