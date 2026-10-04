@@ -3,6 +3,7 @@ const path = require('path');
 
 const source = 'Screener-under-10-Industries.xlsx';
 const output = 'Final-All-Under-10-Review.xlsx';
+const rowColors = ['FFB7E1CD', 'FFBFE6FF', 'FFFFE7A3', 'FFD9D2E5', 'FFD8F0C8'];
 
 function formatNumber(value) {
   if (value === null || value === undefined || value === '') return '';
@@ -97,18 +98,79 @@ async function fetchCompanyMetrics(url) {
   };
 }
 
+function addStockSheet(workbook, title, entries, emptyMessage = '') {
+  const sheet = workbook.addWorksheet(title);
+  const headers = ['Sector', 'Company', 'Price ₹', 'Market Cap ₹ Cr', 'Promoter %', 'Public %', 'ROCE %', 'ROE %', 'Pledged %', 'Debt/Equity', 'TTM Growth %', '3Y Growth %', 'Screener Link'];
+  styleHeader(sheet.addRow(headers));
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
+
+  if (entries.length === 0 && emptyMessage) {
+    sheet.mergeCells('A2:M2');
+    sheet.getCell('A2').value = emptyMessage;
+    sheet.getCell('A2').alignment = { wrapText: true, vertical: 'middle' };
+    sheet.getCell('A2').font = { bold: true };
+    sheet.getRow(2).height = 32;
+  }
+
+  for (const [index, item] of entries.entries()) {
+    const row = sheet.addRow([
+      item.sector, item.company, item.price, item.marketCap, item.promoter, item.public,
+      item.roce, item.roe, item.pledged, item.debt, item.ttmGrowth, item.threeYGrowth, item.link
+    ]);
+    const fillColor = rowColors[(index + 2) % rowColors.length];
+    row.eachCell({ includeEmpty: true }, cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillColor } };
+    });
+    if (!item.link) continue;
+    const companyCell = row.getCell(2);
+    companyCell.value = { text: String(item.company), hyperlink: item.link, tooltip: item.link };
+    companyCell.font = { color: { argb: 'FF0000FF' }, underline: true };
+    const linkCell = row.getCell(13);
+    linkCell.value = { text: item.link, hyperlink: item.link, tooltip: item.link };
+    linkCell.font = { color: { argb: 'FF0000FF' }, underline: true };
+  }
+
+  sheet.columns = [
+    { width: 18 }, { width: 28 }, { width: 12 }, { width: 16 }, { width: 12 },
+    { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 14 },
+    { width: 14 }, { width: 14 }, { width: 30 }
+  ];
+}
+
 async function main() {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(path.join(__dirname, source));
-  const entries = [];
+  const allStocks = [];
+  const filteredStocks = [];
 
   for (const ws of workbook.worksheets.slice(1)) {
     if (ws.rowCount <= 1) continue;
     for (let r = 2; r <= ws.rowCount; r += 1) {
       const raw = parseRowValues(ws, r);
       const company = raw['Company'] || raw['Company Name'];
-      if (!company || !matchesBaseFilter(raw)) continue;
+      if (!company) continue;
       const link = raw['Screener Link'] || raw['Screener URL'] || raw['Link'] || '';
+      const price = parseNumber(raw['Current Price (₹)'] ?? raw['Current Price']);
+      if (price !== null && price > 0 && price < 10) {
+        allStocks.push({
+          sector: ws.name,
+          company,
+          price: formatNumber(price),
+          marketCap: formatNumber(raw['Market Cap (₹ Cr)'] ?? raw['Market Cap']),
+          promoter: formatNumber(raw['Promoter Holding (%)'] ?? raw['Promoter Holding']),
+          public: formatNumber(raw['Public Holding (%)'] ?? raw['Public Holding']),
+          roce: formatNumber(raw['ROCE (%)'] ?? raw['ROCE']),
+          roe: formatNumber(raw['ROE (%)'] ?? raw['ROE']),
+          pledged: formatNumber(raw['Pledged Percentage (%)'] ?? raw['Pledged Percentage']),
+          debt: formatNumber(raw['Debt to Equity'] ?? raw['Debt to Equity Ratio'] ?? raw['Debt/Equity']),
+          ttmGrowth: formatNumber(raw['Profit Growth TTM (%)'] ?? raw['Profit Growth TTM']),
+          threeYGrowth: formatNumber(raw['Profit Growth 3Yrs (%)'] ?? raw['Profit Growth 3Yrs']),
+          link: String(link)
+        });
+      }
+
+      if (!matchesBaseFilter(raw)) continue;
       if (!link) continue;
       await new Promise(resolve => setTimeout(resolve, 900));
       const live = await fetchCompanyMetrics(String(link));
@@ -118,7 +180,7 @@ async function main() {
       }
       if (!(live.price > 0 && live.price < 10 && live.debtToEquity < 1 && live.pledged < 0
         && live.roe > 15 && live.roce > 18)) continue;
-      entries.push({
+      filteredStocks.push({
         sector: ws.name,
         company,
         price: formatNumber(live.price),
@@ -136,42 +198,12 @@ async function main() {
     }
   }
   const finalWorkbook = new ExcelJS.Workbook();
-  const sheet = finalWorkbook.addWorksheet('Stocks under 10Rs');
-  const headers = ['Sector', 'Company', 'Price ₹', 'Market Cap ₹ Cr', 'Promoter %', 'Public %', 'ROCE %', 'ROE %', 'Pledged %', 'Debt/Equity', 'TTM Growth %', '3Y Growth %', 'Screener Link'];
-  const headerRow = sheet.addRow(headers);
-  styleHeader(headerRow);
-  sheet.views = [{ state: 'frozen', ySplit: 1 }];
-  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
-
-  if (entries.length === 0) {
-    sheet.mergeCells('A2:M2');
-    sheet.getCell('A2').value = 'No verified stocks matched. Pledged percentage < 0 is not a valid no-pledge filter; use 0% for no pledged shares.';
-    sheet.getCell('A2').alignment = { wrapText: true, vertical: 'middle' };
-    sheet.getCell('A2').font = { bold: true };
-    sheet.getRow(2).height = 32;
-  }
-
-  for (const item of entries) {
-    const stockRow = sheet.addRow([
-      item.sector, item.company, item.price, item.marketCap, item.promoter, item.public,
-      item.roce, item.roe, item.pledged, item.debt, item.ttmGrowth, item.threeYGrowth, item.link
-    ]);
-    const companyCell = stockRow.getCell(2);
-    companyCell.value = { text: String(item.company), hyperlink: item.link, tooltip: item.link };
-    companyCell.font = { color: { argb: 'FF0000FF' }, underline: true };
-    const linkCell = stockRow.getCell(13);
-    linkCell.value = { text: item.link, hyperlink: item.link, tooltip: item.link };
-    linkCell.font = { color: { argb: 'FF0000FF' }, underline: true };
-  }
-
-  sheet.columns = [
-    { width: 18 }, { width: 28 }, { width: 12 }, { width: 16 }, { width: 12 },
-    { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 14 },
-    { width: 14 }, { width: 14 }, { width: 30 }
-  ];
+  addStockSheet(finalWorkbook, 'All Stocks', allStocks);
+  addStockSheet(finalWorkbook, 'Stocks under 10Rs', filteredStocks,
+    'No verified stocks matched. Pledged percentage < 0 is not a valid no-pledge filter; use 0% for no pledged shares.');
 
   await finalWorkbook.xlsx.writeFile(path.join(__dirname, output));
-  console.log(`Saved ${output} with ${entries.length} matching stocks in the Stocks under 10Rs sheet.`);
+  console.log(`Saved ${output} with ${allStocks.length} All Stocks rows and ${filteredStocks.length} query matches.`);
 }
 
 main().catch(error => {
