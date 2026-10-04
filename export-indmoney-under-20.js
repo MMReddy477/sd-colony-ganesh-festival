@@ -157,7 +157,7 @@ class IndmoneySectorExporter {
 
     return [...stocksById.values()]
       .map(stock => ({ ...stock, sector: [...stock.sectorNames].join('; ') }))
-      .sort((left, right) => left.company.localeCompare(right.company));
+      .sort((left, right) => left.price - right.price || left.company.localeCompare(right.company));
   }
 
   writeWorkbook(stocks) {
