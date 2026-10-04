@@ -160,6 +160,46 @@ class IndmoneySectorExporter {
       .sort((left, right) => left.price - right.price || left.company.localeCompare(right.company));
   }
 
+  focusRows(stocks) {
+    const rows = [];
+    const metalTypes = new Map([
+      ['baroda extrusion ltd', 'Copper'],
+      ['rajnandini metal ltd', 'Copper'],
+      ['sacheta metals ltd', 'Aluminium'],
+      ['bothra metals & alloys ltd', 'Aluminium'],
+      ['century extrusions ltd', 'Aluminium'],
+      ['sprayking ltd', 'Brass'],
+      ['poojawestern metaliks ltd', 'Brass'],
+      ['facor alloys ltd', 'Steel / Ferro-alloys']
+    ]);
+
+    for (const stock of stocks) {
+      const sectors = stock.sector.split(';').map(sector => sector.trim().toLowerCase());
+      const focusGroups = [];
+      if (sectors.includes('healthcare')) focusGroups.push('Healthcare');
+      if (sectors.includes('pharma')) focusGroups.push('Pharma');
+      if (sectors.includes('fmcg')) focusGroups.push('FMCG');
+      if (sectors.includes('power')) focusGroups.push('Power');
+
+      const isMetal = sectors.some(sector => ['metal', 'steel', 'mining & minerals'].includes(sector));
+      if (isMetal) focusGroups.push('Metals');
+
+      for (const sector of ['defence', 'railway', 'infrastructure']) {
+        if (sectors.includes(sector)) {
+          focusGroups.push(`Watchlist - ${sector[0].toUpperCase()}${sector.slice(1)}`);
+        }
+      }
+
+      if (focusGroups.length === 0) continue;
+      const metalType = isMetal
+        ? metalTypes.get(stock.company.toLowerCase()) || (sectors.includes('steel') ? 'Steel / Other' : 'Other Metals')
+        : '';
+      rows.push({ ...stock, focusGroup: focusGroups.join('; '), metalType });
+    }
+
+    return rows;
+  }
+
   writeWorkbook(stocks) {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'INDmoney sector export';
@@ -197,6 +237,50 @@ class IndmoneySectorExporter {
       { width: 38 }, { width: 38 }, { width: 12 }, { width: 18 }, { width: 14 },
       { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 14 },
       { width: 14 }, { width: 14 }, { width: 58 }
+    ];
+
+    const focusSheet = workbook.addWorksheet('Focus Sectors');
+    const focusHeaders = [
+      'Focus Group', 'Metal Type', 'Sector', 'Company', 'Price ₹', 'Market Cap ₹ Cr', 'Promoter %',
+      'Public %', 'ROCE %', 'ROE %', 'Pledged %', 'Debt/Equity', 'TTM Growth %', '3Y Growth %', 'Stock Page Link'
+    ];
+    focusSheet.addRow(focusHeaders);
+    focusSheet.views = [{ state: 'frozen', ySplit: 1 }];
+    focusSheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: focusHeaders.length } };
+    focusSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    focusSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+    focusSheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    focusSheet.getRow(1).height = 32;
+
+    for (const stock of this.focusRows(stocks)) {
+      const row = focusSheet.addRow([
+        stock.focusGroup, stock.metalType, stock.sector, stock.company, stock.price, stock.marketCap,
+        stock.promoter, stock.public, stock.roce, stock.roe, stock.pledged, stock.debt,
+        stock.ttmGrowth, stock.threeYGrowth, stock.link
+      ]);
+      row.getCell(5).numFmt = '0.00';
+      row.getCell(6).numFmt = '#,##0.00';
+      for (const column of [7, 8, 9, 10, 11, 12, 13, 14]) row.getCell(column).numFmt = '0.00';
+      const companyCell = row.getCell(4);
+      companyCell.value = { text: stock.company, hyperlink: stock.link, tooltip: stock.link };
+      companyCell.font = { color: { argb: 'FF0000FF' }, underline: true };
+      const linkCell = row.getCell(15);
+      linkCell.value = { text: stock.link, hyperlink: stock.link, tooltip: stock.link };
+      linkCell.font = { color: { argb: 'FF0000FF' }, underline: true };
+    }
+
+    const noteRow = focusSheet.addRow([
+      'Metal types follow INDmoney company descriptions. No company explicitly focused on zinc and no Railway-category stock appeared below ₹20 in the 47 source sectors. Additional watchlist groups are not investment recommendations.'
+    ]);
+    focusSheet.mergeCells(`A${noteRow.number}:O${noteRow.number}`);
+    noteRow.getCell(1).alignment = { wrapText: true, vertical: 'middle' };
+    noteRow.getCell(1).font = { italic: true, color: { argb: 'FF666666' } };
+    noteRow.height = 32;
+
+    focusSheet.columns = [
+      { width: 40 }, { width: 20 }, { width: 40 }, { width: 38 }, { width: 12 },
+      { width: 18 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 12 },
+      { width: 12 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 58 }
     ];
     return workbook.xlsx.writeFile(path.join(__dirname, OUTPUT));
   }
