@@ -9,7 +9,7 @@ const USER_AGENT = 'Mozilla/5.0 (compatible; ScreenerWorkbook/1.0)';
 const REQUEST_DELAY_MS = 1000;
 const CHECKPOINT_SIZE = 20;
 const PROFILE_CONCURRENCY = 2;
-const PROFILE_PARSER_VERSION = 2;
+const PROFILE_PARSER_VERSION = 3;
 const HEADERS = [
   'Ex-Date', 'Sector', 'Company', 'Price ₹', 'Market Cap ₹ Cr', 'Promoter %', 'Public %',
   'ROCE %', 'ROE %', 'Pledged %', 'Debt/Equity', 'Sales (₹ Cr)',
@@ -118,6 +118,17 @@ function latestSales(html) {
   return null;
 }
 
+function latestStatementValue(section, target) {
+  for (const [, row] of section.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const cells = [...row.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(match => clean(match[1]));
+    const label = (cells[0] || '').replace(/\+/g, '').trim().toLowerCase();
+    if (label !== target) continue;
+    const values = cells.slice(1).map(numberFrom).filter(value => value !== null);
+    return values.length ? values[values.length - 1] : null;
+  }
+  return null;
+}
+
 function parseProfile(html) {
   const ratios = latestRatios(html);
   const value = (...names) => {
@@ -135,6 +146,13 @@ function parseProfile(html) {
     }
   }
   const shareholding = html.match(/<section\b[^>]*id=['"]shareholding['"][^>]*>([\s\S]*?)(?=<section\b|$)/i)?.[1] || '';
+  const balanceSheet = html.match(/<section\b[^>]*id=['"]balance-sheet['"][^>]*>([\s\S]*?)(?=<section\b|$)/i)?.[1] || '';
+  const reportedDebtToEquity = value('debt to equity', 'debt / equity', 'debt/equity');
+  const borrowings = latestStatementValue(balanceSheet, 'borrowings');
+  const equityCapital = latestStatementValue(balanceSheet, 'equity capital');
+  const reserves = latestStatementValue(balanceSheet, 'reserves');
+  const equity = equityCapital !== null && reserves !== null ? equityCapital + reserves : null;
+  const calculatedDebtToEquity = borrowings !== null && equity > 0 ? borrowings / equity : null;
   const about = clean(html.match(/<div\b[^>]*class=['"][^'"]*\babout\b[^'"]*['"][^>]*>([\s\S]*?)<\/div>/i)?.[1] || '');
   const profile = {
     parserVersion: PROFILE_PARSER_VERSION,
@@ -146,7 +164,10 @@ function parseProfile(html) {
     roce: value('roce'),
     roe: value('roe'),
     pledged: value('pledged percentage', 'pledged percentage %', 'pledged %', 'pledged'),
-    debtToEquity: value('debt to equity', 'debt / equity', 'debt/equity'),
+    debtToEquity: reportedDebtToEquity ?? calculatedDebtToEquity,
+    debtToEquitySource: reportedDebtToEquity !== null ? 'Screener ratio' : calculatedDebtToEquity !== null
+      ? 'Calculated from latest balance-sheet borrowings / (equity capital + reserves)'
+      : '',
     sales: latestSales(html),
     about
   };
@@ -285,7 +306,8 @@ async function writeWorkbook(events, profiles, cutoff, checkpoint = false) {
     ['Action dates', `Only completed actions through ${cutoff.toISOString().slice(0, 10)} are included. Future ex-dates were excluded because post-action prices are not yet available.`],
     ['Bonus periods', 'Ex-dates in 2025 and 2026.'],
     ['Split periods', 'Ex-dates in 2024, 2025 and 2026.'],
-    ['Ownership', 'Promoter and public holdings use the latest quarterly shareholding figures available on the Screener profile; unavailable values remain blank.'],
+    ['Ownership', 'Promoter and public holdings use the latest quarterly shareholding figures available on the Screener profile; unavailable values remain blank. Pledged percentage is shown only when reported on the profile; a blank does not mean zero.'],
+    ['Debt/Equity', 'Uses Screener’s reported ratio when available; otherwise it is calculated from the latest available balance-sheet Borrowings / (Equity Capital + Reserves). Blank indicates insufficient source values for a calculation.'],
     ['Promoter-filtered tabs', `Bonus Promoter >=30 and Split Promoter >=30 include only rows with a known promoter holding of at least 30%: ${promoterFilteredRows.Bonus} bonus rows and ${promoterFilteredRows.Split} split rows. The unfiltered Bonus and Split tabs are retained.`],
     ['Products / applications', 'The description is copied from Screener company-profile About text; it is not independently verified as a complete product catalogue.'],
     ['Coverage', `${eligibleEvents.length} completed action records screened across ${profiles.size} unique company profiles; ${qualifyingRows} action rows meet the current-price rule. Bonus and split results, plus promoter-filtered tabs, are provided separately.`],
@@ -324,11 +346,14 @@ async function main() {
   }
 
   const companyUrls = [...new Set(events.map(event => event.companyUrl))];
-  const pending = companyUrls.filter(url => (
-    !profiles.has(url)
-    || profiles.get(url)?.error
-    || profiles.get(url)?.parserVersion !== PROFILE_PARSER_VERSION
-  ));
+  const pending = companyUrls.filter(url => {
+    const profile = profiles.get(url);
+    return !profile || profile.error || (
+      profile.price > 0
+      && profile.price < 20
+      && profile.parserVersion !== PROFILE_PARSER_VERSION
+    );
+  });
   console.log(`${events.length} completed actions; ${companyUrls.length} unique company profiles; ${pending.length} profiles pending.`);
   let result = await writeWorkbook(events, profiles, cutoff, true);
   console.log(`Workbook checkpoint saved: ${result.qualifyingRows} qualifying action rows.`);
