@@ -45,9 +45,6 @@ app.use('/uploads', express.static(uploadDir, {
     response.setHeader('Expires', '0');
   }
 }));
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html')));
-app.get('/ganesh-public.html', (_req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html')));
-app.get('/family-public.html', (_req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html')));
 app.use(express.static(path.join(__dirname, '..', 'frontend'), { setHeaders: response => response.setHeader('Cache-Control', 'no-store') }));
 app.get('/phonepe-qr.jpeg', (_req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'phonepe-qr.jpeg')));
 app.get('/ganesh-logo.png', (_req, res) => res.sendFile(path.join(__dirname, '..', 'ganesh-logo.png')));
